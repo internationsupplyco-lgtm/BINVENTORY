@@ -464,6 +464,10 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
     }
     .sell-toolbar-label {
       font-size: 0.85rem;
@@ -476,6 +480,21 @@
       flex-wrap: wrap;
       justify-content: flex-end;
       align-items: center;
+      min-width: 0;
+      max-width: 100%;
+    }
+    @media (max-width: 640px) {
+      .sell-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .sell-actions {
+        justify-content: stretch;
+      }
+      .sell-actions .btn-sell-action {
+        flex: 1 1 auto;
+        text-align: center;
+      }
     }
     .sell-actions .btn-sell-action {
       background: var(--surface-2);
