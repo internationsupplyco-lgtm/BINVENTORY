@@ -189,6 +189,24 @@
       color: #93c5fd;
       border-color: rgba(59, 130, 246, 0.35);
     }
+    .nav-btn .nav-chat-label { display: inline-flex; align-items: center; gap: 0.45rem; }
+    .chat-unread-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.15rem;
+      height: 1.15rem;
+      padding: 0 0.3rem;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 700;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .nav-btn.active .chat-unread-badge { background: #60a5fa; color: #0f172a; }
+    .chat-pip-title .chat-unread-badge { background: #f59e0b; }
     .nav-list { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; }
     .user-panel {
       border-top: 1px solid var(--border);
@@ -739,6 +757,9 @@
     .chat-pip-header:active { cursor: grabbing; }
     .chat-pip-title {
       flex: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
       font-size: 0.88rem;
       font-weight: 600;
       letter-spacing: -0.01em;
@@ -838,6 +859,67 @@
     }
     .chat-status.err { color: var(--danger); }
     .chat-status.ok { color: var(--success); }
+    .chat-notify-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem 1.1rem;
+      align-items: center;
+      margin-top: 0.75rem;
+    }
+    .chat-notify-row label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+    }
+    .chat-notify-row input[type="checkbox"] {
+      width: auto;
+      min-width: 0;
+      accent-color: var(--accent);
+    }
+    .chat-notify-hint { font-size: 0.78rem; color: var(--muted); margin-top: 0.45rem; }
+    .chat-toast-host {
+      position: fixed;
+      right: 1rem;
+      bottom: 1rem;
+      z-index: 12000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-width: min(360px, calc(100vw - 2rem));
+      pointer-events: none;
+    }
+    .chat-toast {
+      pointer-events: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 0.75rem 0.9rem;
+      cursor: pointer;
+      animation: chat-toast-in 0.22s ease-out;
+    }
+    .chat-toast:hover { border-color: rgba(59, 130, 246, 0.45); }
+    .chat-toast .toast-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.15rem;
+    }
+    .chat-toast .toast-body {
+      font-size: 0.8rem;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    @keyframes chat-toast-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
     .code-reveal {
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 0.85rem;
@@ -986,7 +1068,7 @@
         <button type="button" class="nav-btn" data-page="sell">Sell</button>
         <button type="button" class="nav-btn" data-page="breakeven">Break-even</button>
         <button type="button" class="nav-btn" data-page="equity" id="navEquity">Equity</button>
-        <button type="button" class="nav-btn" data-page="chat" id="navChat">Chat</button>
+        <button type="button" class="nav-btn" data-page="chat" id="navChat"><span class="nav-chat-label">Chat <span class="chat-unread-badge hidden" id="navChatBadge" aria-hidden="true"></span></span></button>
         <button type="button" class="nav-btn" data-page="team">Team &amp; sync</button>
       </nav>
       <div class="user-panel">
@@ -1090,8 +1172,19 @@
         <div class="kpi-grid">
           <div class="stat"><label>Gross sales revenue</label><div class="value" id="sellGrossRev">$0.00</div></div>
           <div class="stat"><label>Units sold</label><div class="value" id="sellUnitsSold">0</div></div>
-          <div class="stat"><label>Sell profit (after allocated fixed)</label><div class="value" id="sellProfitVal">$0.00</div></div>
+          <div class="stat"><label>Sell profit (after fixed + sales overhead)</label><div class="value" id="sellProfitVal">$0.00</div></div>
           <div class="stat"><label>Stock on hand</label><div class="value" id="sellStockOnHand">0</div></div>
+        </div>
+        <div class="card" id="sellOverheadCard" style="margin-top:1rem">
+          <h2>Sales overhead</h2>
+          <p class="sell-method-note" id="sellOverheadNote">
+            Overhead to recover is paid from sales as units sell. Paid and remaining are derived from current sold totals (undo/reset recalculate automatically).
+          </p>
+          <div class="summary-grid">
+            <div class="stat"><label>Overhead to recover</label><div class="value" id="sellOhTotal">$0.00</div></div>
+            <div class="stat"><label>Paid from sales</label><div class="value" id="sellOhPaid">$0.00</div></div>
+            <div class="stat"><label>Remaining</label><div class="value" id="sellOhRemaining">$0.00</div></div>
+          </div>
         </div>
         <div class="sell-toolbar" id="sellToolbar" role="toolbar" aria-label="Sales actions">
           <span class="sell-toolbar-label">Sales actions</span>
@@ -1128,16 +1221,18 @@
           </div>
           <div class="summary-grid" style="margin-top:1rem">
             <div class="stat"><label>Gross sales revenue</label><div class="value" id="sellTotalRev">$0.00</div></div>
-            <div class="stat"><label>Sold margin (before fixed)</label><div class="value" id="sellTotalMargin">$0.00</div></div>
+            <div class="stat"><label>Sold margin (before overhead)</label><div class="value" id="sellTotalMargin">$0.00</div></div>
+            <div class="stat"><label>Sales overhead paid</label><div class="value" id="sellAllocOh">$0.00</div></div>
             <div class="stat"><label>Allocated fixed costs</label><div class="value" id="sellAllocFixed">$0.00</div></div>
           </div>
         </div>
         <div class="card" id="sellEquityCard">
           <h2>Equity from sales</h2>
           <p class="sell-method-note" id="sellMethodNote">
-            Sell profit = Σ sold × (sell − cost), then minus fixed costs allocated by sold-unit share:
-            fixed × soldUnits / (soldUnits + stock). Foundation takes its cut from that sell-profit first;
-            remaining parties split the rest (same rules as Equity).
+            Sell profit = sold margin − sales overhead paid − allocated fixed costs.
+            Sales overhead pays down a recover budget from sales (margin, % of revenue, or $ / unit).
+            Fixed costs use sold-unit share: fixed × soldUnits / (soldUnits + stock).
+            Foundation takes its cut from sell-profit first; remaining parties split the rest.
           </p>
           <p class="equity-remainder-note" id="sellEquityNote"></p>
           <div class="party-grid" id="sellEquityPayments"></div>
@@ -1146,7 +1241,7 @@
 
       <section class="page hidden" id="page-breakeven">
         <h1 class="page-title">Break-even</h1>
-        <p class="page-sub">Fixed costs and break-even targets for the workspace.</p>
+        <p class="page-sub">Fixed costs, sales-tied overhead to recover, and break-even targets for the workspace.</p>
         <div class="card">
           <div class="summary-grid">
             <div class="stat"><label>Inventory cost</label><div class="value" id="summaryCost">$0.00</div></div>
@@ -1156,13 +1251,44 @@
           </div>
           <div class="field-row" style="margin-top:1rem">
             <div class="field">
-              <label for="fixedCosts">Fixed / overhead costs</label>
+              <label for="fixedCosts">Fixed costs</label>
               <input type="number" id="fixedCosts" min="0" step="0.01" value="0" />
+              <div class="field-hint">Allocated to sales by sold-unit share (not paid down by revenue %).</div>
             </div>
             <div class="field">
               <label for="targetUnits">Units to sell (optional)</label>
               <input type="number" id="targetUnits" min="0" step="1" placeholder="All units" />
             </div>
+          </div>
+          <h3 style="margin:1.25rem 0 0.5rem;font-size:1rem">Sales overhead (variable)</h3>
+          <p class="foundation-sub" style="margin-bottom:0.75rem">
+            Budget paid off as sales happen. Paid amount is recalculated from current sold units/revenue/margin — undo and reset update it automatically.
+          </p>
+          <div class="field-row">
+            <div class="field">
+              <label for="varOhTotal">Overhead to recover ($)</label>
+              <input type="number" id="varOhTotal" min="0" step="0.01" value="0" />
+            </div>
+            <div class="field">
+              <label for="varOhMode">Pay from sales by</label>
+              <select id="varOhMode">
+                <option value="margin">Sold margin (until recovered)</option>
+                <option value="pctRevenue">% of gross revenue</option>
+                <option value="perUnit">$ per unit sold</option>
+              </select>
+            </div>
+            <div class="field hidden" id="varOhPctField">
+              <label for="varOhRatePct">% of gross revenue</label>
+              <input type="number" id="varOhRatePct" min="0" max="100" step="0.01" value="0" />
+            </div>
+            <div class="field hidden" id="varOhPerUnitField">
+              <label for="varOhPerUnit">$ per unit sold</label>
+              <input type="number" id="varOhPerUnit" min="0" step="0.01" value="0" />
+            </div>
+          </div>
+          <div class="summary-grid" style="margin-top:1rem">
+            <div class="stat"><label>Overhead paid (from current sales)</label><div class="value" id="beOhPaid">$0.00</div></div>
+            <div class="stat"><label>Overhead remaining</label><div class="value" id="beOhRemaining">$0.00</div></div>
           </div>
           <div class="summary-grid">
             <div class="stat"><label>Break-even price / unit</label><div class="value" id="bePrice">—</div></div>
@@ -1219,6 +1345,7 @@
             <p class="page-sub">Messages sync with the workspace (local invite, other tabs, or live Firestore).</p>
           </div>
           <div class="chat-page-actions">
+            <button type="button" class="btn-ghost" id="chatEnableNotifyBtn" title="Allow desktop or in-app chat alerts">Enable notifications</button>
             <button type="button" class="btn-ghost" id="chatPopOutBtn" title="Open chat as a floating window">Pop out</button>
           </div>
         </div>
@@ -1232,6 +1359,11 @@
             </form>
           </div>
         </div>
+        <div class="chat-notify-row" id="chatNotifyControls">
+          <label><input type="checkbox" id="chatNotifyEnabled" /> Alert on new messages</label>
+          <label><input type="checkbox" id="chatNotifySound" /> Play sound</label>
+        </div>
+        <p class="chat-notify-hint" id="chatNotifyHint"></p>
         <div class="chat-pip-docked-hint hidden" id="chatPipDockedHint">
           Chat is floating on screen. Drag its header to move it, or press <strong>Dock</strong> to put it back here.
         </div>
@@ -1240,6 +1372,17 @@
       <section class="page hidden" id="page-team">
         <h1 class="page-title">Team &amp; sync</h1>
         <p class="page-sub">Accounts, roles, permissions, invites, and Firestore live sync.</p>
+
+        <div class="card" id="chatNotifyCard">
+          <h2>Chat notifications</h2>
+          <p class="note" style="margin-top:0">Get alerts when teammates send chat messages. Preferences stay on this device.</p>
+          <div class="chat-notify-row">
+            <button type="button" class="btn-primary" id="teamEnableNotifyBtn">Enable notifications</button>
+            <label><input type="checkbox" id="teamChatNotifyEnabled" /> Alert on new messages</label>
+            <label><input type="checkbox" id="teamChatNotifySound" /> Play sound</label>
+          </div>
+          <p class="chat-notify-hint" id="teamChatNotifyHint"></p>
+        </div>
 
         <div class="card" id="firebaseCard">
           <div class="card-header">
@@ -1437,11 +1580,13 @@ service cloud.firestore {
 
   <div id="chatPip" class="chat-pip hidden" aria-hidden="true" role="dialog" aria-label="Team chat">
     <div class="chat-pip-header" id="chatPipHandle">
-      <span class="chat-pip-title">Team chat</span>
+      <span class="chat-pip-title">Team chat <span class="chat-unread-badge hidden" id="chatPipBadge" aria-hidden="true"></span></span>
       <button type="button" class="btn-ghost" id="chatPipDockBtn" title="Dock chat back to the Chat page">Dock</button>
     </div>
     <div class="chat-pip-body" id="chatPipHost"></div>
   </div>
+
+  <div id="chatToastHost" class="chat-toast-host" aria-live="polite" aria-relevant="additions"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/hash-wasm@4.12.0/dist/index.umd.min.js" data-hash-wasm="1"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -1459,6 +1604,7 @@ service cloud.firestore {
     const WS_PREFIX = "inventory-split-ws:";
     const FIREBASE_LS_KEY = "inventory-split-firebase";
     const CHAT_PIP_KEY = "inventory-split-chat-pip";
+    const CHAT_NOTIFY_KEY = "inventory-split-chat-notify";
     const INVITE_TYPE = "inventory-split-invite";
     const DEFAULT_LOGIN_TITLE = "Inventory Split";
     const MAX_CHAT_MESSAGES = 200;
@@ -1553,6 +1699,12 @@ service cloud.firestore {
     ];
 
     const DEFAULT_FOUNDATION = { mode: "pct", pct: 0, fixed: 0 };
+    const DEFAULT_VARIABLE_OVERHEAD = {
+      total: 0,
+      mode: "margin",
+      ratePct: 0,
+      perUnit: 0,
+    };
 
     const fmt = (n) =>
       new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
@@ -1574,6 +1726,65 @@ service cloud.firestore {
         pct: Math.max(0, parseNum(f.pct)),
         fixed: Math.max(0, parseNum(f.fixed)),
       };
+    }
+
+    function normalizeVariableOverhead(raw) {
+      const o = raw && typeof raw === "object" ? raw : {};
+      const mode =
+        o.mode === "pctRevenue" || o.mode === "perUnit" ? o.mode : "margin";
+      return {
+        total: Math.max(0, parseNum(o.total)),
+        mode,
+        ratePct: Math.max(0, parseNum(o.ratePct)),
+        perUnit: Math.max(0, parseNum(o.perUnit)),
+      };
+    }
+
+    /**
+     * Sales overhead paid is always derived from current sold metrics (not a stack).
+     * - margin: min(total, soldMargin) — requires a recover budget
+     * - pctRevenue: min(total or uncapped if total=0, gross × rate%)
+     * - perUnit: min(total or uncapped if total=0, soldUnits × perUnit)
+     */
+    function computeVariableOverheadPaid(oh, { soldMargin, grossRevenue, soldUnits }) {
+      const cfg = normalizeVariableOverhead(oh);
+      let raw = 0;
+      if (cfg.mode === "pctRevenue") {
+        raw = Math.max(0, grossRevenue) * (cfg.ratePct / 100);
+      } else if (cfg.mode === "perUnit") {
+        raw = Math.max(0, soldUnits) * cfg.perUnit;
+      } else {
+        raw = Math.max(0, soldMargin);
+      }
+      let paid;
+      if (cfg.total > 0) {
+        paid = Math.min(cfg.total, raw);
+      } else if (cfg.mode === "margin") {
+        paid = 0;
+      } else {
+        paid = raw;
+      }
+      const remaining = cfg.total > 0 ? Math.max(0, cfg.total - paid) : 0;
+      return {
+        ...cfg,
+        raw,
+        paid,
+        remaining,
+        hasBudget: cfg.total > 0,
+      };
+    }
+
+    function variableOverheadModeLabel(oh) {
+      const cfg = normalizeVariableOverhead(oh);
+      if (cfg.mode === "pctRevenue") {
+        return `${cfg.ratePct.toFixed(2)}% of gross revenue` + (cfg.total > 0 ? ` · recover ${fmt(cfg.total)}` : " · ongoing");
+      }
+      if (cfg.mode === "perUnit") {
+        return `${fmt(cfg.perUnit)} / unit sold` + (cfg.total > 0 ? ` · recover ${fmt(cfg.total)}` : " · ongoing");
+      }
+      return cfg.total > 0
+        ? `From sold margin until ${fmt(cfg.total)} recovered`
+        : "No sales overhead budget set";
     }
 
     function toHex(buf) {
@@ -1988,6 +2199,7 @@ service cloud.firestore {
       return stripUndefined({
         items: normalizeItems(clean.items),
         fixedCosts: clean.fixedCosts,
+        variableOverhead: normalizeVariableOverhead(clean.variableOverhead),
         targetUnits: clean.targetUnits,
         parties: clean.parties,
         foundation: normalizeFoundation(clean.foundation),
@@ -2225,6 +2437,7 @@ service cloud.firestore {
             workspaceState.roleDefs = normalizeRoleDefs(workspaceState.roleDefs);
             workspaceState.chatMessages = normalizeChatMessages(workspaceState.chatMessages);
             workspaceState.foundation = normalizeFoundation(workspaceState.foundation);
+            workspaceState.variableOverhead = normalizeVariableOverhead(workspaceState.variableOverhead);
             if (!workspaceState.parties?.length) {
               workspaceState.parties = DEFAULT_PARTIES.map((p) => ({ ...p }));
             }
@@ -2329,6 +2542,11 @@ service cloud.firestore {
     let setupMeta = loadSetupMeta();
     const SELL_UNDO_MAX = 20;
     let sellUndoStack = [];
+    let chatKnownMessageIds = new Set();
+    let chatNotifySeeded = false;
+    let chatUnreadCount = 0;
+    let chatNotifyAudioCtx = null;
+    let chatToastTimer = null;
 
     function emptyState() {
       return {
@@ -2337,6 +2555,7 @@ service cloud.firestore {
           { name: "Second item", qty: 5, cost: 20, sell: 35, sold: 0 },
         ],
         fixedCosts: 0,
+        variableOverhead: { ...DEFAULT_VARIABLE_OVERHEAD },
         targetUnits: "",
         parties: DEFAULT_PARTIES.map((p) => ({ ...p })),
         foundation: { ...DEFAULT_FOUNDATION },
@@ -2517,6 +2736,7 @@ service cloud.firestore {
       if ("chat" in data) delete data.chat;
       data.items = normalizeItems(Array.isArray(data.items) ? data.items : []);
       data.foundation = normalizeFoundation(data.foundation);
+      data.variableOverhead = normalizeVariableOverhead(data.variableOverhead);
       return data;
     }
 
@@ -2528,6 +2748,12 @@ service cloud.firestore {
     const inventoryBody = document.getElementById("inventoryBody");
     const fixedCostsEl = document.getElementById("fixedCosts");
     const targetUnitsEl = document.getElementById("targetUnits");
+    const varOhTotalEl = document.getElementById("varOhTotal");
+    const varOhModeEl = document.getElementById("varOhMode");
+    const varOhRatePctEl = document.getElementById("varOhRatePct");
+    const varOhPerUnitEl = document.getElementById("varOhPerUnit");
+    const varOhPctField = document.getElementById("varOhPctField");
+    const varOhPerUnitField = document.getElementById("varOhPerUnitField");
 
     function hideAuthViews() {
       welcomeView.classList.add("hidden");
@@ -2600,6 +2826,7 @@ service cloud.firestore {
       document.getElementById("workspaceCode").value =
         urlWs || setupMeta.defaultWorkspaceId || "MAIN";
       refreshLoginTitleFromWorkspaceCode();
+      resetChatNotifyTracking();
     }
 
     function accountsUseCurrentPipeline(accounts) {
@@ -2727,6 +2954,7 @@ service cloud.firestore {
           ? rawState.parties
           : DEFAULT_PARTIES.map((p) => ({ ...p })),
         foundation: normalizeFoundation(rawState.foundation),
+        variableOverhead: normalizeVariableOverhead(rawState.variableOverhead),
         activity: rawState.activity || [],
         chatMessages: normalizeChatMessages(rawState.chatMessages),
         accounts: importedAccounts,
@@ -2772,6 +3000,7 @@ service cloud.firestore {
         let data = raw ? JSON.parse(raw) : emptyState();
         if (!data.parties?.length) data.parties = DEFAULT_PARTIES.map((p) => ({ ...p }));
         data.foundation = normalizeFoundation(data.foundation);
+        data.variableOverhead = normalizeVariableOverhead(data.variableOverhead);
         if (!Array.isArray(data.activity)) data.activity = [];
         if (!Array.isArray(data.items)) data.items = [];
         data.items = normalizeItems(data.items);
@@ -2949,11 +3178,13 @@ service cloud.firestore {
         workspaceId +
         (workspaceState.workspaceName ? " · " + workspaceState.workspaceName : "");
       loadSellUndoStack();
+      resetChatNotifyTracking();
       renderAllFromState();
       showPage("dashboard");
       updateAddPeopleCta();
       refreshFirebaseUi();
       restoreChatPipIfNeeded();
+      refreshChatNotifyUi();
     }
 
     function showPage(page) {
@@ -2965,10 +3196,15 @@ service cloud.firestore {
       document.querySelectorAll(".nav-btn").forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.page === page);
       });
-      if (page === "team") renderTeamPage();
+      if (page === "team") {
+        renderTeamPage();
+        refreshChatNotifyUi();
+      }
       if (page === "chat") {
+        clearChatUnread();
         renderChat(true);
         setChatStatus("");
+        refreshChatNotifyUi();
       }
     }
 
@@ -2977,6 +3213,354 @@ service cloud.firestore {
       if (!el) return;
       el.textContent = text || "";
       el.className = "chat-status" + (mode ? " " + mode : "");
+    }
+
+    function defaultChatNotifyPrefs() {
+      return { enabled: true, muted: false, sound: false };
+    }
+
+    function loadChatNotifyPrefs() {
+      try {
+        const raw = localStorage.getItem(CHAT_NOTIFY_KEY);
+        if (!raw) return defaultChatNotifyPrefs();
+        const parsed = JSON.parse(raw);
+        return {
+          enabled: parsed.enabled !== false && !parsed.muted,
+          muted: !!parsed.muted || parsed.enabled === false,
+          sound: !!parsed.sound,
+        };
+      } catch (_) {
+        return defaultChatNotifyPrefs();
+      }
+    }
+
+    function saveChatNotifyPrefs(partial) {
+      const cur = loadChatNotifyPrefs();
+      let next = { ...cur, ...partial };
+      if (Object.prototype.hasOwnProperty.call(partial, "enabled")) {
+        next.enabled = !!partial.enabled;
+        next.muted = !next.enabled;
+      }
+      if (Object.prototype.hasOwnProperty.call(partial, "muted")) {
+        next.muted = !!partial.muted;
+        next.enabled = !next.muted;
+      }
+      next = {
+        enabled: !!next.enabled && !next.muted,
+        muted: !!next.muted || !next.enabled,
+        sound: !!next.sound,
+      };
+      localStorage.setItem(CHAT_NOTIFY_KEY, JSON.stringify(next));
+      return next;
+    }
+
+    function chatNotifyPermissionLabel() {
+      if (typeof Notification === "undefined") return "unsupported";
+      return Notification.permission;
+    }
+
+    function refreshChatNotifyUi() {
+      const prefs = loadChatNotifyPrefs();
+      const perm = chatNotifyPermissionLabel();
+      const enabledEl = document.getElementById("chatNotifyEnabled");
+      const soundEl = document.getElementById("chatNotifySound");
+      const teamEnabledEl = document.getElementById("teamChatNotifyEnabled");
+      const teamSoundEl = document.getElementById("teamChatNotifySound");
+      if (enabledEl) enabledEl.checked = prefs.enabled && !prefs.muted;
+      if (soundEl) soundEl.checked = !!prefs.sound;
+      if (teamEnabledEl) teamEnabledEl.checked = prefs.enabled && !prefs.muted;
+      if (teamSoundEl) teamSoundEl.checked = !!prefs.sound;
+
+      let hint;
+      if (prefs.muted || !prefs.enabled) {
+        hint = "Alerts muted. Unread badges still appear when you’re away from Chat.";
+      } else if (perm === "granted") {
+        hint = "Desktop notifications on. Toast used as a fallback when needed.";
+      } else if (perm === "denied") {
+        hint = "Browser blocked desktop alerts — in-app toasts will be used instead.";
+      } else if (perm === "unsupported") {
+        hint = "Desktop notifications unsupported here — in-app toasts will be used.";
+      } else {
+        hint = "Click Enable notifications to allow desktop alerts (asked once).";
+      }
+      const hintEl = document.getElementById("chatNotifyHint");
+      const teamHintEl = document.getElementById("teamChatNotifyHint");
+      if (hintEl) hintEl.textContent = hint;
+      if (teamHintEl) teamHintEl.textContent = hint;
+
+      const btnLabel =
+        perm === "granted"
+          ? "Notifications on"
+          : perm === "denied"
+            ? "Use in-app alerts"
+            : "Enable notifications";
+      const chatBtn = document.getElementById("chatEnableNotifyBtn");
+      const teamBtn = document.getElementById("teamEnableNotifyBtn");
+      if (chatBtn) chatBtn.textContent = btnLabel;
+      if (teamBtn) teamBtn.textContent = perm === "granted" ? "Notifications on" : "Enable notifications";
+    }
+
+    async function requestChatNotifyPermission() {
+      saveChatNotifyPrefs({ enabled: true, muted: false });
+      if (typeof Notification === "undefined") {
+        setChatStatus("Desktop notifications unsupported — using in-app toasts.", "ok");
+        refreshChatNotifyUi();
+        return;
+      }
+      if (Notification.permission === "granted") {
+        setChatStatus("Desktop notifications are on.", "ok");
+        refreshChatNotifyUi();
+        return;
+      }
+      if (Notification.permission === "denied") {
+        setChatStatus("Permission denied in the browser — toasts will be used instead.", "err");
+        refreshChatNotifyUi();
+        return;
+      }
+      try {
+        const result = await Notification.requestPermission();
+        if (result === "granted") {
+          setChatStatus("Desktop notifications enabled.", "ok");
+        } else {
+          setChatStatus("Permission not granted — using in-app toasts.", "err");
+        }
+      } catch (err) {
+        console.warn(err);
+        setChatStatus("Could not request permission — using in-app toasts.", "err");
+      }
+      refreshChatNotifyUi();
+    }
+
+    function getActiveAppPage() {
+      const open = [...document.querySelectorAll("#appView .page")].find(
+        (el) => !el.classList.contains("hidden")
+      );
+      return open && open.id.startsWith("page-") ? open.id.slice(5) : "";
+    }
+
+    function isAttendingChat() {
+      if (document.hidden) return false;
+      return getActiveAppPage() === "chat";
+    }
+
+    function resetChatNotifyTracking() {
+      chatKnownMessageIds = new Set();
+      chatNotifySeeded = false;
+      setChatUnread(0);
+    }
+
+    function setChatUnread(count) {
+      chatUnreadCount = Math.max(0, count | 0);
+      const label = chatUnreadCount > 99 ? "99+" : String(chatUnreadCount);
+      const show = chatUnreadCount > 0;
+      const navBadge = document.getElementById("navChatBadge");
+      const pipBadge = document.getElementById("chatPipBadge");
+      [navBadge, pipBadge].forEach((el) => {
+        if (!el) return;
+        el.textContent = label;
+        el.classList.toggle("hidden", !show);
+        el.setAttribute("aria-hidden", show ? "false" : "true");
+      });
+      const nav = document.getElementById("navChat");
+      if (nav) {
+        if (show) nav.setAttribute("aria-label", "Chat, " + chatUnreadCount + " unread");
+        else nav.removeAttribute("aria-label");
+      }
+      const pip = document.getElementById("chatPip");
+      if (pip) {
+        pip.setAttribute(
+          "aria-label",
+          show ? "Team chat, " + chatUnreadCount + " unread" : "Team chat"
+        );
+      }
+    }
+
+    function clearChatUnread() {
+      setChatUnread(0);
+    }
+
+    function playChatNotifySound() {
+      try {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        if (!chatNotifyAudioCtx) chatNotifyAudioCtx = new Ctx();
+        const ctx = chatNotifyAudioCtx;
+        if (ctx.state === "suspended") ctx.resume().catch(() => {});
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.exponentialRampToValueAtTime(660, now + 0.08);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.045, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.18);
+      } catch (_) {}
+    }
+
+    function showChatToast(title, body) {
+      const host = document.getElementById("chatToastHost");
+      if (!host) return;
+      const toast = document.createElement("button");
+      toast.type = "button";
+      toast.className = "chat-toast";
+      toast.innerHTML =
+        `<div class="toast-title">${escapeHtml(title)}</div>` +
+        `<div class="toast-body">${escapeHtml(body)}</div>`;
+      const dismiss = () => {
+        toast.remove();
+      };
+      toast.addEventListener("click", () => {
+        dismiss();
+        if (currentUser) {
+          if (isChatPipEnabled()) {
+            document.getElementById("chatPip")?.focus?.();
+          } else {
+            showPage("chat");
+          }
+          clearChatUnread();
+        }
+      });
+      host.appendChild(toast);
+      if (chatToastTimer) clearTimeout(chatToastTimer);
+      chatToastTimer = setTimeout(() => {
+        [...host.querySelectorAll(".chat-toast")].forEach((el) => el.remove());
+      }, 5500);
+    }
+
+    function notifyIncomingChatMessage(msg, extraCount) {
+      const prefs = loadChatNotifyPrefs();
+      if (!prefs.enabled || prefs.muted) return;
+      if (isAttendingChat()) return;
+      // Floating chat already shows the thread — badge only, no extra alerts.
+      if (isChatPipEnabled() && !document.hidden) return;
+
+      const title = (msg && msg.user) || "Team chat";
+      let body = String((msg && msg.text) || "").trim();
+      if (extraCount > 1) body = `(${extraCount} new) ` + body;
+      body = body.slice(0, 140);
+
+      const canBrowser =
+        typeof Notification !== "undefined" && Notification.permission === "granted";
+      let usedBrowser = false;
+      if (canBrowser) {
+        try {
+          const n = new Notification(title, {
+            body,
+            tag: "inventory-split-chat-" + (workspaceId || "ws"),
+            renotify: true,
+          });
+          n.onclick = () => {
+            try {
+              window.focus();
+            } catch (_) {}
+            if (currentUser) showPage("chat");
+            clearChatUnread();
+            n.close();
+          };
+          usedBrowser = true;
+          setTimeout(() => {
+            try {
+              n.close();
+            } catch (_) {}
+          }, 8000);
+        } catch (_) {
+          usedBrowser = false;
+        }
+      }
+      if (!usedBrowser && !document.hidden) {
+        showChatToast(title, body);
+      }
+      if (prefs.sound) playChatNotifySound();
+    }
+
+    function seedChatNotifyIds(messages) {
+      chatKnownMessageIds = new Set(
+        (messages || []).map((m) => m && m.id).filter(Boolean)
+      );
+      chatNotifySeeded = true;
+    }
+
+    function syncChatNotificationsFromState() {
+      if (!currentUser) {
+        resetChatNotifyTracking();
+        return;
+      }
+      const messages = normalizeChatMessages(workspaceState.chatMessages || []);
+      if (!chatNotifySeeded) {
+        seedChatNotifyIds(messages);
+        if (isAttendingChat()) clearChatUnread();
+        return;
+      }
+      const me = (currentUser.username || "").toLowerCase();
+      const newcomers = [];
+      for (const m of messages) {
+        if (!m?.id || chatKnownMessageIds.has(m.id)) continue;
+        chatKnownMessageIds.add(m.id);
+        const fromMe = me && m.username && String(m.username).toLowerCase() === me;
+        if (!fromMe) newcomers.push(m);
+      }
+      if (chatKnownMessageIds.size > MAX_CHAT_MESSAGES * 2) {
+        const keep = new Set(messages.map((m) => m.id).filter(Boolean));
+        chatKnownMessageIds = keep;
+      }
+      if (isAttendingChat()) {
+        clearChatUnread();
+        return;
+      }
+      if (!newcomers.length) return;
+      setChatUnread(chatUnreadCount + newcomers.length);
+      notifyIncomingChatMessage(newcomers[newcomers.length - 1], newcomers.length);
+    }
+
+    function initChatNotifyUi() {
+      const bindToggle = (id, key) => {
+        const el = document.getElementById(id);
+        if (!el || el.dataset.notifyBound) return;
+        el.dataset.notifyBound = "1";
+        el.addEventListener("change", () => {
+          if (key === "enabled") saveChatNotifyPrefs({ enabled: el.checked, muted: !el.checked });
+          else if (key === "sound") saveChatNotifyPrefs({ sound: el.checked });
+          refreshChatNotifyUi();
+        });
+      };
+      bindToggle("chatNotifyEnabled", "enabled");
+      bindToggle("chatNotifySound", "sound");
+      bindToggle("teamChatNotifyEnabled", "enabled");
+      bindToggle("teamChatNotifySound", "sound");
+
+      const bindEnable = (id) => {
+        const el = document.getElementById(id);
+        if (!el || el.dataset.notifyBound) return;
+        el.dataset.notifyBound = "1";
+        el.addEventListener("click", () => {
+          requestChatNotifyPermission();
+        });
+      };
+      bindEnable("chatEnableNotifyBtn");
+      bindEnable("teamEnableNotifyBtn");
+
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && isAttendingChat()) clearChatUnread();
+      });
+
+      document.addEventListener(
+        "focusin",
+        (ev) => {
+          const t = ev.target;
+          if (!t || !currentUser) return;
+          if (t.id === "chatInput" || (t.closest && t.closest("#chatCard"))) {
+            if (isAttendingChat() || isChatPipEnabled()) clearChatUnread();
+          }
+        },
+        true
+      );
+
+      refreshChatNotifyUi();
     }
 
     function defaultChatPipPrefs() {
@@ -3209,6 +3793,7 @@ service cloud.firestore {
       }
       const messages = normalizeChatMessages(workspaceState.chatMessages || []);
       workspaceState.chatMessages = messages;
+      syncChatNotificationsFromState();
       const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 80;
       if (!messages.length) {
         list.innerHTML = `<div class="chat-empty">No messages yet. Say hello to the team.</div>`;
@@ -3289,6 +3874,10 @@ service cloud.firestore {
       document.getElementById("foundationFixed").disabled = !meta.canEditSplit;
       fixedCostsEl.disabled = !meta.canEditBreakEven;
       targetUnitsEl.disabled = !meta.canEditBreakEven;
+      if (varOhTotalEl) varOhTotalEl.disabled = !meta.canEditBreakEven;
+      if (varOhModeEl) varOhModeEl.disabled = !meta.canEditBreakEven;
+      if (varOhRatePctEl) varOhRatePctEl.disabled = !meta.canEditBreakEven;
+      if (varOhPerUnitEl) varOhPerUnitEl.disabled = !meta.canEditBreakEven;
       inventoryBody.querySelectorAll("input").forEach((i) => (i.disabled = !meta.canEdit));
       inventoryBody.querySelectorAll(".remove-row").forEach((btn) => {
         btn.disabled = !meta.canEdit;
@@ -3494,12 +4083,16 @@ service cloud.firestore {
      * Sell-page P&L for equity:
      * - Gross revenue = Σ sold × sell
      * - Sold margin = Σ sold × (sell − cost)
+     * - Sales overhead paid = derived from current sales toward recover budget
      * - Fixed costs allocated by unit share: fixed × soldUnits / (soldUnits + stock)
-     * - Sell profit = sold margin − allocated fixed (then Foundation + parties)
+     * - Sell profit = sold margin − sales overhead − allocated fixed (then Foundation + parties)
      */
     function getSellMetrics() {
       const rows = getRows();
       const fixedCosts = parseNum(fixedCostsEl.value);
+      const variableOverhead = normalizeVariableOverhead(
+        workspaceState.variableOverhead || readVariableOverheadFromEditor()
+      );
       let soldUnits = 0;
       let stockUnits = 0;
       let grossRevenue = 0;
@@ -3512,7 +4105,12 @@ service cloud.firestore {
       });
       const denom = soldUnits + stockUnits;
       const allocatedFixed = denom > 0 ? fixedCosts * (soldUnits / denom) : 0;
-      const sellProfit = soldMargin - allocatedFixed;
+      const overhead = computeVariableOverheadPaid(variableOverhead, {
+        soldMargin,
+        grossRevenue,
+        soldUnits,
+      });
+      const sellProfit = soldMargin - overhead.paid - allocatedFixed;
       return {
         rows,
         soldUnits,
@@ -3520,9 +4118,53 @@ service cloud.firestore {
         grossRevenue,
         soldMargin,
         allocatedFixed,
+        overhead,
         sellProfit,
         fixedCosts,
+        variableOverhead,
       };
+    }
+
+    function syncVariableOverheadEditorFields() {
+      const mode = varOhModeEl?.value === "pctRevenue" || varOhModeEl?.value === "perUnit"
+        ? varOhModeEl.value
+        : "margin";
+      if (varOhPctField) varOhPctField.classList.toggle("hidden", mode !== "pctRevenue");
+      if (varOhPerUnitField) varOhPerUnitField.classList.toggle("hidden", mode !== "perUnit");
+    }
+
+    function readVariableOverheadFromEditor() {
+      if (!varOhTotalEl) {
+        return normalizeVariableOverhead(workspaceState.variableOverhead);
+      }
+      const mode =
+        varOhModeEl?.value === "pctRevenue" || varOhModeEl?.value === "perUnit"
+          ? varOhModeEl.value
+          : "margin";
+      const next = normalizeVariableOverhead({
+        total: parseNum(varOhTotalEl.value),
+        mode,
+        ratePct: parseNum(varOhRatePctEl?.value),
+        perUnit: parseNum(varOhPerUnitEl?.value),
+      });
+      workspaceState.variableOverhead = next;
+      syncVariableOverheadEditorFields();
+      return next;
+    }
+
+    function writeVariableOverheadToEditor() {
+      const oh = normalizeVariableOverhead(workspaceState.variableOverhead);
+      workspaceState.variableOverhead = oh;
+      if (!varOhTotalEl) return;
+      if (document.activeElement !== varOhTotalEl) varOhTotalEl.value = oh.total;
+      if (varOhModeEl && document.activeElement !== varOhModeEl) varOhModeEl.value = oh.mode;
+      if (varOhRatePctEl && document.activeElement !== varOhRatePctEl) {
+        varOhRatePctEl.value = oh.ratePct;
+      }
+      if (varOhPerUnitEl && document.activeElement !== varOhPerUnitEl) {
+        varOhPerUnitEl.value = oh.perUnit;
+      }
+      syncVariableOverheadEditorFields();
     }
 
     function setSellError(msg) {
@@ -3640,6 +4282,16 @@ service cloud.firestore {
       set("sellProfitVal", fmt(metrics.sellProfit));
       set("sellTotalMargin", fmt(metrics.soldMargin));
       set("sellAllocFixed", fmt(metrics.allocatedFixed));
+      set("sellAllocOh", fmt(metrics.overhead.paid));
+      set("sellOhTotal", metrics.overhead.hasBudget ? fmt(metrics.overhead.total) : "—");
+      set("sellOhPaid", fmt(metrics.overhead.paid));
+      set("sellOhRemaining", metrics.overhead.hasBudget ? fmt(metrics.overhead.remaining) : "—");
+      const ohNote = document.getElementById("sellOverheadNote");
+      if (ohNote) {
+        ohNote.textContent =
+          variableOverheadModeLabel(metrics.overhead) +
+          ". Paid from sales is recalculated from current sold totals (not a running stack).";
+      }
       const profitEl = document.getElementById("sellProfitVal");
       if (profitEl) {
         profitEl.style.color =
@@ -3647,6 +4299,19 @@ service cloud.firestore {
             ? "var(--danger)"
             : metrics.sellProfit > 0
               ? "var(--success)"
+              : "";
+      }
+      const ohPaidEl = document.getElementById("sellOhPaid");
+      if (ohPaidEl) {
+        ohPaidEl.style.color = metrics.overhead.paid > 0 ? "var(--warning)" : "";
+      }
+      const ohRemEl = document.getElementById("sellOhRemaining");
+      if (ohRemEl && metrics.overhead.hasBudget) {
+        ohRemEl.style.color =
+          metrics.overhead.remaining <= 0
+            ? "var(--success)"
+            : metrics.overhead.paid > 0
+              ? ""
               : "";
       }
 
@@ -3726,7 +4391,9 @@ service cloud.firestore {
           } else {
             note.textContent = `Sell profit ${fmt(metrics.sellProfit)} (margin ${fmt(
               metrics.soldMargin
-            )} − allocated fixed ${fmt(metrics.allocatedFixed)}) → Foundation ${fmt(
+            )} − sales overhead ${fmt(metrics.overhead.paid)} − allocated fixed ${fmt(
+              metrics.allocatedFixed
+            )}) → Foundation ${fmt(
               split.foundationAmount
             )} first → ${fmt(split.remaining)} remaining for parties.`;
           }
@@ -3960,7 +4627,10 @@ service cloud.firestore {
       const rows = getRows();
       const totalCost = rows.reduce((s, r) => s + r.lineCost, 0);
       const totalRevenue = rows.reduce((s, r) => s + r.lineRevenue, 0);
-      return totalRevenue - totalCost - parseNum(fixedCostsEl.value);
+      const vo = normalizeVariableOverhead(
+        workspaceState.variableOverhead || readVariableOverheadFromEditor()
+      );
+      return totalRevenue - totalCost - parseNum(fixedCostsEl.value) - (vo.total > 0 ? vo.total : 0);
     }
 
     function renderPartyPayments(netProfit) {
@@ -4183,6 +4853,7 @@ service cloud.firestore {
         if (!currentUser) return;
         workspaceState.items = collectItemsFromDom();
         workspaceState.fixedCosts = parseNum(fixedCostsEl.value);
+        workspaceState.variableOverhead = readVariableOverheadFromEditor();
         workspaceState.targetUnits = targetUnitsEl.value;
         workspaceState.updatedAt = new Date().toISOString();
         workspaceState.updatedBy = currentUser.name;
@@ -4202,6 +4873,8 @@ service cloud.firestore {
       items.forEach((item) => inventoryBody.appendChild(createRow(item)));
       fixedCostsEl.value = workspaceState.fixedCosts ?? 0;
       targetUnitsEl.value = workspaceState.targetUnits ?? "";
+      workspaceState.variableOverhead = normalizeVariableOverhead(workspaceState.variableOverhead);
+      writeVariableOverheadToEditor();
       if (!workspaceState.parties?.length) {
         workspaceState.parties = DEFAULT_PARTIES.map((p) => ({ ...p }));
       }
@@ -4229,7 +4902,11 @@ service cloud.firestore {
       const totalRevenue = rows.reduce((s, r) => s + r.lineRevenue, 0);
       const totalUnits = rows.reduce((s, r) => s + r.qty, 0);
       const fixedCosts = parseNum(fixedCostsEl.value);
-      const totalExpenses = totalCost + fixedCosts;
+      const vo = normalizeVariableOverhead(
+        workspaceState.variableOverhead || readVariableOverheadFromEditor()
+      );
+      const sellMetrics = getSellMetrics();
+      const totalExpenses = totalCost + fixedCosts + (vo.total > 0 ? vo.total : 0);
       const netProfit = totalRevenue - totalExpenses;
       const set = (id, val) => (document.getElementById(id).textContent = val);
 
@@ -4240,6 +4917,8 @@ service cloud.firestore {
       set("summaryRevenue", fmt(totalRevenue));
       set("summaryProfit", fmt(netProfit));
       set("summaryUnits", totalUnits);
+      set("beOhPaid", fmt(sellMetrics.overhead.paid));
+      set("beOhRemaining", vo.total > 0 ? fmt(sellMetrics.overhead.remaining) : "—");
       renderItemBreakdown(rows, totalCost);
 
       const profitStat = document.getElementById("profitStat");
@@ -4938,6 +5617,24 @@ service cloud.firestore {
       });
     });
 
+    [varOhTotalEl, varOhRatePctEl, varOhPerUnitEl].forEach((el) => {
+      if (!el) return;
+      el.addEventListener("input", () => {
+        if (!getRole()?.canEditBreakEven) return;
+        readVariableOverheadFromEditor();
+        scheduleSave("Updated sales overhead");
+        recalculate();
+      });
+    });
+    if (varOhModeEl) {
+      varOhModeEl.addEventListener("change", () => {
+        if (!getRole()?.canEditBreakEven) return;
+        readVariableOverheadFromEditor();
+        scheduleSave("Updated sales overhead");
+        recalculate();
+      });
+    }
+
     document.getElementById("copySnapshot").addEventListener("click", async () => {
       const text =
         document.getElementById("snapshotOut").value ||
@@ -5017,6 +5714,7 @@ service cloud.firestore {
       handleChatSubmit(e);
     });
     initChatPipUi();
+    initChatNotifyUi();
 
     // Cross-tab sync via localStorage (complements BroadcastChannel)
     window.addEventListener("storage", (ev) => {
