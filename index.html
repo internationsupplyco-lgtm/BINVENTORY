@@ -424,6 +424,33 @@
       font-size: 0.85rem;
       margin: 0.35rem 0 0.85rem;
     }
+    .sell-error {
+      color: var(--danger);
+      font-size: 0.85rem;
+      margin: 0 0 0.75rem;
+      min-height: 1.2em;
+    }
+    .sell-now-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      justify-content: flex-end;
+      white-space: nowrap;
+    }
+    .sell-now-cell input {
+      width: 5.5rem;
+      max-width: 100%;
+    }
+    .sell-method-note {
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.45;
+      margin: 0 0 0.85rem;
+      padding: 0.65rem 0.75rem;
+      background: var(--surface-2);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
     .pct-warn {
       background: rgba(245, 158, 11, 0.12);
       border: 1px solid rgba(245, 158, 11, 0.35);
@@ -875,6 +902,7 @@
       <nav class="nav-list" id="navList">
         <button type="button" class="nav-btn active" data-page="dashboard">Dashboard</button>
         <button type="button" class="nav-btn" data-page="inventory">Inventory</button>
+        <button type="button" class="nav-btn" data-page="sell">Sell</button>
         <button type="button" class="nav-btn" data-page="breakeven">Break-even</button>
         <button type="button" class="nav-btn" data-page="equity" id="navEquity">Equity</button>
         <button type="button" class="nav-btn" data-page="chat" id="navChat">Chat</button>
@@ -927,6 +955,7 @@
           </div>
           <div class="dash-actions">
             <button type="button" class="btn-primary" data-goto="inventory">Open inventory</button>
+            <button type="button" class="btn-ghost" data-goto="sell">Record sales</button>
             <button type="button" class="btn-ghost" data-goto="equity" id="dashGotoEquity">Equity split</button>
             <button type="button" class="btn-ghost" data-goto="team">Team &amp; sync</button>
           </div>
@@ -971,6 +1000,54 @@
         <div class="card">
           <h2>Item breakdown</h2>
           <div class="item-grid" id="itemBreakdown"></div>
+        </div>
+      </section>
+
+      <section class="page hidden" id="page-sell">
+        <h1 class="page-title">Sell</h1>
+        <p class="page-sub">Record units sold. Stock drops by the amount sold; totals sync with inventory and the workspace.</p>
+        <div class="kpi-grid">
+          <div class="stat"><label>Gross sales revenue</label><div class="value" id="sellGrossRev">$0.00</div></div>
+          <div class="stat"><label>Units sold</label><div class="value" id="sellUnitsSold">0</div></div>
+          <div class="stat"><label>Sell profit (after allocated fixed)</label><div class="value" id="sellProfitVal">$0.00</div></div>
+          <div class="stat"><label>Stock on hand</label><div class="value" id="sellStockOnHand">0</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h2>Record sales</h2>
+          </div>
+          <p class="sell-error" id="sellError" aria-live="polite"></p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th class="num">Stock</th>
+                  <th class="num">Sold total</th>
+                  <th class="num">Sell / unit</th>
+                  <th class="num">Line revenue</th>
+                  <th class="num">Line profit</th>
+                  <th class="num">Sold now</th>
+                </tr>
+              </thead>
+              <tbody id="sellBody"></tbody>
+            </table>
+          </div>
+          <div class="summary-grid" style="margin-top:1rem">
+            <div class="stat"><label>Gross sales revenue</label><div class="value" id="sellTotalRev">$0.00</div></div>
+            <div class="stat"><label>Sold margin (before fixed)</label><div class="value" id="sellTotalMargin">$0.00</div></div>
+            <div class="stat"><label>Allocated fixed costs</label><div class="value" id="sellAllocFixed">$0.00</div></div>
+          </div>
+        </div>
+        <div class="card" id="sellEquityCard">
+          <h2>Equity from sales</h2>
+          <p class="sell-method-note" id="sellMethodNote">
+            Sell profit = Σ sold × (sell − cost), then minus fixed costs allocated by sold-unit share:
+            fixed × soldUnits / (soldUnits + stock). Foundation takes its cut from that sell-profit first;
+            remaining parties split the rest (same rules as Equity).
+          </p>
+          <p class="equity-remainder-note" id="sellEquityNote"></p>
+          <div class="party-grid" id="sellEquityPayments"></div>
         </div>
       </section>
 
@@ -1816,7 +1893,7 @@ service cloud.firestore {
       clean.chatMessages = normalizeChatMessages(clean.chatMessages).slice(-MAX_CHAT_MESSAGES);
       clean.activity = (clean.activity || []).slice(0, 30);
       return stripUndefined({
-        items: clean.items,
+        items: normalizeItems(clean.items),
         fixedCosts: clean.fixedCosts,
         targetUnits: clean.targetUnits,
         parties: clean.parties,
@@ -2161,8 +2238,8 @@ service cloud.firestore {
     function emptyState() {
       return {
         items: [
-          { name: "Sample item", qty: 10, cost: 5, sell: 12 },
-          { name: "Second item", qty: 5, cost: 20, sell: 35 },
+          { name: "Sample item", qty: 10, cost: 5, sell: 12, sold: 0 },
+          { name: "Second item", qty: 5, cost: 20, sell: 35, sold: 0 },
         ],
         fixedCosts: 0,
         targetUnits: "",
@@ -2179,6 +2256,22 @@ service cloud.firestore {
         updatedAt: null,
         updatedBy: null,
       };
+    }
+
+    function normalizeItem(raw) {
+      const it = raw && typeof raw === "object" ? raw : {};
+      return {
+        name: String(it.name ?? ""),
+        qty: Math.max(0, parseNum(it.qty)),
+        cost: Math.max(0, parseNum(it.cost)),
+        sell: Math.max(0, parseNum(it.sell)),
+        sold: Math.max(0, parseNum(it.sold)),
+      };
+    }
+
+    function normalizeItems(list) {
+      if (!Array.isArray(list)) return [];
+      return list.map(normalizeItem);
     }
 
     function normalizeRoleDefs(raw) {
@@ -2327,6 +2420,8 @@ service cloud.firestore {
       const alt = Array.isArray(data.chat) ? data.chat : [];
       data.chatMessages = normalizeChatMessages(primary.length ? primary : alt);
       if ("chat" in data) delete data.chat;
+      data.items = normalizeItems(Array.isArray(data.items) ? data.items : []);
+      data.foundation = normalizeFoundation(data.foundation);
       return data;
     }
 
@@ -2532,6 +2627,7 @@ service cloud.firestore {
       workspaceState = ensureAccounts({
         ...emptyState(),
         ...rawState,
+        items: normalizeItems(rawState.items?.length ? rawState.items : emptyState().items),
         parties: rawState.parties?.length
           ? rawState.parties
           : DEFAULT_PARTIES.map((p) => ({ ...p })),
@@ -2582,6 +2678,7 @@ service cloud.firestore {
         data.foundation = normalizeFoundation(data.foundation);
         if (!Array.isArray(data.activity)) data.activity = [];
         if (!Array.isArray(data.items)) data.items = [];
+        data.items = normalizeItems(data.items);
         data.roleDefs = normalizeRoleDefs(data.roleDefs);
         data.chatMessages = normalizeChatMessages(data.chatMessages);
         if (!data.loginTitle) data.loginTitle = setupMeta.loginTitle || DEFAULT_LOGIN_TITLE;
@@ -3130,12 +3227,14 @@ service cloud.firestore {
     function createRow(data = {}) {
       const tr = document.createElement("tr");
       tr.dataset.id = String(++rowId);
+      const item = normalizeItem({ name: "", qty: 1, cost: 0, sell: 0, sold: 0, ...data });
+      tr.dataset.sold = String(item.sold);
       const canEdit = getRole()?.canEdit !== false;
       tr.innerHTML = `
-        <td><input type="text" class="item-name" placeholder="Item name" value="${escapeHtml(data.name || "")}" ${canEdit ? "" : "disabled"} /></td>
-        <td><input type="number" class="qty" min="0" step="1" value="${data.qty ?? 1}" ${canEdit ? "" : "disabled"} /></td>
-        <td><input type="number" class="cost" min="0" step="0.01" value="${data.cost ?? 0}" ${canEdit ? "" : "disabled"} /></td>
-        <td><input type="number" class="sell" min="0" step="0.01" value="${data.sell ?? 0}" ${canEdit ? "" : "disabled"} /></td>
+        <td><input type="text" class="item-name" placeholder="Item name" value="${escapeHtml(item.name || "")}" ${canEdit ? "" : "disabled"} /></td>
+        <td><input type="number" class="qty" min="0" step="1" value="${item.qty}" ${canEdit ? "" : "disabled"} /></td>
+        <td><input type="number" class="cost" min="0" step="0.01" value="${item.cost}" ${canEdit ? "" : "disabled"} /></td>
+        <td><input type="number" class="sell" min="0" step="0.01" value="${item.sell}" ${canEdit ? "" : "disabled"} /></td>
         <td class="num readonly line-cost">$0.00</td>
         <td class="num readonly line-revenue">$0.00</td>
         <td class="num readonly line-profit">$0.00</td>
@@ -3169,25 +3268,43 @@ service cloud.firestore {
         const qty = parseNum(tr.querySelector(".qty").value);
         const cost = parseNum(tr.querySelector(".cost").value);
         const sell = parseNum(tr.querySelector(".sell").value);
+        const sold = Math.max(0, parseNum(tr.dataset.sold));
         const lineCost = qty * cost;
         const lineRevenue = qty * sell;
         const lineProfit = lineRevenue - lineCost;
+        const soldRevenue = sold * sell;
+        const soldProfit = sold * (sell - cost);
         tr.querySelector(".line-cost").textContent = fmt(lineCost);
         tr.querySelector(".line-revenue").textContent = fmt(lineRevenue);
         tr.querySelector(".line-profit").textContent = fmt(lineProfit);
         tr.querySelector(".line-profit").style.color =
           lineProfit < 0 ? "var(--danger)" : lineProfit > 0 ? "var(--success)" : "";
-        return { name, qty, cost, sell, lineCost, lineRevenue, lineProfit };
+        return {
+          name,
+          qty,
+          cost,
+          sell,
+          sold,
+          lineCost,
+          lineRevenue,
+          lineProfit,
+          soldRevenue,
+          soldProfit,
+          rowEl: tr,
+        };
       });
     }
 
     function collectItemsFromDom() {
-      return [...inventoryBody.querySelectorAll("tr")].map((tr) => ({
-        name: tr.querySelector(".item-name").value,
-        qty: parseNum(tr.querySelector(".qty").value),
-        cost: parseNum(tr.querySelector(".cost").value),
-        sell: parseNum(tr.querySelector(".sell").value),
-      }));
+      return [...inventoryBody.querySelectorAll("tr")].map((tr) =>
+        normalizeItem({
+          name: tr.querySelector(".item-name").value,
+          qty: parseNum(tr.querySelector(".qty").value),
+          cost: parseNum(tr.querySelector(".cost").value),
+          sell: parseNum(tr.querySelector(".sell").value),
+          sold: parseNum(tr.dataset.sold),
+        })
+      );
     }
 
     function renderItemBreakdown(rows, totalCost) {
@@ -3273,6 +3390,195 @@ service cloud.firestore {
         )
         .join("");
       return foundationCard + partyCards;
+    }
+
+    /**
+     * Sell-page P&L for equity:
+     * - Gross revenue = Σ sold × sell
+     * - Sold margin = Σ sold × (sell − cost)
+     * - Fixed costs allocated by unit share: fixed × soldUnits / (soldUnits + stock)
+     * - Sell profit = sold margin − allocated fixed (then Foundation + parties)
+     */
+    function getSellMetrics() {
+      const rows = getRows();
+      const fixedCosts = parseNum(fixedCostsEl.value);
+      let soldUnits = 0;
+      let stockUnits = 0;
+      let grossRevenue = 0;
+      let soldMargin = 0;
+      rows.forEach((r) => {
+        soldUnits += r.sold;
+        stockUnits += r.qty;
+        grossRevenue += r.soldRevenue;
+        soldMargin += r.soldProfit;
+      });
+      const denom = soldUnits + stockUnits;
+      const allocatedFixed = denom > 0 ? fixedCosts * (soldUnits / denom) : 0;
+      const sellProfit = soldMargin - allocatedFixed;
+      return {
+        rows,
+        soldUnits,
+        stockUnits,
+        grossRevenue,
+        soldMargin,
+        allocatedFixed,
+        sellProfit,
+        fixedCosts,
+      };
+    }
+
+    function setSellError(msg) {
+      const el = document.getElementById("sellError");
+      if (el) el.textContent = msg || "";
+    }
+
+    function renderSellPage() {
+      const body = document.getElementById("sellBody");
+      if (!body) return;
+      const meta = getRole();
+      const canSell = !!meta?.canEdit;
+      const metrics = getSellMetrics();
+      const set = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      };
+      set("sellGrossRev", fmt(metrics.grossRevenue));
+      set("sellTotalRev", fmt(metrics.grossRevenue));
+      set("sellUnitsSold", metrics.soldUnits.toLocaleString());
+      set("sellStockOnHand", metrics.stockUnits.toLocaleString());
+      set("sellProfitVal", fmt(metrics.sellProfit));
+      set("sellTotalMargin", fmt(metrics.soldMargin));
+      set("sellAllocFixed", fmt(metrics.allocatedFixed));
+      const profitEl = document.getElementById("sellProfitVal");
+      if (profitEl) {
+        profitEl.style.color =
+          metrics.sellProfit < 0
+            ? "var(--danger)"
+            : metrics.sellProfit > 0
+              ? "var(--success)"
+              : "";
+      }
+
+      body.innerHTML = metrics.rows.length
+        ? metrics.rows
+            .map((r, idx) => {
+              const stock = r.qty;
+              const disabled = !canSell || stock <= 0;
+              const maxAttr = stock > 0 ? `max="${stock}"` : "";
+              return `<tr data-row-idx="${idx}">
+                <td>${escapeHtml(r.name)}</td>
+                <td class="num">${stock.toLocaleString()}</td>
+                <td class="num">${r.sold.toLocaleString()}</td>
+                <td class="num">${fmt(r.sell)}</td>
+                <td class="num">${fmt(r.soldRevenue)}</td>
+                <td class="num" style="color:${
+                  r.soldProfit < 0
+                    ? "var(--danger)"
+                    : r.soldProfit > 0
+                      ? "var(--success)"
+                      : ""
+                }">${fmt(r.soldProfit)}</td>
+                <td>
+                  <div class="sell-now-cell">
+                    <input type="number" class="sell-now-qty" min="1" step="1" ${maxAttr}
+                      value="${stock > 0 ? 1 : 0}" ${disabled ? "disabled" : ""}
+                      aria-label="Quantity to sell for ${escapeHtml(r.name)}" />
+                    <button type="button" class="btn-primary sell-record-btn"
+                      data-row-idx="${idx}" ${disabled ? "disabled" : ""}>Add sold</button>
+                  </div>
+                </td>
+              </tr>`;
+            })
+            .join("")
+        : `<tr><td colspan="7" class="note">No inventory items yet. Add items on the Inventory page.</td></tr>`;
+
+      body.querySelectorAll(".sell-now-qty").forEach((input) => {
+        input.addEventListener("input", () => {
+          const row = input.closest("tr");
+          const idx = Number(row?.dataset.rowIdx);
+          const stockRow = metrics.rows[idx];
+          const btn = row?.querySelector(".sell-record-btn");
+          if (!stockRow || !btn) return;
+          const n = Math.floor(parseNum(input.value));
+          const ok = canSell && n > 0 && n <= stockRow.qty;
+          btn.disabled = !ok;
+          if (!canSell) {
+            setSellError("Read-only: your role cannot record sales (needs Edit inventory).");
+          } else if (n > stockRow.qty) {
+            setSellError(`Cannot sell ${n} of ${stockRow.name} — only ${stockRow.qty} in stock.`);
+          } else if (n <= 0) {
+            setSellError("Enter a sold quantity of at least 1.");
+          } else {
+            setSellError("");
+          }
+        });
+      });
+
+      body.querySelectorAll(".sell-record-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.getAttribute("data-row-idx"));
+          const row = btn.closest("tr");
+          const input = row?.querySelector(".sell-now-qty");
+          recordSale(idx, input ? parseNum(input.value) : 0);
+        });
+      });
+
+      const equityCard = document.getElementById("sellEquityCard");
+      if (equityCard) equityCard.classList.toggle("hidden", !meta?.canSeeEquity);
+      if (meta?.canSeeEquity) {
+        const split = computeEquitySplit(metrics.sellProfit);
+        const note = document.getElementById("sellEquityNote");
+        if (note) {
+          if (!(metrics.sellProfit > 0)) {
+            note.textContent =
+              "Sell profit ≤ 0: Foundation and all party payments from sales are $0.";
+          } else {
+            note.textContent = `Sell profit ${fmt(metrics.sellProfit)} (margin ${fmt(
+              metrics.soldMargin
+            )} − allocated fixed ${fmt(metrics.allocatedFixed)}) → Foundation ${fmt(
+              split.foundationAmount
+            )} first → ${fmt(split.remaining)} remaining for parties.`;
+          }
+        }
+        const pay = document.getElementById("sellEquityPayments");
+        if (pay) pay.innerHTML = renderEquityPaymentCards(split);
+      }
+
+      if (!canSell && meta) {
+        setSellError("Read-only view: sales totals are visible; recording sales needs Edit inventory.");
+      } else {
+        setSellError("");
+      }
+    }
+
+    function recordSale(rowIdx, amount) {
+      if (!getRole()?.canEdit) {
+        setSellError("You do not have permission to record sales.");
+        return;
+      }
+      const trs = [...inventoryBody.querySelectorAll("tr")];
+      const tr = trs[rowIdx];
+      if (!tr) {
+        setSellError("Item not found.");
+        return;
+      }
+      const name = tr.querySelector(".item-name").value.trim() || "Unnamed item";
+      const qty = parseNum(tr.querySelector(".qty").value);
+      const n = Math.floor(parseNum(amount));
+      if (!(n > 0)) {
+        setSellError("Enter a sold quantity of at least 1.");
+        return;
+      }
+      if (n > qty) {
+        setSellError(`Cannot sell ${n} of ${name} — only ${qty} in stock.`);
+        return;
+      }
+      const prevSold = Math.max(0, parseNum(tr.dataset.sold));
+      tr.querySelector(".qty").value = String(qty - n);
+      tr.dataset.sold = String(prevSold + n);
+      setSellError("");
+      scheduleSave(`Sold ${n} × ${name}`);
+      recalculate();
     }
 
     function syncFoundationEditor() {
@@ -3603,7 +3909,10 @@ service cloud.firestore {
     function renderAllFromState() {
       inventoryBody.innerHTML = "";
       rowId = 0;
-      const items = workspaceState.items?.length ? workspaceState.items : emptyState().items;
+      const items = normalizeItems(
+        workspaceState.items?.length ? workspaceState.items : emptyState().items
+      );
+      workspaceState.items = items;
       items.forEach((item) => inventoryBody.appendChild(createRow(item)));
       fixedCostsEl.value = workspaceState.fixedCosts ?? 0;
       targetUnitsEl.value = workspaceState.targetUnits ?? "";
@@ -3663,6 +3972,7 @@ service cloud.firestore {
       updatePctStatus();
       renderPartyPayments(netProfit);
       renderDashboard(rows, { totalCost, totalRevenue, totalUnits, netProfit });
+      renderSellPage();
     }
 
     // ——— Events ———
@@ -4278,7 +4588,7 @@ service cloud.firestore {
 
     document.getElementById("addRow").addEventListener("click", () => {
       if (!getRole()?.canEdit) return;
-      addRow({ name: "", qty: 1, cost: 0, sell: 0 });
+      addRow({ name: "", qty: 1, cost: 0, sell: 0, sold: 0 });
       scheduleSave("Added an inventory item");
     });
 
