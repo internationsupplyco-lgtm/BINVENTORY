@@ -87,6 +87,59 @@
     }
     .setup-steps ol { margin: 0.35rem 0 0 1.1rem; }
     .field-hint { font-size: 0.72rem; color: var(--muted); margin-top: 0.3rem; }
+    .entry-actions { display: flex; flex-direction: column; gap: 0.65rem; margin-top: 0.35rem; }
+    .entry-actions .btn-primary,
+    .entry-actions .btn-ghost { width: 100%; }
+    .entry-divider {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin: 0.35rem 0;
+    }
+    .entry-divider::before,
+    .entry-divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .login-link-row {
+      margin-top: 0.85rem;
+      text-align: center;
+      font-size: 0.82rem;
+    }
+    .login-link-row button {
+      background: none;
+      border: none;
+      color: #93c5fd;
+      cursor: pointer;
+      font: inherit;
+      text-decoration: underline;
+      padding: 0;
+    }
+    .login-link-row button:hover { color: #bfdbfe; }
+    textarea.snapshot,
+    textarea.join-invite {
+      width: 100%;
+      min-height: 120px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 0.65rem 0.75rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.72rem;
+      resize: vertical;
+    }
+    .invite-steps {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.45;
+      margin: 0.5rem 0 0.85rem;
+    }
+    .invite-steps strong { color: var(--text); }
 
     .role-pill {
       display: inline-block;
@@ -407,9 +460,124 @@
     .sync-status.live { color: var(--success); }
     .dash-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
     textarea.snapshot { min-height: 90px; font-family: ui-monospace, monospace; font-size: 0.78rem; }
+    .welcome-actions { display: flex; flex-direction: column; gap: 0.55rem; margin-top: 1rem; }
+    .welcome-actions .btn-primary,
+    .welcome-actions .btn-ghost { width: 100%; }
+
+    .chat-card {
+      display: flex;
+      flex-direction: column;
+      height: min(70vh, 640px);
+      padding: 0;
+      overflow: hidden;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem 1.15rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .chat-empty {
+      color: var(--muted);
+      font-size: 0.9rem;
+      text-align: center;
+      margin: auto;
+      padding: 2rem 1rem;
+    }
+    .chat-bubble {
+      max-width: min(100%, 560px);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.65rem 0.8rem;
+    }
+    .chat-bubble.mine {
+      align-self: flex-end;
+      background: rgba(59, 130, 246, 0.12);
+      border-color: rgba(59, 130, 246, 0.35);
+    }
+    .chat-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 0.3rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .chat-meta .sender { color: var(--text); font-weight: 600; font-size: 0.85rem; }
+    .chat-meta .time { margin-left: auto; font-variant-numeric: tabular-nums; }
+    .chat-text {
+      font-size: 0.92rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.45;
+    }
+    .chat-compose {
+      display: flex;
+      gap: 0.55rem;
+      padding: 0.85rem 1rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .chat-compose input { flex: 1; }
+    .chat-compose .btn-primary { flex-shrink: 0; }
   </style>
 </head>
 <body class="login-mode">
+  <!-- FIRST SCREEN: Core setup OR join existing workspace -->
+  <div id="welcomeView" class="login-shell">
+    <div class="login-brand">
+      <h1 id="welcomeBrandTitle">Inventory Split</h1>
+      <p>Core sets up once · friends join</p>
+    </div>
+    <div class="login-card">
+      <h2>Get started</h2>
+      <p class="note" style="margin-top:0">
+        Friends: choose <strong>Join workspace</strong> and paste Core’s invite — you only see Sign in (not Setup).
+        Core only: use first-time setup once to create the organization.
+      </p>
+      <div class="welcome-actions">
+        <button type="button" class="btn-primary" id="welcomeJoinBtn">I already have an invite / Join workspace</button>
+        <button type="button" class="btn-ghost" id="welcomeSetupBtn">First-time Core setup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JOIN (friends) — no Core setup form -->
+  <div id="joinView" class="login-shell hidden">
+    <div class="login-brand">
+      <h1 id="joinBrandTitle">Inventory Split</h1>
+      <p>Join a workspace</p>
+    </div>
+    <form class="login-card" id="joinForm">
+      <h2>Join with invite</h2>
+      <div class="setup-steps">
+        Ask Core for <strong>Share invite</strong> (Team &amp; sync). You will only see Sign in after this — not Setup.
+        <ol>
+          <li>Paste the invite package (or snapshot)</li>
+          <li>Confirm the workspace code</li>
+          <li>Sign in with the username/password Core gave you</li>
+        </ol>
+      </div>
+      <div class="login-field">
+        <label for="joinSnapshot">Invite package or workspace snapshot</label>
+        <textarea class="snapshot" id="joinSnapshot" placeholder='Paste invite from Core (Share invite)…'></textarea>
+        <div class="field-hint">Required on a new phone/browser. Includes hashed accounts Core created.</div>
+      </div>
+      <div class="login-field">
+        <label for="joinWorkspaceCode">Workspace code</label>
+        <input type="text" id="joinWorkspaceCode" value="MAIN" placeholder="MAIN" required />
+        <div class="field-hint">Usually filled from the invite (e.g. MAIN).</div>
+      </div>
+      <div class="login-error" id="joinError"></div>
+      <button type="submit" class="btn-primary" id="joinBtn">Join &amp; continue to login</button>
+      <button type="button" class="btn-ghost" id="joinBackBtn" style="width:100%;margin-top:0.5rem">Back</button>
+    </form>
+  </div>
+
   <!-- FIRST-RUN SETUP (Core only, one time) -->
   <div id="setupView" class="login-shell hidden">
     <div class="login-brand">
@@ -454,7 +622,8 @@
       </div>
       <div class="login-error" id="setupError"></div>
       <button type="submit" class="btn-primary" id="setupBtn">Finish setup</button>
-      <p class="login-hint">Passwords are hashed locally (SHA-256 → SHA-3 → BLAKE3 → SHA-256). Only digests are stored.</p>
+      <button type="button" class="btn-ghost" id="setupBackBtn" style="width:100%;margin-top:0.5rem">Back</button>
+      <p class="login-hint">Passwords are hashed locally (SHA-256 → SHA-3 → BLAKE3 → SHA-256). Only digests are stored. Friends should use Join existing workspace, not this form.</p>
     </form>
   </div>
 
@@ -479,7 +648,8 @@
       </div>
       <div class="login-error" id="loginError"></div>
       <button type="submit" class="btn-primary" id="loginBtn">Sign in</button>
-      <p class="login-hint">Accounts are created by Core after setup. Use the same workspace code to share data.</p>
+      <p class="login-hint">Use the username/password Core created for you, and the workspace code from the invite.</p>
+      <button type="button" class="btn-ghost" id="loginJoinLink" style="width:100%;margin-top:0.65rem">Join / re-import invite</button>
     </form>
   </div>
 
@@ -491,6 +661,7 @@
         <button type="button" class="nav-btn" data-page="inventory">Inventory</button>
         <button type="button" class="nav-btn" data-page="breakeven">Break-even</button>
         <button type="button" class="nav-btn" data-page="equity" id="navEquity">Equity</button>
+        <button type="button" class="nav-btn" data-page="chat">Chat</button>
         <button type="button" class="nav-btn" data-page="team">Team & sync</button>
       </nav>
       <div class="user-panel">
@@ -506,7 +677,7 @@
       <div class="cta-banner hidden" id="addPeopleCta">
         <div>
           <strong>Add people to your workspace</strong>
-          <p>Setup is done. Invite partners and viewers so others can sign in.</p>
+          <p>Create their accounts, then use Share invite so they can join and sign in (no Setup for them).</p>
         </div>
         <button type="button" class="btn-primary" id="ctaAddPeople">Manage team</button>
       </div>
@@ -637,10 +808,23 @@
         </div>
       </section>
 
+      <!-- CHAT -->
+      <section class="page hidden" id="page-chat">
+        <h1 class="page-title">Team chat</h1>
+        <p class="page-sub">Messages for everyone on this workspace code. History syncs with the workspace snapshot.</p>
+        <div class="card chat-card">
+          <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
+          <form class="chat-compose" id="chatForm">
+            <input type="text" id="chatInput" maxlength="2000" placeholder="Write a message…" autocomplete="off" required />
+            <button type="submit" class="btn-primary" id="chatSendBtn">Send</button>
+          </form>
+        </div>
+      </section>
+
       <!-- TEAM -->
       <section class="page hidden" id="page-team">
         <h1 class="page-title">Team & sync</h1>
-        <p class="page-sub">Everyone on the same workspace code shares inventory, equity, and accounts on this sync channel.</p>
+        <p class="page-sub">Everyone on the same workspace code shares inventory, equity, accounts, and chat on this sync channel.</p>
 
         <div class="card" id="loginTitleCard">
           <h2>Login screen name</h2>
@@ -722,16 +906,27 @@
           </form>
         </div>
         <div class="card">
-          <h2>Workspace sharing</h2>
-          <p class="note" style="margin-top:0">Use the same workspace code at login (e.g. MAIN). Changes sync live across tabs on this browser via BroadcastChannel, and persist in localStorage. Accounts Core creates travel with the workspace snapshot.</p>
+          <h2>Share invite</h2>
+          <p class="invite-steps" style="margin-top:0">
+            After you add a person, copy a fresh invite and send it with their username, password, and workspace code.
+            They open this app → <strong>Join workspace</strong> → paste invite → <strong>Sign in</strong> only.
+          </p>
+          <div class="field-row" style="margin-top:0.5rem;align-items:end">
+            <div class="field" style="flex:1">
+              <label>Workspace code to tell friends</label>
+              <input type="text" id="shareWorkspaceCode" readonly />
+            </div>
+            <button type="button" class="btn-primary" id="shareInviteBtn">Share invite (copy)</button>
+          </div>
+          <div class="login-error" id="shareInviteStatus" style="min-height:0;margin-top:0.5rem;color:var(--success)"></div>
           <div class="field-row" style="margin-top:1rem">
             <div class="field">
-              <label>Export snapshot (paste on another device)</label>
+              <label>Invite / snapshot (read-only)</label>
               <textarea class="snapshot" id="snapshotOut" readonly></textarea>
-              <button type="button" class="btn-ghost" id="copySnapshot" style="margin-top:0.5rem">Copy snapshot</button>
+              <button type="button" class="btn-ghost" id="copySnapshot" style="margin-top:0.5rem">Copy raw snapshot</button>
             </div>
             <div class="field">
-              <label>Import snapshot</label>
+              <label>Import snapshot (this device)</label>
               <textarea class="snapshot" id="snapshotIn" placeholder="Paste workspace JSON here"></textarea>
               <button type="button" class="btn-primary" id="importSnapshot" style="margin-top:0.5rem">Import into workspace</button>
             </div>
@@ -756,7 +951,9 @@
     const SESSION_KEY = "inventory-split-session";
     const SETUP_KEY = "inventory-split-setup";
     const WS_PREFIX = "inventory-split-ws:";
+    const INVITE_TYPE = "inventory-split-invite";
     const DEFAULT_LOGIN_TITLE = "Inventory Split";
+    const MAX_CHAT_MESSAGES = 200;
 
     /** Default Core digest for shipped password (new 4-step pipeline). Used if setup leaves password blank. */
     const DEFAULT_CORE = {
@@ -909,6 +1106,7 @@
         targetUnits: "",
         parties: DEFAULT_PARTIES.map((p) => ({ ...p })),
         activity: [],
+        chatMessages: [],
         accounts: [],
         setupDone: false,
         loginTitle: DEFAULT_LOGIN_TITLE,
@@ -967,13 +1165,6 @@
       localStorage.setItem(SETUP_KEY, JSON.stringify(setupMeta));
     }
 
-    const setupView = document.getElementById("setupView");
-    const loginView = document.getElementById("loginView");
-    const appView = document.getElementById("appView");
-    const inventoryBody = document.getElementById("inventoryBody");
-    const fixedCostsEl = document.getElementById("fixedCosts");
-    const targetUnitsEl = document.getElementById("targetUnits");
-
     function getRole() {
       return currentUser ? ROLE_META[currentUser.role] : null;
     }
@@ -999,7 +1190,6 @@
         } else if (!data.setupDone) {
           data.accounts = DEFAULT_SEED_ACCOUNTS.map((a) => ({ ...a }));
         } else {
-          // Stale setup with missing accounts — seed Core only with current pipeline
           data.accounts = [{ ...DEFAULT_CORE }];
         }
       }
@@ -1008,7 +1198,76 @@
         data.accounts.unshift({ ...DEFAULT_CORE });
       }
       if (!data.hashVersion) data.hashVersion = null;
+      if (!Array.isArray(data.chatMessages)) data.chatMessages = [];
+      else data.chatMessages = normalizeChatMessages(data.chatMessages);
       return data;
+    }
+
+    const welcomeView = document.getElementById("welcomeView");
+    const joinView = document.getElementById("joinView");
+    const setupView = document.getElementById("setupView");
+    const loginView = document.getElementById("loginView");
+    const appView = document.getElementById("appView");
+    const inventoryBody = document.getElementById("inventoryBody");
+    const fixedCostsEl = document.getElementById("fixedCosts");
+    const targetUnitsEl = document.getElementById("targetUnits");
+
+    function hideAuthViews() {
+      welcomeView.classList.add("hidden");
+      joinView.classList.add("hidden");
+      setupView.classList.add("hidden");
+      loginView.classList.add("hidden");
+      appView.classList.add("hidden");
+    }
+
+    function enterAuthShell() {
+      currentUser = null;
+      document.body.classList.add("login-mode");
+      document.body.classList.remove("app-mode");
+      if (channel) {
+        try { channel.close(); } catch (_) {}
+        channel = null;
+      }
+    }
+
+    function showWelcome() {
+      enterAuthShell();
+      hideAuthViews();
+      welcomeView.classList.remove("hidden");
+      applyLoginBranding(setupMeta.loginTitle || DEFAULT_LOGIN_TITLE, "Core sets up once · friends join");
+      document.getElementById("welcomeBrandTitle").textContent =
+        setupMeta.loginTitle || DEFAULT_LOGIN_TITLE;
+    }
+
+    function showJoin() {
+      enterAuthShell();
+      hideAuthViews();
+      joinView.classList.remove("hidden");
+      document.getElementById("joinError").textContent = "";
+      document.getElementById("joinWorkspaceCode").value = setupMeta.defaultWorkspaceId || "MAIN";
+      applyLoginBranding(setupMeta.loginTitle || DEFAULT_LOGIN_TITLE, "Join a workspace");
+      document.getElementById("joinBrandTitle").textContent =
+        setupMeta.loginTitle || DEFAULT_LOGIN_TITLE;
+    }
+
+    function showSetup() {
+      enterAuthShell();
+      hideAuthViews();
+      setupView.classList.remove("hidden");
+      document.getElementById("setupError").textContent = "";
+      const draft = document.getElementById("setupLoginTitle").value.trim() || DEFAULT_LOGIN_TITLE;
+      applyLoginBranding(draft, "One-time Core setup");
+    }
+
+    function showLogin() {
+      enterAuthShell();
+      localStorage.removeItem(SESSION_KEY);
+      hideAuthViews();
+      loginView.classList.remove("hidden");
+      document.getElementById("loginError").textContent = "";
+      document.getElementById("loginPass").value = "";
+      document.getElementById("workspaceCode").value = setupMeta.defaultWorkspaceId || "MAIN";
+      refreshLoginTitleFromWorkspaceCode();
     }
 
     function accountsUseCurrentPipeline(accounts) {
@@ -1024,25 +1283,134 @@
       );
     }
 
+    function normalizeChatMessages(list) {
+      if (!Array.isArray(list)) return [];
+      return list
+        .map((m) => {
+          if (!m || typeof m.text !== "string") return null;
+          const text = String(m.text).trim();
+          if (!text) return null;
+          return {
+            id: String(m.id || "m" + Date.now() + Math.random().toString(16).slice(2)),
+            at: m.at || new Date().toISOString(),
+            user: String(m.user || m.name || "Unknown").trim() || "Unknown",
+            username: String(m.username || "").trim(),
+            role: m.role === "core" || m.role === "partner" || m.role === "viewer" ? m.role : "viewer",
+            text: text.slice(0, 2000),
+          };
+        })
+        .filter(Boolean)
+        .slice(-MAX_CHAT_MESSAGES);
+    }
+
+    /** True when shared workspace data is ready for login (accounts + Core + setupDone). */
+    function isWorkspaceReady(data) {
+      if (!data || !data.setupDone) return false;
+      if (data.hashVersion && data.hashVersion !== HASH_PIPELINE_VERSION) return false;
+      const accounts = Array.isArray(data.accounts) ? data.accounts.map(normalizeAccount).filter(Boolean) : [];
+      if (!accounts.some((a) => a.role === "core")) return false;
+      if (data.hashVersion === HASH_PIPELINE_VERSION && !accountsUseCurrentPipeline(accounts)) return false;
+      // Allow ready if setupDone + core and either current pipeline or no hashVersion yet but digests present
+      if (!data.hashVersion && !accounts.every((a) => a.passwordDigest)) return false;
+      return true;
+    }
+
     function isSetupComplete() {
+      // Device already finished Core setup or joined a workspace
       if (setupMeta.done && setupMeta.hashVersion === HASH_PIPELINE_VERSION) return true;
+      // Or any local workspace snapshot is ready (shared data present)
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (!key || !key.startsWith(WS_PREFIX)) continue;
         try {
-          const data = JSON.parse(localStorage.getItem(key) || "{}");
-          if (
-            data.setupDone &&
-            data.hashVersion === HASH_PIPELINE_VERSION &&
-            Array.isArray(data.accounts) &&
-            data.accounts.some((a) => a.role === "core") &&
-            accountsUseCurrentPipeline(data.accounts)
-          ) {
-            return true;
-          }
+          const data = ensureAccounts({ ...emptyState(), ...JSON.parse(localStorage.getItem(key) || "{}") });
+          if (isWorkspaceReady(data)) return true;
         } catch (_) {}
       }
       return false;
+    }
+
+    /** Mark this browser as past first-run (login only). Used after Core setup or friend join. */
+    function markDeviceJoined(meta = {}) {
+      saveSetupMeta({
+        done: true,
+        loginTitle: meta.loginTitle || workspaceState.loginTitle || setupMeta.loginTitle || DEFAULT_LOGIN_TITLE,
+        defaultWorkspaceId: (meta.defaultWorkspaceId || workspaceId || "MAIN").toUpperCase(),
+        workspaceName: meta.workspaceName || workspaceState.workspaceName || setupMeta.workspaceName || "Main workspace",
+        hashVersion: meta.hashVersion || workspaceState.hashVersion || HASH_PIPELINE_VERSION,
+      });
+    }
+
+    function buildInvitePackage(state = workspaceState, id = workspaceId) {
+      const ready = ensureAccounts({
+        ...emptyState(),
+        ...state,
+        setupDone: true,
+        hashVersion: state.hashVersion || HASH_PIPELINE_VERSION,
+      });
+      return {
+        type: INVITE_TYPE,
+        version: 1,
+        workspaceId: String(id || "MAIN").toUpperCase(),
+        state: ready,
+      };
+    }
+
+    function parseInviteOrSnapshot(rawText, fallbackCode) {
+      const parsed = JSON.parse(rawText);
+      if (!parsed || typeof parsed !== "object") throw new Error("Invalid invite");
+
+      if (parsed.type === INVITE_TYPE && parsed.state) {
+        const code = String(parsed.workspaceId || fallbackCode || "MAIN").toUpperCase();
+        return { workspaceId: code, state: parsed.state };
+      }
+
+      // Raw workspace snapshot (or wrapped { workspaceId, state })
+      if (parsed.state && (parsed.workspaceId || Array.isArray(parsed.state.accounts))) {
+        return {
+          workspaceId: String(parsed.workspaceId || fallbackCode || "MAIN").toUpperCase(),
+          state: parsed.state,
+        };
+      }
+
+      if (Array.isArray(parsed.accounts) || parsed.setupDone || Array.isArray(parsed.items)) {
+        return {
+          workspaceId: String(parsed.workspaceId || fallbackCode || "MAIN").toUpperCase(),
+          state: parsed,
+        };
+      }
+
+      throw new Error("Not an invite or snapshot");
+    }
+
+    function applyJoinedWorkspace(code, rawState) {
+      const importedAccounts = Array.isArray(rawState.accounts)
+        ? rawState.accounts.map(normalizeAccount).filter(Boolean)
+        : [];
+      workspaceId = String(code || "MAIN").toUpperCase();
+      workspaceState = ensureAccounts({
+        ...emptyState(),
+        ...rawState,
+        parties: rawState.parties?.length ? rawState.parties : DEFAULT_PARTIES.map((p) => ({ ...p })),
+        activity: rawState.activity || [],
+        chatMessages: normalizeChatMessages(rawState.chatMessages),
+        accounts: importedAccounts,
+        setupDone: true,
+        hashVersion: rawState.hashVersion || HASH_PIPELINE_VERSION,
+        loginTitle: rawState.loginTitle || setupMeta.loginTitle || DEFAULT_LOGIN_TITLE,
+        workspaceName: rawState.workspaceName || setupMeta.workspaceName || "Main workspace",
+      });
+      if (!isWorkspaceReady(workspaceState)) {
+        throw new Error("Invite is missing a completed Core setup or accounts");
+      }
+      markDeviceJoined({
+        loginTitle: workspaceState.loginTitle,
+        defaultWorkspaceId: workspaceId,
+        workspaceName: workspaceState.workspaceName,
+        hashVersion: workspaceState.hashVersion,
+      });
+      persistWorkspace();
+      return workspaceState;
     }
 
     /** Old HMAC digests are invalid under the new pipeline — force re-setup. */
@@ -1068,6 +1436,7 @@
         if (!data.parties?.length) data.parties = DEFAULT_PARTIES.map((p) => ({ ...p }));
         if (!Array.isArray(data.activity)) data.activity = [];
         if (!Array.isArray(data.items)) data.items = [];
+        data.chatMessages = normalizeChatMessages(data.chatMessages);
         if (!data.loginTitle) data.loginTitle = setupMeta.loginTitle || DEFAULT_LOGIN_TITLE;
         if (!data.workspaceName) data.workspaceName = setupMeta.workspaceName || "Main workspace";
         data = ensureAccounts(data);
@@ -1088,8 +1457,13 @@
 
     function persistWorkspace() {
       if (!Array.isArray(workspaceState.accounts)) workspaceState.accounts = [];
+      workspaceState.chatMessages = normalizeChatMessages(workspaceState.chatMessages);
       localStorage.setItem(dataKey(), JSON.stringify(workspaceState));
-      document.getElementById("snapshotOut").value = JSON.stringify(workspaceState, null, 2);
+      const inviteText = JSON.stringify(buildInvitePackage(), null, 2);
+      const out = document.getElementById("snapshotOut");
+      if (out) out.value = inviteText;
+      const codeEl = document.getElementById("shareWorkspaceCode");
+      if (codeEl) codeEl.value = workspaceId;
       if (channel && !applyingRemote) {
         channel.postMessage({ type: "workspace", workspaceId, state: workspaceState });
       }
@@ -1112,6 +1486,10 @@
       const t = (title || setupMeta.loginTitle || DEFAULT_LOGIN_TITLE).trim() || DEFAULT_LOGIN_TITLE;
       document.getElementById("loginBrandTitle").textContent = t;
       document.getElementById("setupBrandTitle").textContent = t;
+      const welcomeTitle = document.getElementById("welcomeBrandTitle");
+      if (welcomeTitle) welcomeTitle.textContent = t;
+      const joinTitle = document.getElementById("joinBrandTitle");
+      if (joinTitle) joinTitle.textContent = t;
       document.title = t;
       const sub = document.getElementById("loginBrandSub");
       if (subtitle) sub.textContent = subtitle;
@@ -1146,6 +1524,7 @@
           if (msg.workspaceId !== workspaceId.toUpperCase()) return;
           applyingRemote = true;
           workspaceState = ensureAccounts({ ...emptyState(), ...msg.state });
+          workspaceState.chatMessages = normalizeChatMessages(workspaceState.chatMessages);
           localStorage.setItem(dataKey(), JSON.stringify(workspaceState));
           if (workspaceState.loginTitle) {
             saveSetupMeta({ loginTitle: workspaceState.loginTitle, workspaceName: workspaceState.workspaceName });
@@ -1156,36 +1535,6 @@
           document.getElementById("syncStatus").classList.add("live");
         };
       } catch {
-        channel = null;
-      }
-    }
-
-    function showSetup() {
-      currentUser = null;
-      document.body.classList.add("login-mode");
-      document.body.classList.remove("app-mode");
-      setupView.classList.remove("hidden");
-      loginView.classList.add("hidden");
-      appView.classList.add("hidden");
-      document.getElementById("setupError").textContent = "";
-      const draft = document.getElementById("setupLoginTitle").value.trim() || DEFAULT_LOGIN_TITLE;
-      applyLoginBranding(draft, "One-time Core setup");
-    }
-
-    function showLogin() {
-      currentUser = null;
-      localStorage.removeItem(SESSION_KEY);
-      document.body.classList.add("login-mode");
-      document.body.classList.remove("app-mode");
-      setupView.classList.add("hidden");
-      loginView.classList.remove("hidden");
-      appView.classList.add("hidden");
-      document.getElementById("loginError").textContent = "";
-      document.getElementById("loginPass").value = "";
-      document.getElementById("workspaceCode").value = setupMeta.defaultWorkspaceId || "MAIN";
-      refreshLoginTitleFromWorkspaceCode();
-      if (channel) {
-        try { channel.close(); } catch (_) {}
         channel = null;
       }
     }
@@ -1206,8 +1555,7 @@
       );
       document.body.classList.remove("login-mode");
       document.body.classList.add("app-mode");
-      setupView.classList.add("hidden");
-      loginView.classList.add("hidden");
+      hideAuthViews();
       appView.classList.remove("hidden");
 
       const meta = ROLE_META[user.role];
@@ -1252,6 +1600,60 @@
         btn.classList.toggle("active", btn.dataset.page === page);
       });
       if (page === "team") renderTeamPage();
+      if (page === "chat") renderChat(true);
+    }
+
+    function renderChat(forceScroll) {
+      const list = document.getElementById("chatMessages");
+      if (!list) return;
+      const messages = normalizeChatMessages(workspaceState.chatMessages);
+      workspaceState.chatMessages = messages;
+      const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 80;
+      if (!messages.length) {
+        list.innerHTML = `<div class="chat-empty">No messages yet. Say hello to the team.</div>`;
+        return;
+      }
+      const me = (currentUser?.username || "").toLowerCase();
+      list.innerHTML = messages
+        .map((m) => {
+          const meta = ROLE_META[m.role] || ROLE_META.viewer;
+          const mine = me && m.username && m.username.toLowerCase() === me;
+          const when = m.at ? new Date(m.at).toLocaleString() : "";
+          return `<div class="chat-bubble${mine ? " mine" : ""}">
+            <div class="chat-meta">
+              <span class="sender">${escapeHtml(m.user)}</span>
+              <span class="role-pill ${meta.pillClass}">${meta.label}</span>
+              <span class="time">${escapeHtml(when)}</span>
+            </div>
+            <div class="chat-text">${escapeHtml(m.text)}</div>
+          </div>`;
+        })
+        .join("");
+      if (forceScroll || nearBottom) {
+        list.scrollTop = list.scrollHeight;
+      }
+    }
+
+    function sendChatMessage(text) {
+      if (!currentUser) return;
+      const cleaned = String(text || "").trim().slice(0, 2000);
+      if (!cleaned) return;
+      const msg = {
+        id: "c" + Date.now().toString(36) + Math.random().toString(16).slice(2, 8),
+        at: new Date().toISOString(),
+        user: currentUser.name,
+        username: currentUser.username,
+        role: currentUser.role,
+        text: cleaned,
+      };
+      workspaceState.chatMessages = normalizeChatMessages([
+        ...(workspaceState.chatMessages || []),
+        msg,
+      ]);
+      workspaceState.updatedAt = msg.at;
+      workspaceState.updatedBy = currentUser.name;
+      persistWorkspace();
+      renderChat(true);
     }
 
     function applyPermissions() {
@@ -1495,6 +1897,10 @@
       });
       applyPermissions();
       updateAddPeopleCta();
+      const shareCode = document.getElementById("shareWorkspaceCode");
+      if (shareCode) shareCode.value = workspaceId;
+      const out = document.getElementById("snapshotOut");
+      if (out) out.value = JSON.stringify(buildInvitePackage(), null, 2);
     }
 
     function openEditUser(username) {
@@ -1598,6 +2004,7 @@
         workspaceState.parties = DEFAULT_PARTIES.map((p) => ({ ...p }));
       }
       workspaceState = ensureAccounts(workspaceState);
+      workspaceState.chatMessages = normalizeChatMessages(workspaceState.chatMessages);
       renderPartyEditor();
       applyPermissions();
       recalculate();
@@ -1605,6 +2012,7 @@
       if (document.getElementById("page-team") && !document.getElementById("page-team").classList.contains("hidden")) {
         renderTeamPage();
       }
+      renderChat(false);
     }
 
     function recalculate() {
@@ -1649,6 +2057,61 @@
       const t = e.target.value.trim() || DEFAULT_LOGIN_TITLE;
       document.getElementById("setupBrandTitle").textContent = t;
       document.title = t;
+    });
+
+    // ——— Welcome / Join (friends never forced through Core setup) ———
+    document.getElementById("welcomeJoinBtn").addEventListener("click", showJoin);
+    document.getElementById("welcomeSetupBtn").addEventListener("click", showSetup);
+    document.getElementById("joinBackBtn").addEventListener("click", showWelcome);
+    document.getElementById("setupBackBtn").addEventListener("click", showWelcome);
+    document.getElementById("loginJoinLink").addEventListener("click", showJoin);
+
+    document.getElementById("joinForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById("joinError");
+      const codeInput = (document.getElementById("joinWorkspaceCode").value.trim() || "MAIN").toUpperCase();
+      const raw = document.getElementById("joinSnapshot").value.trim();
+      errorEl.textContent = "";
+
+      try {
+        if (raw) {
+          const { workspaceId: id, state } = parseInviteOrSnapshot(raw, codeInput);
+          document.getElementById("joinWorkspaceCode").value = id;
+          applyJoinedWorkspace(id, state);
+        } else {
+          const existing = readWorkspaceRaw(codeInput);
+          if (!existing || !isWorkspaceReady(ensureAccounts({ ...emptyState(), ...existing }))) {
+            errorEl.textContent =
+              "On a new device you must paste Core’s Share invite package. Workspace code alone cannot sync across phones.";
+            return;
+          }
+          applyJoinedWorkspace(codeInput, existing);
+        }
+        document.getElementById("joinSnapshot").value = "";
+        document.getElementById("workspaceCode").value = workspaceId;
+        showLogin();
+        document.getElementById("loginError").textContent =
+          "Joined " + workspaceId + ". Sign in with the account Core created for you.";
+        refreshLoginTitleFromWorkspaceCode();
+      } catch (err) {
+        console.error(err);
+        errorEl.textContent =
+          err?.message || "Could not join. Paste a valid invite package from Core’s Share invite button.";
+      }
+    });
+
+    document.getElementById("joinSnapshot").addEventListener("input", () => {
+      const raw = document.getElementById("joinSnapshot").value.trim();
+      if (!raw) return;
+      try {
+        const { workspaceId: id } = parseInviteOrSnapshot(raw, document.getElementById("joinWorkspaceCode").value);
+        if (id) document.getElementById("joinWorkspaceCode").value = id;
+        const parsed = JSON.parse(raw);
+        const state = parsed.type === INVITE_TYPE ? parsed.state : parsed.state || parsed;
+        if (state?.loginTitle) {
+          document.getElementById("joinBrandTitle").textContent = state.loginTitle;
+        }
+      } catch (_) {}
     });
 
     // ——— Setup ———
@@ -1702,6 +2165,7 @@
           ...emptyState(),
           ...existing,
           accounts: [coreAccount, ...others],
+          chatMessages: normalizeChatMessages(existing.chatMessages),
           setupDone: true,
           loginTitle,
           workspaceName,
@@ -1710,8 +2174,7 @@
           updatedBy: displayName,
         };
         persistWorkspace();
-        saveSetupMeta({
-          done: true,
+        markDeviceJoined({
           loginTitle,
           defaultWorkspaceId: code,
           workspaceName,
@@ -1719,7 +2182,8 @@
         });
         document.getElementById("loginUser").value = username;
         showLogin();
-        document.getElementById("loginError").textContent = "Setup complete. Sign in as Core, then add people.";
+        document.getElementById("loginError").textContent =
+          "Setup complete. Sign in as Core, add people, then Share invite so friends can Join → Login.";
       } catch (err) {
         console.error(err);
         errorEl.textContent = "Could not complete setup (crypto / hash libs unavailable). Use HTTPS or localhost.";
@@ -1743,10 +2207,15 @@
 
       try {
         workspaceState = loadWorkspaceFromStorage();
-        // If workspace has no setup but device isn't set up, block
-        if (!setupMeta.done && !workspaceState.setupDone) {
-          errorEl.textContent = "Complete first-time setup first.";
-          showSetup();
+        const ready = isWorkspaceReady(workspaceState) || (setupMeta.done && workspaceState.setupDone);
+        if (!ready) {
+          errorEl.textContent = "This workspace is not on this device yet.";
+          showJoin();
+          document.getElementById("joinWorkspaceCode").value = workspaceId;
+          document.getElementById("joinError").textContent =
+            "Paste Core’s Share invite for code " +
+            workspaceId +
+            ", then continue to Sign in. Only Core uses First-time setup.";
           return;
         }
         const digest = await hashPasswordPipeline(password);
@@ -1755,14 +2224,12 @@
           errorEl.textContent = "Invalid username or password.";
           return;
         }
-        if (workspaceState.loginTitle) {
-          saveSetupMeta({
-            done: true,
-            loginTitle: workspaceState.loginTitle,
-            defaultWorkspaceId: workspaceId,
-            workspaceName: workspaceState.workspaceName || setupMeta.workspaceName,
-          });
-        }
+        markDeviceJoined({
+          loginTitle: workspaceState.loginTitle,
+          defaultWorkspaceId: workspaceId,
+          workspaceName: workspaceState.workspaceName || setupMeta.workspaceName,
+          hashVersion: workspaceState.hashVersion || HASH_PIPELINE_VERSION,
+        });
         showApp(user);
       } catch (err) {
         console.error(err);
@@ -1837,6 +2304,13 @@
         hideTeamForms();
         renderTeamPage();
         updateAddPeopleCta();
+        const status = document.getElementById("shareInviteStatus");
+        if (status) {
+          status.style.color = "var(--success)";
+          status.textContent =
+            "@" + username + " added. Click Share invite (copy) and send them the package + their password.";
+        }
+        showPage("team");
       } catch (err) {
         console.error(err);
         errorEl.textContent = "Could not hash password.";
@@ -1962,13 +2436,35 @@
     });
 
     document.getElementById("copySnapshot").addEventListener("click", async () => {
-      const text = document.getElementById("snapshotOut").value;
+      const text = document.getElementById("snapshotOut").value || JSON.stringify(buildInvitePackage(), null, 2);
       try {
         await navigator.clipboard.writeText(text);
-        document.getElementById("syncStatus").textContent = "Snapshot copied";
+        document.getElementById("syncStatus").textContent = "Invite / snapshot copied";
       } catch {
         document.getElementById("snapshotOut").select();
       }
+    });
+
+    document.getElementById("shareInviteBtn").addEventListener("click", async () => {
+      const text = JSON.stringify(buildInvitePackage(), null, 2);
+      document.getElementById("snapshotOut").value = text;
+      document.getElementById("shareWorkspaceCode").value = workspaceId;
+      const status = document.getElementById("shareInviteStatus");
+      try {
+        await navigator.clipboard.writeText(text);
+        status.style.color = "var(--success)";
+        status.textContent =
+          "Invite copied. Send it with workspace code " +
+          workspaceId +
+          " and each friend’s username/password. They choose Join workspace → paste → Sign in.";
+      } catch {
+        document.getElementById("snapshotOut").select();
+        status.style.color = "var(--warning)";
+        status.textContent = "Select and copy the invite text manually, then send it to your friend.";
+      }
+      setTimeout(() => {
+        status.textContent = "";
+      }, 8000);
     });
 
     document.getElementById("importSnapshot").addEventListener("click", () => {
@@ -1977,51 +2473,43 @@
         return;
       }
       try {
-        const data = JSON.parse(document.getElementById("snapshotIn").value);
-        if (!data || !Array.isArray(data.items)) throw new Error("bad");
-        const importedAccounts = Array.isArray(data.accounts)
-          ? data.accounts.map(normalizeAccount).filter(Boolean)
-          : getAccounts();
-        workspaceState = ensureAccounts({
-          ...emptyState(),
-          ...data,
-          parties: data.parties?.length ? data.parties : DEFAULT_PARTIES.map((p) => ({ ...p })),
-          activity: data.activity || [],
-          accounts: importedAccounts.length ? importedAccounts : getAccounts(),
-          setupDone: true,
-          hashVersion: data.hashVersion || HASH_PIPELINE_VERSION,
-          loginTitle: data.loginTitle || workspaceState.loginTitle || setupMeta.loginTitle,
-          workspaceName: data.workspaceName || workspaceState.workspaceName,
-        });
-        if (workspaceState.loginTitle) {
-          saveSetupMeta({
-            done: true,
-            loginTitle: workspaceState.loginTitle,
-            workspaceName: workspaceState.workspaceName,
-            defaultWorkspaceId: workspaceId,
-            hashVersion: workspaceState.hashVersion || HASH_PIPELINE_VERSION,
-          });
-        }
-        pushActivity("Imported workspace snapshot");
+        const rawText = document.getElementById("snapshotIn").value.trim();
+        const { workspaceId: id, state } = parseInviteOrSnapshot(rawText, workspaceId);
+        workspaceId = id;
+        applyJoinedWorkspace(id, state);
+        pushActivity("Imported workspace invite/snapshot");
         persistWorkspace();
         renderAllFromState();
         applyLoginBranding(workspaceState.loginTitle, workspaceState.workspaceName);
         document.getElementById("snapshotIn").value = "";
+        document.getElementById("syncStatus").textContent = "Invite imported · " + workspaceId;
       } catch {
-        alert("Invalid snapshot JSON.");
+        alert("Invalid invite / snapshot JSON.");
       }
     });
 
-    // Boot: migrate hash pipeline → setup → login → optional session restore
+    document.getElementById("chatForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (!currentUser) return;
+      const input = document.getElementById("chatInput");
+      const text = input.value;
+      input.value = "";
+      sendChatMessage(text);
+      input.focus();
+    });
+
+    // Boot: migrate hash pipeline → welcome / setup → login → optional session restore
     (async () => {
       setupMeta = loadSetupMeta();
       const needsReseSetup = invalidateStalePasswordPipeline();
-      if (needsReseSetup || !isSetupComplete()) {
+      if (needsReseSetup) {
         showSetup();
-        if (needsReseSetup) {
-          document.getElementById("setupError").textContent =
-            "Password hashing was upgraded (SHA-256 → SHA-3 → BLAKE3 → SHA-256). Re-run Core setup to create new digests.";
-        }
+        document.getElementById("setupError").textContent =
+          "Password hashing was upgraded (SHA-256 → SHA-3 → BLAKE3 → SHA-256). Re-run Core setup to create new digests. Friends must re-join with a fresh invite afterward.";
+        return;
+      }
+      if (!isSetupComplete()) {
+        showWelcome();
         return;
       }
       try {
@@ -2029,10 +2517,14 @@
         if (session?.username) {
           workspaceId = (session.workspaceId || setupMeta.defaultWorkspaceId || "MAIN").toUpperCase();
           workspaceState = loadWorkspaceFromStorage();
-          if (workspaceState.hashVersion !== HASH_PIPELINE_VERSION) {
+          if (workspaceState.hashVersion && workspaceState.hashVersion !== HASH_PIPELINE_VERSION) {
             showSetup();
             document.getElementById("setupError").textContent =
               "This workspace still has old password digests. Re-run Core setup.";
+            return;
+          }
+          if (!isWorkspaceReady(workspaceState) && !workspaceState.setupDone) {
+            showJoin();
             return;
           }
           const user = findAccount(session.username);
