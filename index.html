@@ -249,6 +249,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
       gap: 1rem;
       margin-bottom: 1rem;
     }
@@ -451,12 +452,66 @@
       border-radius: 8px;
       border: 1px solid var(--border);
     }
+    .sell-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem 1rem;
+      margin-bottom: 1rem;
+      padding: 0.75rem 0.9rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .sell-toolbar-label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
     .sell-actions {
       display: flex;
-      gap: 0.4rem;
+      gap: 0.5rem;
       flex-wrap: wrap;
       justify-content: flex-end;
       align-items: center;
+    }
+    .sell-actions .btn-sell-action {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.85rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      opacity: 1;
+    }
+    .sell-actions .btn-sell-action:disabled {
+      opacity: 0.7;
+      color: var(--muted);
+    }
+    .sell-actions .btn-sell-action.btn-danger {
+      border-color: rgba(239, 68, 68, 0.45);
+      color: #f87171;
+    }
+    .sell-actions .btn-sell-action.btn-danger:disabled {
+      border-color: var(--border);
+      color: var(--muted);
+    }
+    .sell-actions .btn-sell-action:hover:not(:disabled) {
+      background: var(--border);
+      color: var(--text);
+    }
+    .sell-actions .btn-sell-action.btn-danger:hover:not(:disabled) {
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, 0.7);
+      background: rgba(239, 68, 68, 0.12);
+    }
+    .sell-viewer-note {
+      width: 100%;
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--muted);
     }
     .pct-warn {
       background: rgba(245, 158, 11, 0.12);
@@ -1019,17 +1074,21 @@
           <div class="stat"><label>Sell profit (after allocated fixed)</label><div class="value" id="sellProfitVal">$0.00</div></div>
           <div class="stat"><label>Stock on hand</label><div class="value" id="sellStockOnHand">0</div></div>
         </div>
+        <div class="sell-toolbar" id="sellToolbar" role="toolbar" aria-label="Sales actions">
+          <span class="sell-toolbar-label">Sales actions</span>
+          <div class="sell-actions">
+            <button type="button" class="btn-sell-action" id="undoSaleBtn" disabled title="Undo the last recorded sale">
+              Undo last sale
+            </button>
+            <button type="button" class="btn-sell-action btn-danger" id="resetSalesBtn" disabled title="Reset all sold counts and restore stock">
+              Reset all sales
+            </button>
+          </div>
+          <p class="sell-viewer-note hidden" id="sellViewerNote">View only — Edit inventory permission is required to record, undo, or reset sales.</p>
+        </div>
         <div class="card">
           <div class="card-header">
             <h2>Record sales</h2>
-            <div class="sell-actions">
-              <button type="button" class="btn-ghost" id="undoSaleBtn" disabled title="Undo the last recorded sale">
-                Undo last sale
-              </button>
-              <button type="button" class="btn-ghost btn-danger" id="resetSalesBtn" disabled title="Reset all sold counts and restore stock">
-                Reset all sales
-              </button>
-            </div>
           </div>
           <p class="sell-error" id="sellError" aria-live="polite"></p>
           <div class="table-wrap">
@@ -3491,22 +3550,31 @@ service cloud.firestore {
       const canSell = !!getRole()?.canEdit;
       const undoBtn = document.getElementById("undoSaleBtn");
       const resetBtn = document.getElementById("resetSalesBtn");
+      const viewerNote = document.getElementById("sellViewerNote");
       const totalSold = [...inventoryBody.querySelectorAll("tr")].reduce(
         (s, tr) => s + Math.max(0, parseNum(tr.dataset.sold)),
         0
       );
+      if (viewerNote) viewerNote.classList.toggle("hidden", canSell);
       if (undoBtn) {
-        undoBtn.classList.toggle("hidden", !canSell);
+        undoBtn.classList.remove("hidden");
         undoBtn.disabled = !canSell || sellUndoStack.length === 0;
-        const tip =
-          sellUndoStack.length > 0
-            ? `Undo last sale (${sellUndoStack.length} in stack)`
-            : "No recent sales to undo";
-        undoBtn.title = tip;
+        if (!canSell) {
+          undoBtn.title = "Edit inventory required";
+        } else if (sellUndoStack.length > 0) {
+          undoBtn.title = `Undo last sale (${sellUndoStack.length} in stack)`;
+        } else {
+          undoBtn.title = "No recent sales to undo";
+        }
       }
       if (resetBtn) {
-        resetBtn.classList.toggle("hidden", !canSell);
+        resetBtn.classList.remove("hidden");
         resetBtn.disabled = !canSell || totalSold <= 0;
+        resetBtn.title = !canSell
+          ? "Edit inventory required"
+          : totalSold > 0
+            ? `Reset all sales (${totalSold.toLocaleString()} units sold)`
+            : "No sales to reset";
       }
     }
 
