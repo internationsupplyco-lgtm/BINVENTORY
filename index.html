@@ -1,0 +1,2049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventory Split</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface-2: #243044;
+      --border: #2d3a4f;
+      --text: #e8edf4;
+      --muted: #8b9cb3;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 10px;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+      --sidebar: 220px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    body.login-mode {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      background: radial-gradient(ellipse at top, #1a2a44 0%, transparent 55%), var(--bg);
+    }
+    body.app-mode { display: block; }
+    .hidden { display: none !important; }
+
+    .login-shell { width: 100%; max-width: 420px; }
+    .login-brand { text-align: center; margin-bottom: 1.5rem; }
+    .login-brand h1 { font-size: 1.85rem; font-weight: 700; letter-spacing: -0.03em; }
+    .login-brand p { color: var(--muted); margin-top: 0.35rem; }
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+    .login-card h2 { font-size: 1.05rem; margin-bottom: 1.1rem; }
+    .login-field { margin-bottom: 0.9rem; }
+    .login-field label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem; }
+    .login-card input,
+    .login-card select,
+    .team-form input,
+    .team-form select {
+      width: 100%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 0.65rem 0.75rem;
+      font: inherit;
+    }
+    .login-card input:focus,
+    .login-card select:focus,
+    .team-form input:focus,
+    .team-form select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    }
+    .login-error { color: var(--danger); font-size: 0.85rem; margin-bottom: 0.75rem; min-height: 1.2em; }
+    .login-card .btn-primary { width: 100%; margin-top: 0.25rem; }
+    .login-hint { font-size: 0.8rem; color: var(--muted); margin-top: 0.85rem; line-height: 1.4; }
+    .setup-steps {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      padding: 0.65rem 0.75rem;
+      background: var(--surface-2);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .setup-steps ol { margin: 0.35rem 0 0 1.1rem; }
+    .field-hint { font-size: 0.72rem; color: var(--muted); margin-top: 0.3rem; }
+
+    .role-pill {
+      display: inline-block;
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .role-admin { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .role-partner { background: rgba(96, 165, 250, 0.2); color: #60a5fa; }
+    .role-viewer { background: rgba(139, 156, 179, 0.25); color: var(--muted); }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: var(--sidebar) 1fr;
+      min-height: 100vh;
+    }
+    @media (max-width: 800px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar { position: sticky; top: 0; z-index: 5; }
+    }
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1.25rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .sidebar .brand { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.02em; }
+    .sidebar .brand span { display: block; font-size: 0.75rem; color: var(--muted); font-weight: 500; margin-top: 0.15rem; }
+    .nav-btn {
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid transparent;
+      padding: 0.55rem 0.7rem;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+    .nav-btn:hover { background: var(--surface-2); color: var(--text); }
+    .nav-btn.active {
+      background: rgba(59, 130, 246, 0.15);
+      color: #93c5fd;
+      border-color: rgba(59, 130, 246, 0.35);
+    }
+    .nav-list { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; }
+    .user-panel {
+      border-top: 1px solid var(--border);
+      padding-top: 0.9rem;
+      font-size: 0.85rem;
+    }
+    .user-panel .name { font-weight: 600; }
+    .user-panel .meta { color: var(--muted); font-size: 0.78rem; margin: 0.2rem 0 0.65rem; }
+
+    .main {
+      padding: 1.5rem 1.25rem 3rem;
+      max-width: 1100px;
+      width: 100%;
+    }
+    .page-title {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.25rem;
+    }
+    .page-sub { color: var(--muted); margin-bottom: 1.25rem; font-size: 0.92rem; }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: 0.55rem 1rem;
+      font-weight: 500;
+    }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-ghost {
+      background: var(--surface-2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.65rem;
+      font-size: 0.85rem;
+    }
+    .btn-ghost:hover:not(:disabled) { color: var(--text); background: var(--border); }
+    .btn-danger:hover:not(:disabled) { color: var(--danger); }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow);
+    }
+    .card h2, .card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .card-header h2, .card-header h3 { margin-bottom: 0; }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .stat {
+      background: var(--surface-2);
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+    }
+    .stat label {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+    }
+    .stat .value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat.profit .value { color: var(--success); }
+    .stat.loss .value { color: var(--danger); }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.75rem;
+    }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td {
+      padding: 0.55rem 0.45rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    th {
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    td.num, th.num { text-align: right; }
+
+    input[type="text"], input[type="number"], input[type="password"], textarea {
+      width: 100%;
+      min-width: 70px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 0.45rem 0.55rem;
+      font: inherit;
+      font-size: 0.9rem;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    }
+    input:disabled, textarea:disabled { opacity: 0.7; cursor: not-allowed; }
+    input[type="number"] { text-align: right; }
+    .item-name { min-width: 130px; }
+    .readonly { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .field label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem; }
+    .note { font-size: 0.82rem; color: var(--muted); margin-top: 0.75rem; line-height: 1.45; }
+
+    .item-breakdown-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 0.75rem;
+    }
+    .item-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .item-card h3 {
+      font-size: 0.95rem;
+      margin-bottom: 0.65rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .item-card dl {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.35rem 1rem;
+      font-size: 0.85rem;
+    }
+    .item-card dt { color: var(--muted); }
+    .item-card dd { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; }
+
+    .party-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.75rem;
+    }
+    .party-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.9rem;
+    }
+    .party-card .amount {
+      font-size: 1.35rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      margin-top: 0.35rem;
+    }
+    .party-edit-row {
+      display: grid;
+      grid-template-columns: 1fr 90px auto;
+      gap: 0.5rem;
+      align-items: end;
+      margin-bottom: 0.55rem;
+    }
+    .pct-warn {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fbbf24;
+      border-radius: 8px;
+      padding: 0.65rem 0.9rem;
+      font-size: 0.85rem;
+      margin-bottom: 0.9rem;
+    }
+    .pct-ok {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #4ade80;
+      border-radius: 8px;
+      padding: 0.65rem 0.9rem;
+      font-size: 0.85rem;
+      margin-bottom: 0.9rem;
+    }
+    .perm-banner {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fbbf24;
+      border-radius: 8px;
+      padding: 0.65rem 0.9rem;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+    }
+    .activity-list { list-style: none; font-size: 0.85rem; }
+    .activity-list li {
+      padding: 0.45rem 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .activity-list strong { color: var(--text); }
+    .team-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.55rem 0;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .team-row-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+    .team-form {
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+    .team-form .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    @media (max-width: 640px) {
+      .team-form .form-grid { grid-template-columns: 1fr; }
+    }
+    .cta-banner {
+      background: rgba(59, 130, 246, 0.12);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      color: #93c5fd;
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .cta-banner strong { color: var(--text); display: block; margin-bottom: 0.2rem; }
+    .cta-banner p { margin: 0; font-size: 0.85rem; }
+    .sync-status { font-size: 0.8rem; color: var(--muted); }
+    .sync-status.live { color: var(--success); }
+    .dash-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+    textarea.snapshot { min-height: 90px; font-family: ui-monospace, monospace; font-size: 0.78rem; }
+  </style>
+</head>
+<body class="login-mode">
+  <!-- FIRST-RUN SETUP (Core only, one time) -->
+  <div id="setupView" class="login-shell hidden">
+    <div class="login-brand">
+      <h1 id="setupBrandTitle">Inventory Split</h1>
+      <p>One-time Core setup</p>
+    </div>
+    <form class="login-card" id="setupForm">
+      <h2>Set up your workspace</h2>
+      <div class="setup-steps">
+        Complete this once as Core. Afterward you sign in and can add other people.
+        <ol>
+          <li>Choose your login screen name</li>
+          <li>Confirm Core username &amp; password</li>
+          <li>Optionally set a workspace name/code</li>
+        </ol>
+      </div>
+      <div class="login-field">
+        <label for="setupLoginTitle">Login screen name</label>
+        <input type="text" id="setupLoginTitle" value="Inventory Split" maxlength="80" required />
+        <div class="field-hint">Shown as the title on the sign-in page (you can change it later).</div>
+      </div>
+      <div class="login-field">
+        <label for="setupCoreUser">Core username</label>
+        <input type="text" id="setupCoreUser" value="ESP1234242442S6" autocomplete="username" required />
+      </div>
+      <div class="login-field">
+        <label for="setupCoreName">Display name</label>
+        <input type="text" id="setupCoreName" value="Core User" required />
+      </div>
+      <div class="login-field">
+        <label for="setupCorePass">Core password</label>
+        <input type="password" id="setupCorePass" autocomplete="new-password" placeholder="Set or keep existing" />
+        <div class="field-hint" id="setupPassHint">Leave blank to keep the shipped Core password (new hash pipeline).</div>
+      </div>
+      <div class="login-field">
+        <label for="setupWorkspaceName">Workspace name (optional)</label>
+        <input type="text" id="setupWorkspaceName" value="Main workspace" maxlength="80" />
+      </div>
+      <div class="login-field">
+        <label for="setupWorkspaceCode">Workspace code</label>
+        <input type="text" id="setupWorkspaceCode" value="MAIN" placeholder="MAIN" />
+      </div>
+      <div class="login-error" id="setupError"></div>
+      <button type="submit" class="btn-primary" id="setupBtn">Finish setup</button>
+      <p class="login-hint">Passwords are hashed locally (SHA-256 → SHA-3 → BLAKE3 → SHA-256). Only digests are stored.</p>
+    </form>
+  </div>
+
+  <div id="loginView" class="login-shell hidden">
+    <div class="login-brand">
+      <h1 id="loginBrandTitle">Inventory Split</h1>
+      <p id="loginBrandSub">Sign in to your workspace</p>
+    </div>
+    <form class="login-card" id="loginForm">
+      <h2>Sign in</h2>
+      <div class="login-field">
+        <label for="loginUser">Username</label>
+        <input type="text" id="loginUser" autocomplete="username" required />
+      </div>
+      <div class="login-field">
+        <label for="loginPass">Password</label>
+        <input type="password" id="loginPass" autocomplete="current-password" required />
+      </div>
+      <div class="login-field">
+        <label for="workspaceCode">Workspace code</label>
+        <input type="text" id="workspaceCode" value="MAIN" placeholder="MAIN" />
+      </div>
+      <div class="login-error" id="loginError"></div>
+      <button type="submit" class="btn-primary" id="loginBtn">Sign in</button>
+      <p class="login-hint">Accounts are created by Core after setup. Use the same workspace code to share data.</p>
+    </form>
+  </div>
+
+  <div id="appView" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="brand"><span id="appBrandName">Inventory Split</span><span id="workspaceLabel">Workspace MAIN</span></div>
+      <nav class="nav-list" id="navList">
+        <button type="button" class="nav-btn active" data-page="dashboard">Dashboard</button>
+        <button type="button" class="nav-btn" data-page="inventory">Inventory</button>
+        <button type="button" class="nav-btn" data-page="breakeven">Break-even</button>
+        <button type="button" class="nav-btn" data-page="equity" id="navEquity">Equity</button>
+        <button type="button" class="nav-btn" data-page="team">Team & sync</button>
+      </nav>
+      <div class="user-panel">
+        <div class="name" id="userDisplayName">—</div>
+        <div class="meta"><span id="userRoleLabel">—</span> · <span class="role-pill" id="userRolePill">—</span></div>
+        <div class="sync-status" id="syncStatus">Local workspace</div>
+        <button type="button" class="btn-ghost" id="logoutBtn" style="width:100%;margin-top:0.5rem">Log out</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="perm-banner hidden" id="permBanner"></div>
+      <div class="cta-banner hidden" id="addPeopleCta">
+        <div>
+          <strong>Add people to your workspace</strong>
+          <p>Setup is done. Invite partners and viewers so others can sign in.</p>
+        </div>
+        <button type="button" class="btn-primary" id="ctaAddPeople">Manage team</button>
+      </div>
+
+      <!-- DASHBOARD -->
+      <section class="page" id="page-dashboard">
+        <h1 class="page-title">Main dashboard</h1>
+        <p class="page-sub">Shared team overview for the active workspace.</p>
+        <div class="kpi-grid">
+          <div class="stat"><label>Inventory value</label><div class="value" id="dashInv">$0.00</div></div>
+          <div class="stat"><label>Revenue potential</label><div class="value" id="dashRev">$0.00</div></div>
+          <div class="stat" id="dashProfitStat"><label>Net profit</label><div class="value" id="dashProfit">$0.00</div></div>
+          <div class="stat"><label>Items / units</label><div class="value" id="dashUnits">0 / 0</div></div>
+          <div class="stat"><label>Equity parties</label><div class="value" id="dashParties">0</div></div>
+          <div class="stat"><label>Last edit</label><div class="value" id="dashLastEdit" style="font-size:0.95rem">—</div></div>
+        </div>
+        <div class="card">
+          <h2>Quick inventory</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Value</th><th class="num">Profit</th></tr></thead>
+              <tbody id="dashTable"></tbody>
+            </table>
+          </div>
+          <div class="dash-actions">
+            <button type="button" class="btn-primary" data-goto="inventory">Open inventory</button>
+            <button type="button" class="btn-ghost" data-goto="equity" id="dashGotoEquity">Equity split</button>
+            <button type="button" class="btn-ghost" data-goto="team">Team & sync</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Recent activity</h2>
+          <ul class="activity-list" id="activityList"></ul>
+        </div>
+      </section>
+
+      <!-- INVENTORY -->
+      <section class="page hidden" id="page-inventory">
+        <h1 class="page-title">Inventory</h1>
+        <p class="page-sub">Shared item list for everyone on this workspace.</p>
+        <div class="card">
+          <div class="card-header">
+            <h2>Items</h2>
+            <button type="button" class="btn-primary" id="addRow">+ Add item</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th class="num">Qty</th>
+                  <th class="num">Cost / unit</th>
+                  <th class="num">Sell / unit</th>
+                  <th class="num">Inv. value</th>
+                  <th class="num">Revenue</th>
+                  <th class="num">Profit</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="inventoryBody"></tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="4"><strong>Total inventory</strong></td>
+                  <td class="num readonly" id="totalCost">$0.00</td>
+                  <td class="num readonly" id="totalRevenue">$0.00</td>
+                  <td class="num readonly" id="totalProfit">$0.00</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Each item</h2>
+          <div class="item-breakdown-grid" id="itemBreakdown"></div>
+        </div>
+        <div class="card">
+          <h2>Summary</h2>
+          <div class="summary-grid">
+            <div class="stat"><label>Total cost</label><div class="value" id="summaryCost">$0.00</div></div>
+            <div class="stat"><label>Total revenue</label><div class="value" id="summaryRevenue">$0.00</div></div>
+            <div class="stat" id="profitStat"><label>Net profit</label><div class="value" id="summaryProfit">$0.00</div></div>
+            <div class="stat"><label>Total units</label><div class="value" id="summaryUnits">0</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BREAK-EVEN -->
+      <section class="page hidden" id="page-breakeven">
+        <h1 class="page-title">Break-even</h1>
+        <p class="page-sub">Fixed costs and break-even targets for the workspace.</p>
+        <div class="card">
+          <div class="field-row">
+            <div class="field">
+              <label for="fixedCosts">Fixed costs</label>
+              <input type="number" id="fixedCosts" min="0" step="0.01" value="0" />
+            </div>
+            <div class="field">
+              <label for="targetUnits">Units to sell (optional)</label>
+              <input type="number" id="targetUnits" min="0" step="1" placeholder="All units" />
+            </div>
+          </div>
+          <div class="summary-grid">
+            <div class="stat"><label>Break-even price / unit</label><div class="value" id="bePrice">—</div></div>
+            <div class="stat"><label>Break-even units</label><div class="value" id="beUnits">—</div></div>
+            <div class="stat"><label>Amount to break even</label><div class="value" id="beTotal">$0.00</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- EQUITY -->
+      <section class="page hidden" id="page-equity">
+        <h1 class="page-title">Equity split</h1>
+        <p class="page-sub">Any number of parties. Shares should total 100%.</p>
+        <div class="card">
+          <div class="card-header">
+            <h2>Parties</h2>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+              <button type="button" class="btn-primary" id="addParty">+ Add party</button>
+              <button type="button" class="btn-ghost" id="normalizeParties">Normalize to 100%</button>
+            </div>
+          </div>
+          <div id="pctStatus" class="pct-ok">Shares total 100%</div>
+          <div id="partyEditor"></div>
+          <h3 style="margin-top:1.25rem">Payments from net profit</h3>
+          <div class="party-grid" id="partyPayments"></div>
+          <p class="note">Core can add, rename, remove, and edit %. Partner can view payment amounts. Viewer cannot see this page.</p>
+        </div>
+      </section>
+
+      <!-- TEAM -->
+      <section class="page hidden" id="page-team">
+        <h1 class="page-title">Team & sync</h1>
+        <p class="page-sub">Everyone on the same workspace code shares inventory, equity, and accounts on this sync channel.</p>
+
+        <div class="card" id="loginTitleCard">
+          <h2>Login screen name</h2>
+          <p class="note" style="margin-top:0">This title appears on the sign-in page for this workspace.</p>
+          <div class="field-row" style="margin-top:0.75rem;align-items:end">
+            <div class="field" style="flex:1">
+              <label for="editLoginTitle">App / login title</label>
+              <input type="text" id="editLoginTitle" maxlength="80" />
+            </div>
+            <button type="button" class="btn-primary" id="saveLoginTitle">Save title</button>
+          </div>
+          <div class="login-error" id="loginTitleError" style="min-height:0;margin-top:0.5rem"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Team members</h2>
+            <button type="button" class="btn-primary hidden" id="showAddUserBtn">+ Add person</button>
+          </div>
+          <div id="teamList"></div>
+          <form class="team-form hidden" id="addUserForm">
+            <h3 style="margin:0;font-size:0.95rem">Add person</h3>
+            <div class="form-grid">
+              <div class="field">
+                <label for="newUserName">Username</label>
+                <input type="text" id="newUserName" autocomplete="off" required />
+              </div>
+              <div class="field">
+                <label for="newDisplayName">Display name</label>
+                <input type="text" id="newDisplayName" required />
+              </div>
+              <div class="field">
+                <label for="newUserPass">Password</label>
+                <input type="password" id="newUserPass" autocomplete="new-password" required />
+              </div>
+              <div class="field">
+                <label for="newUserRole">Role</label>
+                <select id="newUserRole">
+                  <option value="partner">Partner</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+              </div>
+            </div>
+            <div class="login-error" id="addUserError" style="min-height:0"></div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+              <button type="submit" class="btn-primary">Create account</button>
+              <button type="button" class="btn-ghost" id="cancelAddUser">Cancel</button>
+            </div>
+          </form>
+          <form class="team-form hidden" id="editUserForm">
+            <h3 style="margin:0;font-size:0.95rem">Edit member</h3>
+            <input type="hidden" id="editUserKey" />
+            <div class="form-grid">
+              <div class="field">
+                <label for="editUserName">Username</label>
+                <input type="text" id="editUserName" required />
+              </div>
+              <div class="field">
+                <label for="editDisplayName">Display name</label>
+                <input type="text" id="editDisplayName" required />
+              </div>
+              <div class="field">
+                <label for="editUserPass">New password (optional)</label>
+                <input type="password" id="editUserPass" autocomplete="new-password" placeholder="Leave blank to keep" />
+              </div>
+              <div class="field">
+                <label for="editUserRole">Role</label>
+                <select id="editUserRole">
+                  <option value="partner">Partner</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+              </div>
+            </div>
+            <div class="login-error" id="editUserError" style="min-height:0"></div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+              <button type="submit" class="btn-primary">Save changes</button>
+              <button type="button" class="btn-ghost" id="cancelEditUser">Cancel</button>
+            </div>
+          </form>
+        </div>
+        <div class="card">
+          <h2>Workspace sharing</h2>
+          <p class="note" style="margin-top:0">Use the same workspace code at login (e.g. MAIN). Changes sync live across tabs on this browser via BroadcastChannel, and persist in localStorage. Accounts Core creates travel with the workspace snapshot.</p>
+          <div class="field-row" style="margin-top:1rem">
+            <div class="field">
+              <label>Export snapshot (paste on another device)</label>
+              <textarea class="snapshot" id="snapshotOut" readonly></textarea>
+              <button type="button" class="btn-ghost" id="copySnapshot" style="margin-top:0.5rem">Copy snapshot</button>
+            </div>
+            <div class="field">
+              <label>Import snapshot</label>
+              <textarea class="snapshot" id="snapshotIn" placeholder="Paste workspace JSON here"></textarea>
+              <button type="button" class="btn-primary" id="importSnapshot" style="margin-top:0.5rem">Import into workspace</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- SHA-3 + BLAKE3 (WASM). SHA-256 uses Web Crypto. -->
+  <script src="https://cdn.jsdelivr.net/npm/hash-wasm@4.12.0/dist/index.umd.min.js" data-hash-wasm="1"></script>
+  <script>
+    /*
+      Password pipeline (final digest only stored — never plaintext):
+      1) SHA-256(utf8 password)           -> digest1   (Web Crypto)
+      2) SHA-3-256(digest1)               -> digest2   (NIST SHA-3 / Keccak via hash-wasm)
+      3) BLAKE3(digest2)                  -> digest3   (hash-wasm, 32-byte output)
+      4) SHA-256(digest3)                 -> final hex (Web Crypto)
+      Order: SHA-256 → SHA-3 → BLAKE3 → SHA-256
+    */
+    const HASH_PIPELINE_VERSION = "v4-sha256-sha3-blake3-sha256";
+    const SESSION_KEY = "inventory-split-session";
+    const SETUP_KEY = "inventory-split-setup";
+    const WS_PREFIX = "inventory-split-ws:";
+    const DEFAULT_LOGIN_TITLE = "Inventory Split";
+
+    /** Default Core digest for shipped password (new 4-step pipeline). Used if setup leaves password blank. */
+    const DEFAULT_CORE = {
+      username: "ESP1234242442S6",
+      passwordDigest: "6acfe3d59f01f33f0083ae926447b9c48e508dd913d4964c5c375ed93a1b29d7",
+      name: "Core User",
+      role: "core",
+      hashVersion: HASH_PIPELINE_VERSION,
+    };
+
+    const DEFAULT_SEED_ACCOUNTS = [
+      { ...DEFAULT_CORE },
+      {
+        username: "partner",
+        passwordDigest: "b3347b1937516ba20311f429f8ac740d9ecf9f76d01bde6bf7857a53666cefb8",
+        name: "Partner User",
+        role: "partner",
+        hashVersion: HASH_PIPELINE_VERSION,
+      },
+      {
+        username: "viewer",
+        passwordDigest: "bacb539b33af733066043b373ef3fd33f5d1476ddf769bff7560e4df6d28c5c0",
+        name: "Viewer User",
+        role: "viewer",
+        hashVersion: HASH_PIPELINE_VERSION,
+      },
+    ];
+
+    // Back-compat aliases used elsewhere in this file
+    const LEGACY_CORE = DEFAULT_CORE;
+    const LEGACY_SEED_ACCOUNTS = DEFAULT_SEED_ACCOUNTS;
+
+    const ROLE_META = {
+      core: {
+        label: "Core",
+        pillClass: "role-admin",
+        canEdit: true,
+        canEditSplit: true,
+        canSeeEquity: true,
+        banner: null,
+      },
+      partner: {
+        label: "Partner",
+        pillClass: "role-partner",
+        canEdit: true,
+        canEditSplit: false,
+        canSeeEquity: true,
+        banner: "Partner: edit inventory. Equity parties/percents are view-only.",
+      },
+      viewer: {
+        label: "Viewer",
+        pillClass: "role-viewer",
+        canEdit: false,
+        canEditSplit: false,
+        canSeeEquity: false,
+        banner: "Viewer: read-only. Equity split is hidden.",
+      },
+    };
+
+    const DEFAULT_PARTIES = [
+      { id: "p1", name: "Party A", pct: 60 },
+      { id: "p2", name: "Party B", pct: 40 },
+    ];
+
+    const fmt = (n) =>
+      new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
+    const parseNum = (v) => {
+      const n = parseFloat(v);
+      return Number.isFinite(n) ? n : 0;
+    };
+    const escapeHtml = (s) =>
+      String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+
+    function toHex(buf) {
+      return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function hexToBytes(hex) {
+      const clean = String(hex).replace(/^0x/i, "");
+      if (clean.length % 2) throw new Error("Invalid hex length");
+      const out = new Uint8Array(clean.length / 2);
+      for (let i = 0; i < out.length; i++) {
+        out[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
+      }
+      return out;
+    }
+
+    async function sha256Bytes(data) {
+      const bytes =
+        typeof data === "string" ? new TextEncoder().encode(data) : data;
+      return new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+    }
+
+    async function ensureHashLibs() {
+      if (window.hashwasm?.sha3 && window.hashwasm?.blake3) return;
+      await new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[data-hash-wasm]');
+        if (existing) {
+          existing.addEventListener("load", () => resolve());
+          existing.addEventListener("error", () => reject(new Error("hash-wasm failed to load")));
+          return;
+        }
+        const s = document.createElement("script");
+        s.src = "https://cdn.jsdelivr.net/npm/hash-wasm@4.12.0/dist/index.umd.min.js";
+        s.dataset.hashWasm = "1";
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error("hash-wasm failed to load from CDN"));
+        document.head.appendChild(s);
+      });
+      if (!window.hashwasm?.sha3 || !window.hashwasm?.blake3) {
+        throw new Error("hash-wasm SHA-3 / BLAKE3 unavailable");
+      }
+    }
+
+    /**
+     * SHA-256 → SHA-3-256 → BLAKE3 → SHA-256 → hex
+     * Intermediate steps chain raw bytes (not hex strings).
+     */
+    async function hashPasswordPipeline(password) {
+      await ensureHashLibs();
+      const { sha3, blake3 } = window.hashwasm;
+      const step1 = await sha256Bytes(password);
+      const step2 = hexToBytes(await sha3(step1, 256));
+      const step3 = hexToBytes(await blake3(step2));
+      const step4 = await sha256Bytes(step3);
+      return toHex(step4);
+    }
+
+    let currentUser = null;
+    let workspaceId = "MAIN";
+    let rowId = 0;
+    let partySeq = 2;
+    let saveTimer = null;
+    let applyingRemote = false;
+    let channel = null;
+    let workspaceState = emptyState();
+    let setupMeta = loadSetupMeta();
+
+    function emptyState() {
+      return {
+        items: [
+          { name: "Sample item", qty: 10, cost: 5, sell: 12 },
+          { name: "Second item", qty: 5, cost: 20, sell: 35 },
+        ],
+        fixedCosts: 0,
+        targetUnits: "",
+        parties: DEFAULT_PARTIES.map((p) => ({ ...p })),
+        activity: [],
+        accounts: [],
+        setupDone: false,
+        loginTitle: DEFAULT_LOGIN_TITLE,
+        workspaceName: "Main workspace",
+        hashVersion: HASH_PIPELINE_VERSION,
+        updatedAt: null,
+        updatedBy: null,
+      };
+    }
+
+    function normalizeAccount(a) {
+      if (!a || !a.username || !a.passwordDigest) return null;
+      const role = a.role === "core" || a.role === "partner" || a.role === "viewer" ? a.role : "viewer";
+      return {
+        username: String(a.username).trim(),
+        passwordDigest: String(a.passwordDigest),
+        name: String(a.name || a.username).trim(),
+        role,
+        hashVersion: a.hashVersion || null,
+      };
+    }
+
+    function loadSetupMeta() {
+      try {
+        const raw = localStorage.getItem(SETUP_KEY);
+        if (!raw) {
+          return {
+            done: false,
+            loginTitle: DEFAULT_LOGIN_TITLE,
+            defaultWorkspaceId: "MAIN",
+            workspaceName: "Main workspace",
+            hashVersion: null,
+          };
+        }
+        const data = JSON.parse(raw);
+        return {
+          done: !!data.done,
+          loginTitle: (data.loginTitle || DEFAULT_LOGIN_TITLE).trim() || DEFAULT_LOGIN_TITLE,
+          defaultWorkspaceId: (data.defaultWorkspaceId || "MAIN").toUpperCase(),
+          workspaceName: data.workspaceName || "Main workspace",
+          hashVersion: data.hashVersion || null,
+        };
+      } catch {
+        return {
+          done: false,
+          loginTitle: DEFAULT_LOGIN_TITLE,
+          defaultWorkspaceId: "MAIN",
+          workspaceName: "Main workspace",
+          hashVersion: null,
+        };
+      }
+    }
+
+    function saveSetupMeta(meta) {
+      setupMeta = { ...setupMeta, ...meta };
+      localStorage.setItem(SETUP_KEY, JSON.stringify(setupMeta));
+    }
+
+    const setupView = document.getElementById("setupView");
+    const loginView = document.getElementById("loginView");
+    const appView = document.getElementById("appView");
+    const inventoryBody = document.getElementById("inventoryBody");
+    const fixedCostsEl = document.getElementById("fixedCosts");
+    const targetUnitsEl = document.getElementById("targetUnits");
+
+    function getRole() {
+      return currentUser ? ROLE_META[currentUser.role] : null;
+    }
+
+    function dataKey(id = workspaceId) {
+      return WS_PREFIX + String(id).toUpperCase();
+    }
+
+    function readWorkspaceRaw(id) {
+      try {
+        const raw = localStorage.getItem(dataKey(id));
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    }
+
+    function ensureAccounts(data) {
+      if (!Array.isArray(data.accounts) || !data.accounts.length) {
+        if (data.setupDone && data.hashVersion === HASH_PIPELINE_VERSION) {
+          data.accounts = [{ ...DEFAULT_CORE }];
+        } else if (!data.setupDone) {
+          data.accounts = DEFAULT_SEED_ACCOUNTS.map((a) => ({ ...a }));
+        } else {
+          // Stale setup with missing accounts — seed Core only with current pipeline
+          data.accounts = [{ ...DEFAULT_CORE }];
+        }
+      }
+      data.accounts = data.accounts.map(normalizeAccount).filter(Boolean);
+      if (!data.accounts.some((a) => a.role === "core")) {
+        data.accounts.unshift({ ...DEFAULT_CORE });
+      }
+      if (!data.hashVersion) data.hashVersion = null;
+      return data;
+    }
+
+    function accountsUseCurrentPipeline(accounts) {
+      if (!Array.isArray(accounts) || !accounts.length) return false;
+      return accounts.every(
+        (a) => a.hashVersion === HASH_PIPELINE_VERSION ||
+          // Allow match against known default digests without explicit version stamp
+          DEFAULT_SEED_ACCOUNTS.some(
+            (d) =>
+              d.username.toLowerCase() === String(a.username).toLowerCase() &&
+              d.passwordDigest === a.passwordDigest
+          )
+      );
+    }
+
+    function isSetupComplete() {
+      if (setupMeta.done && setupMeta.hashVersion === HASH_PIPELINE_VERSION) return true;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith(WS_PREFIX)) continue;
+        try {
+          const data = JSON.parse(localStorage.getItem(key) || "{}");
+          if (
+            data.setupDone &&
+            data.hashVersion === HASH_PIPELINE_VERSION &&
+            Array.isArray(data.accounts) &&
+            data.accounts.some((a) => a.role === "core") &&
+            accountsUseCurrentPipeline(data.accounts)
+          ) {
+            return true;
+          }
+        } catch (_) {}
+      }
+      return false;
+    }
+
+    /** Old HMAC digests are invalid under the new pipeline — force re-setup. */
+    function invalidateStalePasswordPipeline() {
+      if (!setupMeta.done) return false;
+      if (setupMeta.hashVersion === HASH_PIPELINE_VERSION) return false;
+      localStorage.removeItem(SESSION_KEY);
+      saveSetupMeta({
+        done: false,
+        hashVersion: null,
+        loginTitle: setupMeta.loginTitle,
+        defaultWorkspaceId: setupMeta.defaultWorkspaceId,
+        workspaceName: setupMeta.workspaceName,
+      });
+      setupMeta = loadSetupMeta();
+      return true;
+    }
+
+    function loadWorkspaceFromStorage() {
+      try {
+        const raw = localStorage.getItem(dataKey());
+        let data = raw ? JSON.parse(raw) : emptyState();
+        if (!data.parties?.length) data.parties = DEFAULT_PARTIES.map((p) => ({ ...p }));
+        if (!Array.isArray(data.activity)) data.activity = [];
+        if (!Array.isArray(data.items)) data.items = [];
+        if (!data.loginTitle) data.loginTitle = setupMeta.loginTitle || DEFAULT_LOGIN_TITLE;
+        if (!data.workspaceName) data.workspaceName = setupMeta.workspaceName || "Main workspace";
+        data = ensureAccounts(data);
+        return data;
+      } catch {
+        return ensureAccounts(emptyState());
+      }
+    }
+
+    function getAccounts() {
+      return Array.isArray(workspaceState.accounts) ? workspaceState.accounts : [];
+    }
+
+    function findAccount(username) {
+      const u = String(username || "").trim().toLowerCase();
+      return getAccounts().find((a) => a.username.toLowerCase() === u) || null;
+    }
+
+    function persistWorkspace() {
+      if (!Array.isArray(workspaceState.accounts)) workspaceState.accounts = [];
+      localStorage.setItem(dataKey(), JSON.stringify(workspaceState));
+      document.getElementById("snapshotOut").value = JSON.stringify(workspaceState, null, 2);
+      if (channel && !applyingRemote) {
+        channel.postMessage({ type: "workspace", workspaceId, state: workspaceState });
+      }
+      document.getElementById("syncStatus").textContent = "Synced · " + workspaceId;
+      document.getElementById("syncStatus").classList.add("live");
+    }
+
+    function pushActivity(message) {
+      if (!currentUser || applyingRemote) return;
+      workspaceState.activity.unshift({
+        at: new Date().toISOString(),
+        user: currentUser.name,
+        role: currentUser.role,
+        message,
+      });
+      workspaceState.activity = workspaceState.activity.slice(0, 30);
+    }
+
+    function applyLoginBranding(title, subtitle) {
+      const t = (title || setupMeta.loginTitle || DEFAULT_LOGIN_TITLE).trim() || DEFAULT_LOGIN_TITLE;
+      document.getElementById("loginBrandTitle").textContent = t;
+      document.getElementById("setupBrandTitle").textContent = t;
+      document.title = t;
+      const sub = document.getElementById("loginBrandSub");
+      if (subtitle) sub.textContent = subtitle;
+      else if (setupMeta.workspaceName) sub.textContent = setupMeta.workspaceName;
+      else sub.textContent = "Sign in to your workspace";
+      const appName = document.getElementById("appBrandName");
+      if (appName) appName.textContent = t;
+      const label = document.getElementById("workspaceLabel");
+      if (label) {
+        label.textContent =
+          "Workspace " + workspaceId + (workspaceState.workspaceName ? " · " + workspaceState.workspaceName : "");
+      }
+    }
+
+    function refreshLoginTitleFromWorkspaceCode() {
+      const code = (document.getElementById("workspaceCode").value.trim() || setupMeta.defaultWorkspaceId || "MAIN").toUpperCase();
+      const data = readWorkspaceRaw(code);
+      const title = (data && data.loginTitle) || setupMeta.loginTitle || DEFAULT_LOGIN_TITLE;
+      const name = (data && data.workspaceName) || setupMeta.workspaceName || "";
+      applyLoginBranding(title, name || "Sign in to your workspace");
+    }
+
+    function connectChannel() {
+      if (channel) {
+        try { channel.close(); } catch (_) {}
+      }
+      try {
+        channel = new BroadcastChannel("inventory-split-" + workspaceId.toUpperCase());
+        channel.onmessage = (ev) => {
+          const msg = ev.data;
+          if (!msg || msg.type !== "workspace") return;
+          if (msg.workspaceId !== workspaceId.toUpperCase()) return;
+          applyingRemote = true;
+          workspaceState = ensureAccounts({ ...emptyState(), ...msg.state });
+          localStorage.setItem(dataKey(), JSON.stringify(workspaceState));
+          if (workspaceState.loginTitle) {
+            saveSetupMeta({ loginTitle: workspaceState.loginTitle, workspaceName: workspaceState.workspaceName });
+          }
+          renderAllFromState();
+          applyingRemote = false;
+          document.getElementById("syncStatus").textContent = "Live update received";
+          document.getElementById("syncStatus").classList.add("live");
+        };
+      } catch {
+        channel = null;
+      }
+    }
+
+    function showSetup() {
+      currentUser = null;
+      document.body.classList.add("login-mode");
+      document.body.classList.remove("app-mode");
+      setupView.classList.remove("hidden");
+      loginView.classList.add("hidden");
+      appView.classList.add("hidden");
+      document.getElementById("setupError").textContent = "";
+      const draft = document.getElementById("setupLoginTitle").value.trim() || DEFAULT_LOGIN_TITLE;
+      applyLoginBranding(draft, "One-time Core setup");
+    }
+
+    function showLogin() {
+      currentUser = null;
+      localStorage.removeItem(SESSION_KEY);
+      document.body.classList.add("login-mode");
+      document.body.classList.remove("app-mode");
+      setupView.classList.add("hidden");
+      loginView.classList.remove("hidden");
+      appView.classList.add("hidden");
+      document.getElementById("loginError").textContent = "";
+      document.getElementById("loginPass").value = "";
+      document.getElementById("workspaceCode").value = setupMeta.defaultWorkspaceId || "MAIN";
+      refreshLoginTitleFromWorkspaceCode();
+      if (channel) {
+        try { channel.close(); } catch (_) {}
+        channel = null;
+      }
+    }
+
+    function updateAddPeopleCta() {
+      const cta = document.getElementById("addPeopleCta");
+      const onlyCore =
+        currentUser?.role === "core" &&
+        getAccounts().filter((a) => a.role !== "core").length === 0;
+      cta.classList.toggle("hidden", !onlyCore);
+    }
+
+    function showApp(user) {
+      currentUser = user;
+      localStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({ username: user.username, workspaceId })
+      );
+      document.body.classList.remove("login-mode");
+      document.body.classList.add("app-mode");
+      setupView.classList.add("hidden");
+      loginView.classList.add("hidden");
+      appView.classList.remove("hidden");
+
+      const meta = ROLE_META[user.role];
+      document.getElementById("userDisplayName").textContent = user.name;
+      document.getElementById("userRoleLabel").textContent = "@" + user.username;
+      const pill = document.getElementById("userRolePill");
+      pill.textContent = meta.label;
+      pill.className = "role-pill " + meta.pillClass;
+
+      const banner = document.getElementById("permBanner");
+      if (meta.banner) {
+        banner.textContent = meta.banner;
+        banner.classList.remove("hidden");
+      } else {
+        banner.classList.add("hidden");
+      }
+
+      document.getElementById("navEquity").classList.toggle("hidden", !meta.canSeeEquity);
+      document.getElementById("dashGotoEquity").classList.toggle("hidden", !meta.canSeeEquity);
+
+      connectChannel();
+      workspaceState = loadWorkspaceFromStorage();
+      // Ensure setup flags + title live on the workspace
+      if (setupMeta.done) {
+        workspaceState.setupDone = true;
+        if (!workspaceState.loginTitle) workspaceState.loginTitle = setupMeta.loginTitle;
+      }
+      applyLoginBranding(workspaceState.loginTitle, workspaceState.workspaceName);
+      document.getElementById("workspaceLabel").textContent =
+        "Workspace " + workspaceId + (workspaceState.workspaceName ? " · " + workspaceState.workspaceName : "");
+      renderAllFromState();
+      showPage("dashboard");
+      updateAddPeopleCta();
+    }
+
+    function showPage(page) {
+      const meta = getRole();
+      if (page === "equity" && !meta?.canSeeEquity) page = "dashboard";
+      document.querySelectorAll(".page").forEach((el) => el.classList.add("hidden"));
+      document.getElementById("page-" + page)?.classList.remove("hidden");
+      document.querySelectorAll(".nav-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.page === page);
+      });
+      if (page === "team") renderTeamPage();
+    }
+
+    function applyPermissions() {
+      const meta = getRole();
+      if (!meta) return;
+      const isCore = currentUser?.role === "core";
+      document.getElementById("addRow").disabled = !meta.canEdit;
+      document.getElementById("addParty").disabled = !meta.canEditSplit;
+      document.getElementById("normalizeParties").disabled = !meta.canEditSplit;
+      fixedCostsEl.disabled = !meta.canEdit;
+      targetUnitsEl.disabled = !meta.canEdit;
+      inventoryBody.querySelectorAll("input").forEach((i) => (i.disabled = !meta.canEdit));
+      inventoryBody.querySelectorAll(".remove-row").forEach((btn) => {
+        btn.disabled = !meta.canEdit;
+        btn.classList.toggle("hidden", !meta.canEdit);
+      });
+      document.querySelectorAll(".party-edit-row input").forEach((i) => {
+        i.disabled = !meta.canEditSplit;
+      });
+      document.querySelectorAll(".remove-party").forEach((btn) => {
+        btn.disabled = !meta.canEditSplit;
+        btn.classList.toggle("hidden", !meta.canEditSplit);
+      });
+      document.getElementById("showAddUserBtn").classList.toggle("hidden", !isCore);
+      document.getElementById("loginTitleCard").classList.toggle("hidden", !isCore);
+      document.getElementById("editLoginTitle").disabled = !isCore;
+      document.getElementById("saveLoginTitle").disabled = !isCore;
+    }
+
+    function createRow(data = {}) {
+      const tr = document.createElement("tr");
+      tr.dataset.id = String(++rowId);
+      const canEdit = getRole()?.canEdit !== false;
+      tr.innerHTML = `
+        <td><input type="text" class="item-name" placeholder="Item name" value="${escapeHtml(data.name || "")}" ${canEdit ? "" : "disabled"} /></td>
+        <td><input type="number" class="qty" min="0" step="1" value="${data.qty ?? 1}" ${canEdit ? "" : "disabled"} /></td>
+        <td><input type="number" class="cost" min="0" step="0.01" value="${data.cost ?? 0}" ${canEdit ? "" : "disabled"} /></td>
+        <td><input type="number" class="sell" min="0" step="0.01" value="${data.sell ?? 0}" ${canEdit ? "" : "disabled"} /></td>
+        <td class="num readonly line-cost">$0.00</td>
+        <td class="num readonly line-revenue">$0.00</td>
+        <td class="num readonly line-profit">$0.00</td>
+        <td><button type="button" class="btn-ghost btn-danger remove-row ${canEdit ? "" : "hidden"}" ${canEdit ? "" : "disabled"}>✕</button></td>
+      `;
+      tr.querySelectorAll("input").forEach((input) => {
+        input.addEventListener("input", () => {
+          recalculate();
+          scheduleSave("Updated inventory");
+        });
+      });
+      tr.querySelector(".remove-row").addEventListener("click", () => {
+        if (!getRole()?.canEdit) return;
+        tr.remove();
+        if (!inventoryBody.children.length) addRow();
+        recalculate();
+        scheduleSave("Removed an inventory item");
+      });
+      return tr;
+    }
+
+    function addRow(data) {
+      if (currentUser && !getRole()?.canEdit && inventoryBody.children.length) return;
+      inventoryBody.appendChild(createRow(data));
+      recalculate();
+    }
+
+    function getRows() {
+      return [...inventoryBody.querySelectorAll("tr")].map((tr) => {
+        const name = tr.querySelector(".item-name").value.trim() || "Unnamed item";
+        const qty = parseNum(tr.querySelector(".qty").value);
+        const cost = parseNum(tr.querySelector(".cost").value);
+        const sell = parseNum(tr.querySelector(".sell").value);
+        const lineCost = qty * cost;
+        const lineRevenue = qty * sell;
+        const lineProfit = lineRevenue - lineCost;
+        tr.querySelector(".line-cost").textContent = fmt(lineCost);
+        tr.querySelector(".line-revenue").textContent = fmt(lineRevenue);
+        tr.querySelector(".line-profit").textContent = fmt(lineProfit);
+        tr.querySelector(".line-profit").style.color =
+          lineProfit < 0 ? "var(--danger)" : lineProfit > 0 ? "var(--success)" : "";
+        return { name, qty, cost, sell, lineCost, lineRevenue, lineProfit };
+      });
+    }
+
+    function collectItemsFromDom() {
+      return [...inventoryBody.querySelectorAll("tr")].map((tr) => ({
+        name: tr.querySelector(".item-name").value,
+        qty: parseNum(tr.querySelector(".qty").value),
+        cost: parseNum(tr.querySelector(".cost").value),
+        sell: parseNum(tr.querySelector(".sell").value),
+      }));
+    }
+
+    function renderItemBreakdown(rows, totalCost) {
+      document.getElementById("itemBreakdown").innerHTML = rows
+        .map((row) => {
+          const share = totalCost > 0 ? ((row.lineCost / totalCost) * 100).toFixed(1) : "0.0";
+          const color =
+            row.lineProfit < 0 ? "var(--danger)" : row.lineProfit > 0 ? "var(--success)" : "inherit";
+          return `<article class="item-card"><h3>${escapeHtml(row.name)}</h3>
+            <dl>
+              <dt>Units</dt><dd>${row.qty.toLocaleString()}</dd>
+              <dt>Cost / unit</dt><dd>${fmt(row.cost)}</dd>
+              <dt>Sell / unit</dt><dd>${fmt(row.sell)}</dd>
+              <dt>Inventory value</dt><dd>${fmt(row.lineCost)}</dd>
+              <dt>Revenue</dt><dd>${fmt(row.lineRevenue)}</dd>
+              <dt>Profit</dt><dd style="color:${color}">${fmt(row.lineProfit)}</dd>
+            </dl>
+            <p class="note"><strong>${share}%</strong> of inventory value</p>
+          </article>`;
+        })
+        .join("");
+    }
+
+    function partyTotalPct() {
+      return workspaceState.parties.reduce((s, p) => s + parseNum(p.pct), 0);
+    }
+
+    function renderPartyEditor() {
+      const canEdit = getRole()?.canEditSplit;
+      const editor = document.getElementById("partyEditor");
+      editor.innerHTML = workspaceState.parties
+        .map(
+          (p) => `
+        <div class="party-edit-row" data-id="${escapeHtml(p.id)}">
+          <div class="field">
+            <label>Name</label>
+            <input type="text" class="party-name" value="${escapeHtml(p.name)}" ${canEdit ? "" : "disabled"} />
+          </div>
+          <div class="field">
+            <label>Share %</label>
+            <input type="number" class="party-pct" min="0" max="100" step="0.01" value="${p.pct}" ${canEdit ? "" : "disabled"} />
+          </div>
+          <button type="button" class="btn-ghost btn-danger remove-party ${canEdit ? "" : "hidden"}" ${canEdit ? "" : "disabled"}>Remove</button>
+        </div>`
+        )
+        .join("");
+
+      editor.querySelectorAll(".party-edit-row").forEach((row) => {
+        const id = row.dataset.id;
+        row.querySelector(".party-name").addEventListener("input", (e) => {
+          const party = workspaceState.parties.find((x) => x.id === id);
+          if (!party || !getRole()?.canEditSplit) return;
+          party.name = e.target.value;
+          scheduleSave("Renamed equity party");
+          renderPartyPayments(getNetProfit());
+        });
+        row.querySelector(".party-pct").addEventListener("input", (e) => {
+          const party = workspaceState.parties.find((x) => x.id === id);
+          if (!party || !getRole()?.canEditSplit) return;
+          party.pct = parseNum(e.target.value);
+          scheduleSave("Updated equity shares");
+          updatePctStatus();
+          renderPartyPayments(getNetProfit());
+        });
+        row.querySelector(".remove-party").addEventListener("click", () => {
+          if (!getRole()?.canEditSplit) return;
+          if (workspaceState.parties.length <= 1) return;
+          workspaceState.parties = workspaceState.parties.filter((x) => x.id !== id);
+          scheduleSave("Removed equity party");
+          renderPartyEditor();
+          updatePctStatus();
+          renderPartyPayments(getNetProfit());
+          applyPermissions();
+        });
+      });
+      updatePctStatus();
+    }
+
+    function updatePctStatus() {
+      const total = partyTotalPct();
+      const el = document.getElementById("pctStatus");
+      const ok = Math.abs(total - 100) < 0.05;
+      el.className = ok ? "pct-ok" : "pct-warn";
+      el.textContent = ok
+        ? `Shares total ${total.toFixed(2)}%`
+        : `Shares total ${total.toFixed(2)}% (should be 100%). Use Normalize or edit %.`;
+    }
+
+    function getNetProfit() {
+      const rows = getRows();
+      const totalCost = rows.reduce((s, r) => s + r.lineCost, 0);
+      const totalRevenue = rows.reduce((s, r) => s + r.lineRevenue, 0);
+      return totalRevenue - totalCost - parseNum(fixedCostsEl.value);
+    }
+
+    function renderPartyPayments(netProfit) {
+      const totalPct = partyTotalPct();
+      document.getElementById("partyPayments").innerHTML = workspaceState.parties
+        .map((p) => {
+          const share = totalPct > 0 ? (parseNum(p.pct) / totalPct) * 100 : 0;
+          const amount = netProfit > 0 ? (netProfit * share) / 100 : 0;
+          return `<div class="party-card">
+            <div class="role-pill role-partner">${escapeHtml(p.name)} · ${share.toFixed(1)}%</div>
+            <div class="amount">${fmt(amount)}</div>
+            <div class="note">Equity payment</div>
+          </div>`;
+        })
+        .join("");
+    }
+
+    function hideTeamForms() {
+      document.getElementById("addUserForm").classList.add("hidden");
+      document.getElementById("editUserForm").classList.add("hidden");
+      document.getElementById("addUserError").textContent = "";
+      document.getElementById("editUserError").textContent = "";
+    }
+
+    function renderTeamPage() {
+      const isCore = currentUser?.role === "core";
+      document.getElementById("editLoginTitle").value = workspaceState.loginTitle || setupMeta.loginTitle || DEFAULT_LOGIN_TITLE;
+      document.getElementById("loginTitleError").textContent = "";
+      document.getElementById("teamList").innerHTML = getAccounts()
+        .map((a) => {
+          const meta = ROLE_META[a.role] || ROLE_META.viewer;
+          const isCoreRow = a.role === "core";
+          const actions = isCore
+            ? `<div class="team-row-actions">
+                <button type="button" class="btn-ghost" data-edit="${escapeHtml(a.username)}">Edit</button>
+                ${
+                  isCoreRow
+                    ? `<button type="button" class="btn-ghost" disabled title="Core cannot be removed">Protected</button>`
+                    : `<button type="button" class="btn-ghost btn-danger" data-remove="${escapeHtml(a.username)}">Remove</button>`
+                }
+              </div>`
+            : `<span class="role-pill ${meta.pillClass}">${meta.label}</span>`;
+          return `<div class="team-row">
+            <div>
+              <strong>${escapeHtml(a.name)}</strong>
+              <div class="note" style="margin:0">@${escapeHtml(a.username)} · ${meta.label}</div>
+            </div>
+            ${isCore ? `<span class="role-pill ${meta.pillClass}">${meta.label}</span>${actions}` : actions}
+          </div>`;
+        })
+        .join("") || "<p class='note'>No accounts yet.</p>";
+
+      document.querySelectorAll("[data-edit]").forEach((btn) => {
+        btn.addEventListener("click", () => openEditUser(btn.getAttribute("data-edit")));
+      });
+      document.querySelectorAll("[data-remove]").forEach((btn) => {
+        btn.addEventListener("click", () => removeUser(btn.getAttribute("data-remove")));
+      });
+      applyPermissions();
+      updateAddPeopleCta();
+    }
+
+    function openEditUser(username) {
+      if (currentUser?.role !== "core") return;
+      const acc = findAccount(username);
+      if (!acc) return;
+      hideTeamForms();
+      document.getElementById("editUserForm").classList.remove("hidden");
+      document.getElementById("editUserKey").value = acc.username;
+      document.getElementById("editUserName").value = acc.username;
+      document.getElementById("editDisplayName").value = acc.name;
+      document.getElementById("editUserPass").value = "";
+      const roleSel = document.getElementById("editUserRole");
+      roleSel.innerHTML =
+        acc.role === "core"
+          ? `<option value="core">Core</option>`
+          : `<option value="partner">Partner</option><option value="viewer">Viewer</option>`;
+      roleSel.value = acc.role;
+      roleSel.disabled = acc.role === "core";
+      document.getElementById("editUserName").disabled = acc.role === "core";
+    }
+
+    function removeUser(username) {
+      if (currentUser?.role !== "core") return;
+      const acc = findAccount(username);
+      if (!acc || acc.role === "core") {
+        alert("Core account cannot be removed.");
+        return;
+      }
+      if (!confirm(`Remove @${acc.username}? They will no longer be able to sign in.`)) return;
+      workspaceState.accounts = getAccounts().filter(
+        (a) => a.username.toLowerCase() !== acc.username.toLowerCase()
+      );
+      pushActivity(`Removed team member @${acc.username}`);
+      persistWorkspace();
+      hideTeamForms();
+      renderTeamPage();
+      updateAddPeopleCta();
+    }
+
+    function renderDashboard(rows, totals) {
+      document.getElementById("dashInv").textContent = fmt(totals.totalCost);
+      document.getElementById("dashRev").textContent = fmt(totals.totalRevenue);
+      document.getElementById("dashProfit").textContent = fmt(totals.netProfit);
+      const ps = document.getElementById("dashProfitStat");
+      ps.classList.toggle("profit", totals.netProfit > 0);
+      ps.classList.toggle("loss", totals.netProfit < 0);
+      document.getElementById("dashUnits").textContent =
+        `${rows.length} / ${totals.totalUnits}`;
+      document.getElementById("dashParties").textContent = String(workspaceState.parties.length);
+      document.getElementById("dashLastEdit").textContent = workspaceState.updatedBy
+        ? `${workspaceState.updatedBy}`
+        : "—";
+
+      document.getElementById("dashTable").innerHTML = rows
+        .slice(0, 8)
+        .map(
+          (r) =>
+            `<tr><td>${escapeHtml(r.name)}</td><td class="num">${r.qty}</td><td class="num">${fmt(r.lineCost)}</td><td class="num">${fmt(r.lineProfit)}</td></tr>`
+        )
+        .join("");
+
+      document.getElementById("activityList").innerHTML =
+        (workspaceState.activity || [])
+          .slice(0, 12)
+          .map((a) => {
+            const when = a.at ? new Date(a.at).toLocaleString() : "";
+            return `<li><strong>${escapeHtml(a.user)}</strong> (${escapeHtml(a.role)}) — ${escapeHtml(a.message)} <span style="float:right">${when}</span></li>`;
+          })
+          .join("") || "<li>No activity yet.</li>";
+
+      updateAddPeopleCta();
+    }
+
+    function scheduleSave(activityMsg) {
+      if (applyingRemote) return;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        if (!currentUser) return;
+        workspaceState.items = collectItemsFromDom();
+        workspaceState.fixedCosts = parseNum(fixedCostsEl.value);
+        workspaceState.targetUnits = targetUnitsEl.value;
+        workspaceState.updatedAt = new Date().toISOString();
+        workspaceState.updatedBy = currentUser.name;
+        if (activityMsg) pushActivity(activityMsg);
+        persistWorkspace();
+        recalculate();
+      }, 220);
+    }
+
+    function renderAllFromState() {
+      inventoryBody.innerHTML = "";
+      rowId = 0;
+      const items = workspaceState.items?.length
+        ? workspaceState.items
+        : emptyState().items;
+      items.forEach((item) => inventoryBody.appendChild(createRow(item)));
+      fixedCostsEl.value = workspaceState.fixedCosts ?? 0;
+      targetUnitsEl.value = workspaceState.targetUnits ?? "";
+      if (!workspaceState.parties?.length) {
+        workspaceState.parties = DEFAULT_PARTIES.map((p) => ({ ...p }));
+      }
+      workspaceState = ensureAccounts(workspaceState);
+      renderPartyEditor();
+      applyPermissions();
+      recalculate();
+      document.getElementById("snapshotOut").value = JSON.stringify(workspaceState, null, 2);
+      if (document.getElementById("page-team") && !document.getElementById("page-team").classList.contains("hidden")) {
+        renderTeamPage();
+      }
+    }
+
+    function recalculate() {
+      if (!currentUser) return;
+      const rows = getRows();
+      const totalCost = rows.reduce((s, r) => s + r.lineCost, 0);
+      const totalRevenue = rows.reduce((s, r) => s + r.lineRevenue, 0);
+      const totalUnits = rows.reduce((s, r) => s + r.qty, 0);
+      const fixedCosts = parseNum(fixedCostsEl.value);
+      const totalExpenses = totalCost + fixedCosts;
+      const netProfit = totalRevenue - totalExpenses;
+      const set = (id, val) => (document.getElementById(id).textContent = val);
+
+      set("totalCost", fmt(totalCost));
+      set("totalRevenue", fmt(totalRevenue));
+      set("totalProfit", fmt(totalRevenue - totalCost));
+      set("summaryCost", fmt(totalCost));
+      set("summaryRevenue", fmt(totalRevenue));
+      set("summaryProfit", fmt(netProfit));
+      set("summaryUnits", totalUnits);
+      renderItemBreakdown(rows, totalCost);
+
+      const profitStat = document.getElementById("profitStat");
+      profitStat.classList.toggle("profit", netProfit > 0);
+      profitStat.classList.toggle("loss", netProfit < 0);
+
+      const targetUnits = parseNum(targetUnitsEl.value);
+      const unitsForBE = targetUnits > 0 ? targetUnits : totalUnits;
+      set("beTotal", fmt(totalExpenses));
+      set("bePrice", unitsForBE > 0 ? fmt(totalExpenses / unitsForBE) : "—");
+      const avgMargin = totalUnits > 0 ? (totalRevenue - totalCost) / totalUnits : 0;
+      if (avgMargin > 0) set("beUnits", Math.ceil(totalExpenses / avgMargin).toLocaleString());
+      else if (totalExpenses === 0) set("beUnits", "0");
+      else set("beUnits", "N/A");
+
+      updatePctStatus();
+      renderPartyPayments(netProfit);
+      renderDashboard(rows, { totalCost, totalRevenue, totalUnits, netProfit });
+    }
+
+    document.getElementById("setupLoginTitle").addEventListener("input", (e) => {
+      const t = e.target.value.trim() || DEFAULT_LOGIN_TITLE;
+      document.getElementById("setupBrandTitle").textContent = t;
+      document.title = t;
+    });
+
+    // ——— Setup ———
+    document.getElementById("setupForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById("setupError");
+      const btn = document.getElementById("setupBtn");
+      const loginTitle = document.getElementById("setupLoginTitle").value.trim() || DEFAULT_LOGIN_TITLE;
+      const username = document.getElementById("setupCoreUser").value.trim();
+      const displayName = document.getElementById("setupCoreName").value.trim() || "Core User";
+      const password = document.getElementById("setupCorePass").value;
+      const workspaceName = document.getElementById("setupWorkspaceName").value.trim() || "Main workspace";
+      const code = (document.getElementById("setupWorkspaceCode").value.trim() || "MAIN").toUpperCase();
+
+      if (!username) {
+        errorEl.textContent = "Core username is required.";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Saving…";
+      errorEl.textContent = "";
+
+      try {
+        let digest = DEFAULT_CORE.passwordDigest;
+        if (password) {
+          digest = await hashPasswordPipeline(password);
+        }
+
+        workspaceId = code;
+        const existing = readWorkspaceRaw(code) || emptyState();
+        const coreAccount = {
+          username,
+          passwordDigest: digest,
+          name: displayName,
+          role: "core",
+          hashVersion: HASH_PIPELINE_VERSION,
+        };
+        // New setup: Core-only roster (seed partner/viewer removed unless already present with current pipeline)
+        const priorAccounts = Array.isArray(existing.accounts)
+          ? existing.accounts.map(normalizeAccount).filter(Boolean)
+          : [];
+        const others = priorAccounts.filter(
+          (a) =>
+            a.role !== "core" &&
+            existing.setupDone &&
+            existing.hashVersion === HASH_PIPELINE_VERSION &&
+            a.hashVersion === HASH_PIPELINE_VERSION
+        );
+        workspaceState = {
+          ...emptyState(),
+          ...existing,
+          accounts: [coreAccount, ...others],
+          setupDone: true,
+          loginTitle,
+          workspaceName,
+          hashVersion: HASH_PIPELINE_VERSION,
+          updatedAt: new Date().toISOString(),
+          updatedBy: displayName,
+        };
+        persistWorkspace();
+        saveSetupMeta({
+          done: true,
+          loginTitle,
+          defaultWorkspaceId: code,
+          workspaceName,
+          hashVersion: HASH_PIPELINE_VERSION,
+        });
+        document.getElementById("loginUser").value = username;
+        showLogin();
+        document.getElementById("loginError").textContent = "Setup complete. Sign in as Core, then add people.";
+      } catch (err) {
+        console.error(err);
+        errorEl.textContent = "Could not complete setup (crypto / hash libs unavailable). Use HTTPS or localhost.";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Finish setup";
+      }
+    });
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = document.getElementById("loginUser").value.trim();
+      const password = document.getElementById("loginPass").value;
+      const errorEl = document.getElementById("loginError");
+      const btn = document.getElementById("loginBtn");
+      workspaceId = (document.getElementById("workspaceCode").value.trim() || "MAIN").toUpperCase();
+
+      btn.disabled = true;
+      btn.textContent = "Checking…";
+      errorEl.textContent = "";
+
+      try {
+        workspaceState = loadWorkspaceFromStorage();
+        // If workspace has no setup but device isn't set up, block
+        if (!setupMeta.done && !workspaceState.setupDone) {
+          errorEl.textContent = "Complete first-time setup first.";
+          showSetup();
+          return;
+        }
+        const digest = await hashPasswordPipeline(password);
+        const user = findAccount(username);
+        if (!user || user.passwordDigest !== digest) {
+          errorEl.textContent = "Invalid username or password.";
+          return;
+        }
+        if (workspaceState.loginTitle) {
+          saveSetupMeta({
+            done: true,
+            loginTitle: workspaceState.loginTitle,
+            defaultWorkspaceId: workspaceId,
+            workspaceName: workspaceState.workspaceName || setupMeta.workspaceName,
+          });
+        }
+        showApp(user);
+      } catch (err) {
+        console.error(err);
+        errorEl.textContent = "Could not verify password (crypto / hash libs unavailable). Use HTTPS or localhost.";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Sign in";
+      }
+    });
+
+    document.getElementById("workspaceCode").addEventListener("input", refreshLoginTitleFromWorkspaceCode);
+    document.getElementById("workspaceCode").addEventListener("change", refreshLoginTitleFromWorkspaceCode);
+
+    document.getElementById("logoutBtn").addEventListener("click", showLogin);
+
+    document.querySelectorAll(".nav-btn").forEach((btn) => {
+      btn.addEventListener("click", () => showPage(btn.dataset.page));
+    });
+    document.querySelectorAll("[data-goto]").forEach((btn) => {
+      btn.addEventListener("click", () => showPage(btn.dataset.goto));
+    });
+
+    document.getElementById("ctaAddPeople").addEventListener("click", () => {
+      showPage("team");
+      if (currentUser?.role === "core") {
+        hideTeamForms();
+        document.getElementById("addUserForm").classList.remove("hidden");
+      }
+    });
+
+    document.getElementById("showAddUserBtn").addEventListener("click", () => {
+      hideTeamForms();
+      document.getElementById("addUserForm").classList.remove("hidden");
+      document.getElementById("newUserName").value = "";
+      document.getElementById("newDisplayName").value = "";
+      document.getElementById("newUserPass").value = "";
+      document.getElementById("newUserRole").value = "partner";
+    });
+    document.getElementById("cancelAddUser").addEventListener("click", hideTeamForms);
+    document.getElementById("cancelEditUser").addEventListener("click", hideTeamForms);
+
+    document.getElementById("addUserForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (currentUser?.role !== "core") return;
+      const errorEl = document.getElementById("addUserError");
+      const username = document.getElementById("newUserName").value.trim();
+      const name = document.getElementById("newDisplayName").value.trim();
+      const password = document.getElementById("newUserPass").value;
+      const role = document.getElementById("newUserRole").value;
+      errorEl.textContent = "";
+
+      if (!username || !name || !password) {
+        errorEl.textContent = "Username, display name, and password are required.";
+        return;
+      }
+      if (role === "core") {
+        errorEl.textContent = "Cannot create another Core account.";
+        return;
+      }
+      if (findAccount(username)) {
+        errorEl.textContent = "That username is already taken.";
+        return;
+      }
+      try {
+        const digest = await hashPasswordPipeline(password);
+        workspaceState.accounts = [
+          ...getAccounts(),
+          { username, passwordDigest: digest, name, role, hashVersion: HASH_PIPELINE_VERSION },
+        ];
+        pushActivity(`Added team member @${username} (${role})`);
+        persistWorkspace();
+        hideTeamForms();
+        renderTeamPage();
+        updateAddPeopleCta();
+      } catch (err) {
+        console.error(err);
+        errorEl.textContent = "Could not hash password.";
+      }
+    });
+
+    document.getElementById("editUserForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (currentUser?.role !== "core") return;
+      const errorEl = document.getElementById("editUserError");
+      const key = document.getElementById("editUserKey").value;
+      const acc = findAccount(key);
+      if (!acc) {
+        errorEl.textContent = "Account not found.";
+        return;
+      }
+      const username = document.getElementById("editUserName").value.trim();
+      const name = document.getElementById("editDisplayName").value.trim();
+      const password = document.getElementById("editUserPass").value;
+      let role = document.getElementById("editUserRole").value;
+      errorEl.textContent = "";
+
+      if (!username || !name) {
+        errorEl.textContent = "Username and display name are required.";
+        return;
+      }
+      if (acc.role === "core") {
+        role = "core";
+      } else if (role === "core") {
+        errorEl.textContent = "Cannot promote to Core.";
+        return;
+      }
+      const clash = findAccount(username);
+      if (clash && clash.username.toLowerCase() !== acc.username.toLowerCase()) {
+        errorEl.textContent = "That username is already taken.";
+        return;
+      }
+      try {
+        let digest = acc.passwordDigest;
+        if (password) digest = await hashPasswordPipeline(password);
+        workspaceState.accounts = getAccounts().map((a) =>
+          a.username.toLowerCase() === acc.username.toLowerCase()
+            ? { username, passwordDigest: digest, name, role, hashVersion: HASH_PIPELINE_VERSION }
+            : a
+        );
+        if (currentUser.username.toLowerCase() === acc.username.toLowerCase()) {
+          currentUser = findAccount(username);
+          document.getElementById("userDisplayName").textContent = currentUser.name;
+          document.getElementById("userRoleLabel").textContent = "@" + currentUser.username;
+        }
+        pushActivity(`Updated team member @${username}`);
+        persistWorkspace();
+        hideTeamForms();
+        renderTeamPage();
+      } catch (err) {
+        console.error(err);
+        errorEl.textContent = "Could not save changes.";
+      }
+    });
+
+    document.getElementById("saveLoginTitle").addEventListener("click", () => {
+      if (currentUser?.role !== "core") return;
+      const title = document.getElementById("editLoginTitle").value.trim() || DEFAULT_LOGIN_TITLE;
+      const err = document.getElementById("loginTitleError");
+      workspaceState.loginTitle = title;
+      saveSetupMeta({ loginTitle: title });
+      applyLoginBranding(title, workspaceState.workspaceName);
+      pushActivity("Updated login screen name");
+      persistWorkspace();
+      err.style.color = "var(--success)";
+      err.textContent = "Login screen name saved.";
+      setTimeout(() => {
+        err.style.color = "";
+        err.textContent = "";
+      }, 2000);
+    });
+
+    document.getElementById("addRow").addEventListener("click", () => {
+      if (!getRole()?.canEdit) return;
+      addRow({ name: "", qty: 1, cost: 0, sell: 0 });
+      scheduleSave("Added an inventory item");
+    });
+
+    document.getElementById("addParty").addEventListener("click", () => {
+      if (!getRole()?.canEditSplit) return;
+      partySeq += 1;
+      workspaceState.parties.push({
+        id: "p" + Date.now(),
+        name: "Party " + (workspaceState.parties.length + 1),
+        pct: 0,
+      });
+      renderPartyEditor();
+      applyPermissions();
+      scheduleSave("Added equity party");
+      recalculate();
+    });
+
+    document.getElementById("normalizeParties").addEventListener("click", () => {
+      if (!getRole()?.canEditSplit) return;
+      const total = partyTotalPct();
+      if (total <= 0) return;
+      workspaceState.parties.forEach((p) => {
+        p.pct = Math.round(((parseNum(p.pct) / total) * 100) * 100) / 100;
+      });
+      const sum = partyTotalPct();
+      const drift = Math.round((100 - sum) * 100) / 100;
+      if (workspaceState.parties.length) {
+        workspaceState.parties[workspaceState.parties.length - 1].pct =
+          Math.round((parseNum(workspaceState.parties[workspaceState.parties.length - 1].pct) + drift) * 100) / 100;
+      }
+      renderPartyEditor();
+      applyPermissions();
+      scheduleSave("Normalized equity shares to 100%");
+      recalculate();
+    });
+
+    [fixedCostsEl, targetUnitsEl].forEach((el) => {
+      el.addEventListener("input", () => {
+        if (!getRole()?.canEdit) return;
+        scheduleSave("Updated break-even settings");
+        recalculate();
+      });
+    });
+
+    document.getElementById("copySnapshot").addEventListener("click", async () => {
+      const text = document.getElementById("snapshotOut").value;
+      try {
+        await navigator.clipboard.writeText(text);
+        document.getElementById("syncStatus").textContent = "Snapshot copied";
+      } catch {
+        document.getElementById("snapshotOut").select();
+      }
+    });
+
+    document.getElementById("importSnapshot").addEventListener("click", () => {
+      if (!getRole()?.canEdit && currentUser?.role !== "core") {
+        alert("Only editors/Core can import snapshots.");
+        return;
+      }
+      try {
+        const data = JSON.parse(document.getElementById("snapshotIn").value);
+        if (!data || !Array.isArray(data.items)) throw new Error("bad");
+        const importedAccounts = Array.isArray(data.accounts)
+          ? data.accounts.map(normalizeAccount).filter(Boolean)
+          : getAccounts();
+        workspaceState = ensureAccounts({
+          ...emptyState(),
+          ...data,
+          parties: data.parties?.length ? data.parties : DEFAULT_PARTIES.map((p) => ({ ...p })),
+          activity: data.activity || [],
+          accounts: importedAccounts.length ? importedAccounts : getAccounts(),
+          setupDone: true,
+          hashVersion: data.hashVersion || HASH_PIPELINE_VERSION,
+          loginTitle: data.loginTitle || workspaceState.loginTitle || setupMeta.loginTitle,
+          workspaceName: data.workspaceName || workspaceState.workspaceName,
+        });
+        if (workspaceState.loginTitle) {
+          saveSetupMeta({
+            done: true,
+            loginTitle: workspaceState.loginTitle,
+            workspaceName: workspaceState.workspaceName,
+            defaultWorkspaceId: workspaceId,
+            hashVersion: workspaceState.hashVersion || HASH_PIPELINE_VERSION,
+          });
+        }
+        pushActivity("Imported workspace snapshot");
+        persistWorkspace();
+        renderAllFromState();
+        applyLoginBranding(workspaceState.loginTitle, workspaceState.workspaceName);
+        document.getElementById("snapshotIn").value = "";
+      } catch {
+        alert("Invalid snapshot JSON.");
+      }
+    });
+
+    // Boot: migrate hash pipeline → setup → login → optional session restore
+    (async () => {
+      setupMeta = loadSetupMeta();
+      const needsReseSetup = invalidateStalePasswordPipeline();
+      if (needsReseSetup || !isSetupComplete()) {
+        showSetup();
+        if (needsReseSetup) {
+          document.getElementById("setupError").textContent =
+            "Password hashing was upgraded (SHA-256 → SHA-3 → BLAKE3 → SHA-256). Re-run Core setup to create new digests.";
+        }
+        return;
+      }
+      try {
+        const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+        if (session?.username) {
+          workspaceId = (session.workspaceId || setupMeta.defaultWorkspaceId || "MAIN").toUpperCase();
+          workspaceState = loadWorkspaceFromStorage();
+          if (workspaceState.hashVersion !== HASH_PIPELINE_VERSION) {
+            showSetup();
+            document.getElementById("setupError").textContent =
+              "This workspace still has old password digests. Re-run Core setup.";
+            return;
+          }
+          const user = findAccount(session.username);
+          if (user) {
+            showApp(user);
+            return;
+          }
+        }
+      } catch (_) {}
+      showLogin();
+    })();
+  </script>
+</body>
+</html>
