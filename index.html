@@ -458,10 +458,13 @@
     }
     .cta-banner strong { color: var(--text); display: block; margin-bottom: 0.2rem; }
     .cta-banner p { margin: 0; font-size: 0.85rem; }
-    .sync-status { font-size: 0.8rem; color: var(--muted); }
+    .sync-status-wrap { display: flex; flex-direction: column; gap: 0.35rem; align-items: stretch; }
+    .sync-status { font-size: 0.8rem; color: var(--muted); line-height: 1.35; }
     .sync-status.live { color: var(--success); }
     .sync-status.warn { color: var(--warning); }
     .sync-status.err { color: var(--danger); }
+    .sync-retry-btn { width: 100%; font-size: 0.78rem; padding: 0.35rem 0.5rem; }
+    .sync-retry-btn.hidden { display: none; }
     .firebase-steps {
       font-size: 0.8rem;
       color: var(--muted);
@@ -502,6 +505,10 @@
     .firebase-status-pill.warn {
       background: rgba(245, 158, 11, 0.2);
       color: var(--warning);
+    }
+    .firebase-status-pill.err {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
     }
     .dash-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
     textarea.snapshot { min-height: 90px; font-family: ui-monospace, monospace; font-size: 0.78rem; }
@@ -753,7 +760,10 @@
       <div class="user-panel">
         <div class="name" id="userDisplayName">—</div>
         <div class="meta"><span id="userRoleLabel">—</span> · <span class="role-pill" id="userRolePill">—</span></div>
-        <div class="sync-status" id="syncStatus">Local workspace</div>
+        <div class="sync-status-wrap">
+          <div class="sync-status" id="syncStatus">Local workspace</div>
+          <button type="button" class="btn-ghost sync-retry-btn hidden" id="syncRetryBtn">Retry cloud sync</button>
+        </div>
         <button type="button" class="btn-ghost" id="logoutBtn" style="width:100%;margin-top:0.5rem">Log out</button>
       </div>
     </aside>
@@ -909,11 +919,14 @@
             (GitHub Pages visitors get cloud sync without pasting). Override below only if you rotate keys.
           </p>
           <ol class="firebase-steps">
-            <li>Enable <strong>Anonymous</strong> sign-in in Firebase Authentication</li>
-            <li>Create Firestore and publish <code>firestore.rules</code> from this repo</li>
+            <li>Firebase Console → <strong>Authentication</strong> → Get started → enable <strong>Anonymous</strong></li>
+            <li>Create Firestore → Rules → paste/publish <code>firestore.rules</code> from this repo</li>
             <li>Core: First-time setup → share <code>?ws=YOURCODE</code> with friends</li>
-            <li>Optional: paste a different config → Save &amp; enable (this device only)</li>
+            <li>Optional: paste a different config → Save &amp; enable (runs a live read/write test)</li>
           </ol>
+          <p class="note" style="margin-top:0.35rem">
+            <strong>Connected</strong> means Anonymous Auth + a successful Firestore probe (not just that config JSON loaded).
+          </p>
           <div class="field">
             <label for="firebaseConfigJson">Firebase web config JSON</label>
             <textarea class="snapshot" id="firebaseConfigJson" placeholder='{"apiKey":"…","authDomain":"….firebaseapp.com","projectId":"…","storageBucket":"….appspot.com","messagingSenderId":"…","appId":"…"}'></textarea>
@@ -932,6 +945,7 @@
 service cloud.firestore {
   match /databases/{database}/documents {
     // Require Anonymous Auth + valid workspace code (publish firestore.rules).
+    // Also covers connection probe doc workspaces/_SYNC_PROBE.
     match /workspaces/{workspaceCode} {
       allow read, write: if request.auth != null
         &amp;&amp; workspaceCode.matches('^[A-Z0-9_\\-]{2,48}$');
@@ -1284,6 +1298,11 @@ service cloud.firestore {
     let firestoreDb = null;
     let firestoreUnsub = null;
     let firebaseEnabled = false;
+    /** True only after Anonymous Auth succeeds. */
+    let firebaseAuthOk = false;
+    /** True only after a successful Firestore read/write probe. */
+    let firebaseSyncOk = false;
+    let lastFirebaseError = null;
     let firestorePushTimer = null;
     let lastRemoteUpdatedAt = null;
     /** Shared promise: resolves once Anonymous Auth is ready (or rejects if it fails). */
@@ -1292,7 +1311,12 @@ service cloud.firestore {
     let firestoreRetryTimer = null;
     let firestoreRetryAttempt = 0;
     let firestoreListenCode = null;
+    /** Timer for first onSnapshot; cleared when first snap or error arrives. */
+    let firestoreFirstSnapTimer = null;
+    let firestoreGotFirstSnap = false;
+    const FIRESTORE_FIRST_SNAP_MS = 12000;
     const WORKSPACE_CODE_RE = /^[A-Z0-9_\-]{2,48}$/;
+    const FIRESTORE_PROBE_DOC = "_SYNC_PROBE";
 
     function embeddedFirebaseConfig() {
       const c = FIREBASE_CONFIG || {};
@@ -1300,16 +1324,26 @@ service cloud.firestore {
       return { ...c };
     }
 
-    function loadFirebaseConfigStored() {
+    function readFirebaseLocalPrefs() {
       try {
         const raw = localStorage.getItem(FIREBASE_LS_KEY);
         if (!raw) return null;
-        const data = JSON.parse(raw);
-        if (!data || !data.enabled || !data.config?.apiKey || !data.config?.projectId) return null;
-        return data;
+        return JSON.parse(raw);
       } catch {
         return null;
       }
+    }
+
+    /** Explicit Disable on this device — survives reload even with embedded config. */
+    function isFirebaseExplicitlyDisabled() {
+      const data = readFirebaseLocalPrefs();
+      return !!(data && data.enabled === false);
+    }
+
+    function loadFirebaseConfigStored() {
+      const data = readFirebaseLocalPrefs();
+      if (!data || !data.enabled || !data.config?.apiKey || !data.config?.projectId) return null;
+      return data;
     }
 
     function saveFirebaseConfigStored(config, enabled) {
@@ -1320,12 +1354,18 @@ service cloud.firestore {
     }
 
     function activeFirebaseConfig() {
+      if (isFirebaseExplicitlyDisabled()) return null;
       const stored = loadFirebaseConfigStored();
       if (stored?.enabled && stored.config?.projectId) return stored.config;
       return embeddedFirebaseConfig();
     }
 
     function isFirebaseConfigured() {
+      if (isFirebaseExplicitlyDisabled()) {
+        const emb = embeddedFirebaseConfig();
+        const prefs = readFirebaseLocalPrefs();
+        return !!(emb || prefs?.config?.apiKey);
+      }
       const c = activeFirebaseConfig();
       return !!(c && c.apiKey && c.projectId);
     }
@@ -1337,13 +1377,26 @@ service cloud.firestore {
       pill.className = "firebase-status-pill" + (cls ? " " + cls : "");
     }
 
-    function setSyncStatus(text, mode) {
+    function setSyncRetryVisible(show) {
+      const btn = document.getElementById("syncRetryBtn");
+      if (!btn) return;
+      btn.classList.toggle("hidden", !show);
+    }
+
+    function setSyncStatus(text, mode, opts) {
       const el = document.getElementById("syncStatus");
       if (!el) return;
       el.textContent = text;
       el.classList.toggle("live", mode === "live");
       el.classList.toggle("warn", mode === "warn");
       el.classList.toggle("err", mode === "err");
+      if (opts && Object.prototype.hasOwnProperty.call(opts, "retry")) {
+        setSyncRetryVisible(!!opts.retry);
+      } else if (mode === "err") {
+        setSyncRetryVisible(true);
+      } else if (mode === "live" || mode === "warn" || mode === "") {
+        setSyncRetryVisible(false);
+      }
     }
 
     function formatFirebaseError(err) {
@@ -1360,17 +1413,19 @@ service cloud.firestore {
         code === "auth/configuration-not-found" ||
         msg.includes("CONFIGURATION_NOT_FOUND")
       ) {
-        return "Open Authentication → Get started, then enable Anonymous sign-in.";
+        return "Firebase Console → Authentication → Get started → enable Anonymous sign-in.";
       }
       if (
         code === "auth/operation-not-allowed" ||
-        code === "auth/admin-restricted-operation" ||
-        code === "auth/unauthorized-domain"
+        code === "auth/admin-restricted-operation"
       ) {
-        return "Enable Anonymous Auth (Authentication → Sign-in method) and add this domain if needed.";
+        return "Authentication → Sign-in method → enable Anonymous.";
+      }
+      if (code === "auth/unauthorized-domain") {
+        return "Authentication → Settings → Authorized domains → add this site’s domain.";
       }
       if (code === "permission-denied") {
-        return "Publish firestore.rules and enable Anonymous Auth (rules require request.auth != null).";
+        return "Firestore → Rules → publish firestore.rules from this repo (requires signed-in auth).";
       }
       if (code === "unavailable" || code === "deadline-exceeded") {
         return "Network blip — retrying…";
@@ -1378,10 +1433,41 @@ service cloud.firestore {
       return "";
     }
 
+    function describeFirebaseFix(err) {
+      const hint = firestoreErrorHint(err);
+      const detail = formatFirebaseError(err);
+      return hint ? hint + " (" + detail + ")" : detail;
+    }
+
     function syncStatusFromFirebaseError(prefix, err) {
+      lastFirebaseError = err || null;
       const detail = formatFirebaseError(err);
       const hint = firestoreErrorHint(err);
       setSyncStatus(prefix + " — " + detail + (hint ? " · " + hint : ""), "err");
+    }
+
+    function updateFirebaseStatusPill() {
+      if (isFirebaseExplicitlyDisabled()) {
+        setFirebasePill("Disabled");
+        return;
+      }
+      if (!isFirebaseConfigured() && !firebaseEnabled) {
+        setFirebasePill("Not configured");
+        return;
+      }
+      if (!firebaseEnabled) {
+        setFirebasePill(isFirebaseConfigured() ? "Ready" : "Not configured", isFirebaseConfigured() ? "on" : "");
+        return;
+      }
+      if (!firebaseAuthOk) {
+        setFirebasePill("Auth failed", "err");
+        return;
+      }
+      if (!firebaseSyncOk) {
+        setFirebasePill("Sync blocked", "err");
+        return;
+      }
+      setFirebasePill("Connected", "on");
     }
 
     /**
@@ -1394,7 +1480,10 @@ service cloud.firestore {
         return Promise.resolve(null);
       }
       const auth = firebase.auth();
-      if (auth.currentUser) return Promise.resolve(auth.currentUser);
+      if (auth.currentUser) {
+        firebaseAuthOk = true;
+        return Promise.resolve(auth.currentUser);
+      }
       if (firebaseAuthReady) return firebaseAuthReady;
 
       firebaseAuthReady = new Promise((resolve, reject) => {
@@ -1403,6 +1492,7 @@ service cloud.firestore {
           if (settled) return;
           if (user) {
             settled = true;
+            firebaseAuthOk = true;
             try { unsub(); } catch (_) {}
             resolve(user);
           }
@@ -1412,12 +1502,15 @@ service cloud.firestore {
           .then((cred) => {
             if (settled) return;
             settled = true;
+            firebaseAuthOk = true;
             try { unsub(); } catch (_) {}
             resolve(cred?.user || auth.currentUser);
           })
           .catch((err) => {
             if (settled) return;
             settled = true;
+            firebaseAuthOk = false;
+            firebaseSyncOk = false;
             try { unsub(); } catch (_) {}
             firebaseAuthReady = null;
             reject(err);
@@ -1426,17 +1519,44 @@ service cloud.firestore {
       return firebaseAuthReady;
     }
 
+    /**
+     * Prove rules + network: write then read a dedicated probe doc (not a real workspace).
+     */
+    async function verifyFirestoreAccess() {
+      if (!firestoreDb) throw new Error("Firestore not initialized");
+      await ensureFirebaseAuth();
+      if (!WORKSPACE_CODE_RE.test(FIRESTORE_PROBE_DOC)) {
+        throw new Error("Internal probe doc id invalid for rules");
+      }
+      const ref = firestoreDb.collection("workspaces").doc(FIRESTORE_PROBE_DOC);
+      const token = "p" + Date.now().toString(36) + Math.random().toString(16).slice(2, 8);
+      await ref.set({ ping: token, at: new Date().toISOString() }, { merge: true });
+      const snap = await ref.get();
+      if (!snap.exists || snap.data()?.ping !== token) {
+        const err = new Error("Firestore probe read did not return the written ping");
+        err.code = "unavailable";
+        throw err;
+      }
+      return true;
+    }
+
     async function initFirebase() {
       const cfg = activeFirebaseConfig();
       firebaseEnabled = false;
+      firebaseAuthOk = false;
+      firebaseSyncOk = false;
+      lastFirebaseError = null;
       firestoreDb = null;
       firebaseAuthReady = null;
       if (!cfg) {
-        setFirebasePill("Not configured");
+        updateFirebaseStatusPill();
+        if (isFirebaseExplicitlyDisabled()) {
+          setSyncStatus("Firestore disabled on this device", "warn");
+        }
         return false;
       }
       if (typeof firebase === "undefined" || !firebase.apps) {
-        setFirebasePill("SDK missing", "warn");
+        setFirebasePill("SDK missing", "err");
         setSyncStatus("Firebase SDK failed to load", "err");
         return false;
       }
@@ -1445,24 +1565,46 @@ service cloud.firestore {
         else firebaseApp = firebase.app();
         firestoreDb = firebase.firestore();
         firebaseEnabled = true;
-        setFirebasePill("Connecting…", "on");
+        setFirebasePill("Connecting…", "warn");
         setSyncStatus("Cloud sync: signing in…", "warn");
         try {
           await ensureFirebaseAuth();
+          setFirebasePill("Checking sync…", "warn");
+          setSyncStatus("Cloud sync: testing Firestore read/write…", "warn");
+          await verifyFirestoreAccess();
+          firebaseSyncOk = true;
+          lastFirebaseError = null;
           setFirebasePill("Connected", "on");
-          setSyncStatus("Cloud sync: connected", "live");
-        } catch (authErr) {
-          console.warn("Anonymous Auth failed — enable it in Firebase Console.", authErr);
-          setFirebasePill("Auth failed", "warn");
-          syncStatusFromFirebaseError("Cloud sync: auth failed", authErr);
-          // Keep Firestore enabled so retries / clearer listener errors still work after fix.
+          setSyncStatus("Cloud sync: connected (auth + Firestore OK)", "live");
+        } catch (authOrProbeErr) {
+          lastFirebaseError = authOrProbeErr;
+          const code = String(authOrProbeErr?.code || "");
+          const isAuth =
+            code.startsWith("auth/") ||
+            String(authOrProbeErr?.message || "").toUpperCase().includes("CONFIGURATION_NOT_FOUND");
+          if (isAuth) {
+            firebaseAuthOk = false;
+            firebaseSyncOk = false;
+            console.warn("Anonymous Auth failed — enable it in Firebase Console.", authOrProbeErr);
+            setFirebasePill("Auth failed", "err");
+            syncStatusFromFirebaseError("Cloud sync: auth failed", authOrProbeErr);
+          } else {
+            firebaseSyncOk = false;
+            console.warn("Firestore probe failed — check rules / permissions.", authOrProbeErr);
+            setFirebasePill("Sync blocked", "err");
+            syncStatusFromFirebaseError("Cloud sync: permission/test failed", authOrProbeErr);
+          }
+          // Keep Firebase enabled so retry after Console fix still works without reload.
         }
         return true;
       } catch (err) {
         console.error(err);
-        setFirebasePill("Config error", "warn");
+        lastFirebaseError = err;
+        setFirebasePill("Config error", "err");
         syncStatusFromFirebaseError("Firebase init failed", err);
         firebaseEnabled = false;
+        firebaseAuthOk = false;
+        firebaseSyncOk = false;
         firestoreDb = null;
         return false;
       }
@@ -1520,9 +1662,14 @@ service cloud.firestore {
       try {
         await ensureFirebaseAuth();
         await ref.set(stateForFirestore(state || workspaceState), { merge: true });
+        firebaseSyncOk = true;
+        lastFirebaseError = null;
+        updateFirebaseStatusPill();
         setSyncStatus("Firestore · " + normalizeWorkspaceCode(id || workspaceId), "live");
       } catch (err) {
         console.error(err);
+        firebaseSyncOk = false;
+        updateFirebaseStatusPill();
         syncStatusFromFirebaseError("Firestore save failed", err);
       }
     }
@@ -1553,6 +1700,13 @@ service cloud.firestore {
       }
     }
 
+    function clearFirestoreFirstSnapTimer() {
+      if (firestoreFirstSnapTimer) {
+        clearTimeout(firestoreFirstSnapTimer);
+        firestoreFirstSnapTimer = null;
+      }
+    }
+
     function clearFirestoreRetryTimer() {
       if (firestoreRetryTimer) {
         clearTimeout(firestoreRetryTimer);
@@ -1566,6 +1720,7 @@ service cloud.firestore {
     }
 
     function detachFirestoreListener() {
+      clearFirestoreFirstSnapTimer();
       if (firestoreUnsub) {
         try { firestoreUnsub(); } catch (_) {}
         firestoreUnsub = null;
@@ -1576,8 +1731,20 @@ service cloud.firestore {
     function unsubscribeFirestore() {
       firestoreSubscribeGen += 1;
       firestoreListenCode = null;
+      firestoreGotFirstSnap = false;
       clearFirestoreRetry();
       detachFirestoreListener();
+    }
+
+    function markListenerConnected(id, mode) {
+      firebaseSyncOk = true;
+      lastFirebaseError = null;
+      updateFirebaseStatusPill();
+      if (mode === "empty") {
+        setSyncStatus("Waiting for Core setup (no cloud doc) · " + id, "warn");
+      } else {
+        setSyncStatus("Connected · Live · " + id, "live");
+      }
     }
 
     function beginWorkspaceSubscription(code, { resetRetry } = { resetRetry: true }) {
@@ -1586,18 +1753,28 @@ service cloud.firestore {
       firestoreSubscribeGen += 1;
       const gen = firestoreSubscribeGen;
       clearFirestoreRetryTimer();
+      clearFirestoreFirstSnapTimer();
+      firestoreGotFirstSnap = false;
       if (resetRetry) firestoreRetryAttempt = 0;
       detachFirestoreListener();
       firestoreListenCode = id;
-      setSyncStatus("Cloud sync: attaching listener…", "warn");
+      if (!firebaseAuthOk && !firebaseAuthReady) {
+        setSyncStatus("Cloud sync: waiting for Anonymous Auth…", "warn");
+      } else {
+        setSyncStatus("Cloud sync: attaching listener…", "warn");
+      }
       ensureFirebaseAuth()
         .then(() => {
           if (gen !== firestoreSubscribeGen) return;
+          setSyncStatus("Cloud sync: attaching listener…", "warn");
           attachWorkspaceListener(id, gen);
         })
         .catch((err) => {
           if (gen !== firestoreSubscribeGen) return;
           console.error(err);
+          firebaseAuthOk = false;
+          firebaseSyncOk = false;
+          updateFirebaseStatusPill();
           syncStatusFromFirebaseError("Firestore listener error", err);
           scheduleSubscribeRetry(id);
         });
@@ -1608,15 +1785,17 @@ service cloud.firestore {
       firestoreRetryAttempt += 1;
       if (firestoreRetryAttempt > 8) {
         setSyncStatus(
-          "Firestore listener stopped after retries — check Anonymous Auth + published rules, then refresh",
-          "err"
+          "Firestore listener stopped after retries — check Anonymous Auth + published rules, then Retry",
+          "err",
+          { retry: true }
         );
         return;
       }
       const delay = Math.min(15000, 800 * Math.pow(2, firestoreRetryAttempt - 1));
       setSyncStatus(
         "Firestore reconnecting in " + Math.round(delay / 1000) + "s (attempt " + firestoreRetryAttempt + ")…",
-        "warn"
+        "warn",
+        { retry: true }
       );
       firestoreRetryTimer = setTimeout(() => {
         firestoreRetryTimer = null;
@@ -1626,26 +1805,65 @@ service cloud.firestore {
       }, delay);
     }
 
+    function armFirstSnapshotTimeout(code, gen) {
+      clearFirestoreFirstSnapTimer();
+      firestoreFirstSnapTimer = setTimeout(() => {
+        firestoreFirstSnapTimer = null;
+        if (gen !== firestoreSubscribeGen) return;
+        if (firestoreGotFirstSnap) return;
+        console.warn("Firestore first snapshot timed out after", FIRESTORE_FIRST_SNAP_MS, "ms", code);
+        firebaseSyncOk = false;
+        updateFirebaseStatusPill();
+        const timeoutErr = new Error(
+          "No Firestore snapshot within " + Math.round(FIRESTORE_FIRST_SNAP_MS / 1000) + "s"
+        );
+        timeoutErr.code = "deadline-exceeded";
+        lastFirebaseError = timeoutErr;
+        detachFirestoreListener();
+        setSyncStatus(
+          "Cloud sync timed out (deadline-exceeded) — no first snapshot. Check network / rules, then Retry.",
+          "err",
+          { retry: true }
+        );
+      }, FIRESTORE_FIRST_SNAP_MS);
+    }
+
     function attachWorkspaceListener(code, gen) {
       if (gen !== firestoreSubscribeGen) return;
       const id = normalizeWorkspaceCode(code);
       const ref = workspaceDocRef(id);
       if (!ref) {
-        setSyncStatus("Invalid workspace code for Firestore listener", "err");
+        setSyncStatus("Invalid workspace code for Firestore listener", "err", { retry: true });
         return;
       }
       detachFirestoreListener();
       firestoreListenCode = id;
+      firestoreGotFirstSnap = false;
+      armFirstSnapshotTimeout(id, gen);
       firestoreUnsub = ref.onSnapshot(
         (snap) => {
           if (gen !== firestoreSubscribeGen) return;
+          const isFirst = !firestoreGotFirstSnap;
+          firestoreGotFirstSnap = true;
+          clearFirestoreFirstSnapTimer();
           clearFirestoreRetry();
-          if (!snap.exists) return;
+          if (!snap.exists) {
+            markListenerConnected(id, "empty");
+            return;
+          }
           const remote = snap.data();
-          if (!remote) return;
-          if (remote.updatedAt && remote.updatedAt === lastRemoteUpdatedAt) return;
+          if (!remote) {
+            markListenerConnected(id, "live");
+            return;
+          }
+          // Already in sync with cloud (or echo of our own write) — still progress status.
+          if (remote.updatedAt && remote.updatedAt === lastRemoteUpdatedAt) {
+            markListenerConnected(id, "live");
+            return;
+          }
           if (remote.updatedAt && remote.updatedAt === workspaceState.updatedAt && !applyingRemote) {
             lastRemoteUpdatedAt = remote.updatedAt;
+            markListenerConnected(id, "live");
             return;
           }
           applyingRemote = true;
@@ -1672,14 +1890,18 @@ service cloud.firestore {
                   "Your account was removed from this workspace.";
               }
             }
-            setSyncStatus("Live update · " + id, "live");
+            if (isFirst) markListenerConnected(id, "live");
+            else setSyncStatus("Live update · " + id, "live");
           } finally {
             applyingRemote = false;
           }
         },
         (err) => {
           if (gen !== firestoreSubscribeGen) return;
+          clearFirestoreFirstSnapTimer();
           console.error("Firestore onSnapshot error", err);
+          firebaseSyncOk = false;
+          updateFirebaseStatusPill();
           syncStatusFromFirebaseError("Firestore listener error", err);
           detachFirestoreListener();
           const errCode = String(err?.code || "");
@@ -1694,12 +1916,26 @@ service cloud.firestore {
       beginWorkspaceSubscription(code, { resetRetry: true });
     }
 
+    function retryCloudSync() {
+      if (!firebaseEnabled || !firestoreDb) {
+        setSyncStatus("Cloud sync unavailable — enable Firebase in Team & sync", "err", { retry: true });
+        return;
+      }
+      if (!currentUser) {
+        setSyncStatus("Sign in to retry cloud sync", "err", { retry: true });
+        return;
+      }
+      clearFirestoreRetry();
+      beginWorkspaceSubscription(workspaceId, { resetRetry: true });
+    }
+
     function refreshFirebaseUi() {
       const ta = document.getElementById("firebaseConfigJson");
       const stored = loadFirebaseConfigStored();
+      const prefs = readFirebaseLocalPrefs();
       const embedded = embeddedFirebaseConfig();
       if (ta && !ta.dataset.touched) {
-        const cfg = stored?.config || embedded || {
+        const cfg = stored?.config || prefs?.config || embedded || {
           apiKey: "",
           authDomain: "",
           projectId: "",
@@ -1709,14 +1945,19 @@ service cloud.firestore {
         };
         ta.value = JSON.stringify(cfg, null, 2);
       }
-      if (firebaseEnabled) setFirebasePill("Connected", "on");
-      else if (isFirebaseConfigured()) setFirebasePill("Ready", "on");
-      else setFirebasePill("Not configured");
+      updateFirebaseStatusPill();
       const hint = document.getElementById("joinFirestoreHint");
       if (hint) {
-        hint.textContent = firebaseEnabled
+        hint.textContent = firebaseSyncOk
           ? "Live sync is on — workspace code can load the cloud workspace."
-          : "With live sync on, code alone loads the workspace from the cloud.";
+          : firebaseAuthOk
+            ? "Signed in to Firebase, but Firestore read/write is blocked — publish firestore.rules."
+            : "With live sync on, code alone loads the workspace from the cloud.";
+      }
+      const status = document.getElementById("firebaseConfigStatus");
+      if (status && firebaseEnabled && !firebaseSyncOk && lastFirebaseError && !status.dataset.userMsg) {
+        status.style.color = "var(--danger)";
+        status.textContent = describeFirebaseFix(lastFirebaseError);
       }
     }
 
@@ -2183,9 +2424,17 @@ service cloud.firestore {
       if (channel && !applyingRemote) {
         channel.postMessage({ type: "workspace", workspaceId, state: workspaceState });
       }
-      if (pushCloud && !applyingRemote) scheduleFirestorePush();
-      if (firebaseEnabled) setSyncStatus("Synced · " + workspaceId, "live");
-      else setSyncStatus("Local · " + workspaceId, "live");
+      if (pushCloud && !applyingRemote) {
+        if (firebaseEnabled) {
+          if (firebaseAuthOk) setSyncStatus("Saving to cloud · " + workspaceId + "…", "warn");
+          else setSyncStatus("Local save only — cloud auth failed", "err");
+          scheduleFirestorePush();
+        } else {
+          setSyncStatus("Local · " + workspaceId, "live");
+        }
+      } else if (!firebaseEnabled) {
+        setSyncStatus("Local · " + workspaceId, "live");
+      }
     }
 
     function pushActivity(message) {
@@ -2304,12 +2553,12 @@ service cloud.firestore {
       document.getElementById("navChat").classList.toggle("hidden", meta.canChat === false);
 
       connectChannel();
-      if (firebaseEnabled) subscribeWorkspace(workspaceId);
       workspaceState = loadWorkspaceFromStorage();
       if (setupMeta.done) {
         workspaceState.setupDone = true;
         if (!workspaceState.loginTitle) workspaceState.loginTitle = setupMeta.loginTitle;
       }
+      if (firebaseEnabled) subscribeWorkspace(workspaceId);
       applyLoginBranding(workspaceState.loginTitle, workspaceState.workspaceName);
       document.getElementById("workspaceLabel").textContent =
         "Workspace " +
@@ -3152,6 +3401,10 @@ service cloud.firestore {
       .addEventListener("change", refreshLoginTitleFromWorkspaceCode);
 
     document.getElementById("logoutBtn").addEventListener("click", showLogin);
+    document.getElementById("syncRetryBtn")?.addEventListener("click", () => {
+      retryCloudSync();
+    });
+
 
     document.querySelectorAll(".nav-btn").forEach((btn) => {
       btn.addEventListener("click", () => showPage(btn.dataset.page));
@@ -3408,6 +3661,7 @@ service cloud.firestore {
       const status = document.getElementById("firebaseConfigStatus");
       const ta = document.getElementById("firebaseConfigJson");
       status.style.color = "";
+      delete status.dataset.userMsg;
       try {
         const cfg = JSON.parse(ta.value);
         if (!cfg.apiKey || !cfg.projectId) throw new Error("apiKey and projectId are required");
@@ -3421,34 +3675,59 @@ service cloud.firestore {
         }
         const ok = await initFirebase();
         if (!ok) throw new Error("Could not initialize Firebase with that config");
+        if (!firebaseAuthOk) {
+          status.style.color = "var(--danger)";
+          status.dataset.userMsg = "1";
+          status.textContent =
+            "Config loaded, but Anonymous Auth failed. " +
+            describeFirebaseFix(lastFirebaseError);
+          refreshFirebaseUi();
+          return;
+        }
+        if (!firebaseSyncOk) {
+          status.style.color = "var(--danger)";
+          status.dataset.userMsg = "1";
+          status.textContent =
+            "Signed in, but Firestore probe failed. " +
+            describeFirebaseFix(lastFirebaseError);
+          refreshFirebaseUi();
+          return;
+        }
         if (currentUser) {
           await pushWorkspaceToFirestore(workspaceState, workspaceId);
           subscribeWorkspace(workspaceId);
         }
         status.style.color = "var(--success)";
+        status.dataset.userMsg = "1";
         status.textContent =
-          "Firestore enabled. Friends need the same config (embed FIREBASE_CONFIG before Pages deploy) and workspace code " +
+          "Connected for real — auth + Firestore probe OK. Share workspace code " +
           workspaceId +
-          ".";
+          " (and friend link).";
         refreshFirebaseUi();
       } catch (err) {
         console.error(err);
         status.style.color = "var(--danger)";
+        status.dataset.userMsg = "1";
         status.textContent = err?.message || "Invalid Firebase config JSON";
       }
     });
 
     document.getElementById("disableFirebaseBtn").addEventListener("click", () => {
-      const stored = loadFirebaseConfigStored();
-      saveFirebaseConfigStored(stored?.config || {}, false);
+      const prefs = readFirebaseLocalPrefs();
+      const cfg = prefs?.config || embeddedFirebaseConfig() || {};
+      saveFirebaseConfigStored(cfg, false);
       unsubscribeFirestore();
       firebaseEnabled = false;
+      firebaseAuthOk = false;
+      firebaseSyncOk = false;
       firestoreDb = null;
       setFirebasePill("Disabled");
       setSyncStatus("Local workspace", "");
       const status = document.getElementById("firebaseConfigStatus");
       status.style.color = "var(--warning)";
-      status.textContent = "Firestore disabled on this device. Invite/localStorage still work.";
+      status.dataset.userMsg = "1";
+      status.textContent =
+        "Firestore disabled on this device (stays off after refresh). Invite/localStorage still work. Save & enable to turn back on.";
       refreshFirebaseUi();
     });
 
@@ -3458,9 +3737,12 @@ service cloud.firestore {
       try {
         await navigator.clipboard.writeText(link);
         status.style.color = "var(--success)";
-        status.textContent = "Friend link copied: " + link;
+        status.dataset.userMsg = "1";
+        status.textContent =
+          (firebaseSyncOk ? "Friend link copied: " : "Link copied (cloud sync not ready yet): ") + link;
       } catch {
         status.style.color = "var(--warning)";
+        status.dataset.userMsg = "1";
         status.textContent = link;
       }
     });
@@ -3536,12 +3818,12 @@ service cloud.firestore {
       const link = friendLink(workspaceId);
       try {
         await navigator.clipboard.writeText(
-          firebaseEnabled
+          firebaseSyncOk
             ? "Workspace " + workspaceId + "\n" + link + "\n(Sign in only — ask Core for your login code)"
             : text
         );
         status.style.color = "var(--success)";
-        status.textContent = firebaseEnabled
+        status.textContent = firebaseSyncOk
           ? "Friend link copied for " + workspaceId + ". Send each person’s username + login code."
           : "Invite copied. They Join → paste → Sign in with their login code.";
       } catch {
