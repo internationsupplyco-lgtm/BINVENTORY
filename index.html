@@ -451,6 +451,13 @@
       border-radius: 8px;
       border: 1px solid var(--border);
     }
+    .sell-actions {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+    }
     .pct-warn {
       background: rgba(245, 158, 11, 0.12);
       border: 1px solid rgba(245, 158, 11, 0.35);
@@ -1015,6 +1022,14 @@
         <div class="card">
           <div class="card-header">
             <h2>Record sales</h2>
+            <div class="sell-actions">
+              <button type="button" class="btn-ghost" id="undoSaleBtn" disabled title="Undo the last recorded sale">
+                Undo last sale
+              </button>
+              <button type="button" class="btn-ghost btn-danger" id="resetSalesBtn" disabled title="Reset all sold counts and restore stock">
+                Reset all sales
+              </button>
+            </div>
           </div>
           <p class="sell-error" id="sellError" aria-live="polite"></p>
           <div class="table-wrap">
@@ -2234,6 +2249,8 @@ service cloud.firestore {
     let channel = null;
     let workspaceState = emptyState();
     let setupMeta = loadSetupMeta();
+    const SELL_UNDO_MAX = 20;
+    let sellUndoStack = [];
 
     function emptyState() {
       return {
@@ -2652,6 +2669,7 @@ service cloud.firestore {
         hashVersion: workspaceState.hashVersion,
       });
       persistWorkspace(false);
+      loadSellUndoStack();
       return workspaceState;
     }
 
@@ -2852,6 +2870,7 @@ service cloud.firestore {
         "Workspace " +
         workspaceId +
         (workspaceState.workspaceName ? " · " + workspaceState.workspaceName : "");
+      loadSellUndoStack();
       renderAllFromState();
       showPage("dashboard");
       updateAddPeopleCta();
@@ -3222,6 +3241,7 @@ service cloud.firestore {
       if (navChat) navChat.classList.toggle("hidden", denyChat);
       if (popBtn) popBtn.disabled = denyChat || isChatPipEnabled();
       if (denyChat && isChatPipEnabled()) setChatPipEnabled(false);
+      updateSellActionButtons();
     }
 
     function createRow(data = {}) {
@@ -3432,6 +3452,90 @@ service cloud.firestore {
       if (el) el.textContent = msg || "";
     }
 
+    function sellUndoStorageKey(id = workspaceId) {
+      return "inventory-split-sell-undo:" + String(id || "MAIN").trim().toUpperCase();
+    }
+
+    function loadSellUndoStack() {
+      try {
+        const raw = sessionStorage.getItem(sellUndoStorageKey());
+        const arr = JSON.parse(raw || "[]");
+        sellUndoStack = Array.isArray(arr) ? arr.slice(-SELL_UNDO_MAX) : [];
+      } catch {
+        sellUndoStack = [];
+      }
+    }
+
+    function persistSellUndoStack() {
+      try {
+        sessionStorage.setItem(sellUndoStorageKey(), JSON.stringify(sellUndoStack.slice(-SELL_UNDO_MAX)));
+      } catch {
+        /* sessionStorage may be unavailable */
+      }
+    }
+
+    function pushSellUndo(entry) {
+      sellUndoStack.push(entry);
+      if (sellUndoStack.length > SELL_UNDO_MAX) {
+        sellUndoStack = sellUndoStack.slice(-SELL_UNDO_MAX);
+      }
+      persistSellUndoStack();
+    }
+
+    function clearSellUndoStack() {
+      sellUndoStack = [];
+      persistSellUndoStack();
+    }
+
+    function updateSellActionButtons() {
+      const canSell = !!getRole()?.canEdit;
+      const undoBtn = document.getElementById("undoSaleBtn");
+      const resetBtn = document.getElementById("resetSalesBtn");
+      const totalSold = [...inventoryBody.querySelectorAll("tr")].reduce(
+        (s, tr) => s + Math.max(0, parseNum(tr.dataset.sold)),
+        0
+      );
+      if (undoBtn) {
+        undoBtn.classList.toggle("hidden", !canSell);
+        undoBtn.disabled = !canSell || sellUndoStack.length === 0;
+        const tip =
+          sellUndoStack.length > 0
+            ? `Undo last sale (${sellUndoStack.length} in stack)`
+            : "No recent sales to undo";
+        undoBtn.title = tip;
+      }
+      if (resetBtn) {
+        resetBtn.classList.toggle("hidden", !canSell);
+        resetBtn.disabled = !canSell || totalSold <= 0;
+      }
+    }
+
+    function findInventoryRowForUndo(entry) {
+      const trs = [...inventoryBody.querySelectorAll("tr")];
+      if (!trs.length) return null;
+      if (entry?.rowDomId != null) {
+        const byId = trs.find((tr) => tr.dataset.id === String(entry.rowDomId));
+        if (byId) return byId;
+      }
+      const wantName = String(entry?.name || "").trim() || "Unnamed item";
+      const byName = trs.filter((tr) => {
+        const name = tr.querySelector(".item-name")?.value.trim() || "Unnamed item";
+        return name === wantName;
+      });
+      if (byName.length === 1) return byName[0];
+      if (
+        entry?.rowIdx != null &&
+        Number.isInteger(entry.rowIdx) &&
+        entry.rowIdx >= 0 &&
+        entry.rowIdx < trs.length
+      ) {
+        const atIdx = trs[entry.rowIdx];
+        const name = atIdx.querySelector(".item-name")?.value.trim() || "Unnamed item";
+        if (name === wantName || byName.length === 0) return atIdx;
+      }
+      return byName[0] || null;
+    }
+
     function renderSellPage() {
       const body = document.getElementById("sellBody");
       if (!body) return;
@@ -3549,6 +3653,7 @@ service cloud.firestore {
       } else {
         setSellError("");
       }
+      updateSellActionButtons();
     }
 
     function recordSale(rowIdx, amount) {
@@ -3564,6 +3669,8 @@ service cloud.firestore {
       }
       const name = tr.querySelector(".item-name").value.trim() || "Unnamed item";
       const qty = parseNum(tr.querySelector(".qty").value);
+      const cost = parseNum(tr.querySelector(".cost").value);
+      const sell = parseNum(tr.querySelector(".sell").value);
       const n = Math.floor(parseNum(amount));
       if (!(n > 0)) {
         setSellError("Enter a sold quantity of at least 1.");
@@ -3576,8 +3683,100 @@ service cloud.firestore {
       const prevSold = Math.max(0, parseNum(tr.dataset.sold));
       tr.querySelector(".qty").value = String(qty - n);
       tr.dataset.sold = String(prevSold + n);
+      pushSellUndo({
+        rowDomId: tr.dataset.id,
+        rowIdx,
+        name,
+        qty: n,
+        sell,
+        cost,
+        at: new Date().toISOString(),
+      });
       setSellError("");
       scheduleSave(`Sold ${n} × ${name}`);
+      recalculate();
+    }
+
+    function undoLastSale() {
+      if (!getRole()?.canEdit) {
+        setSellError("You do not have permission to undo sales.");
+        return;
+      }
+      if (!sellUndoStack.length) {
+        setSellError("Nothing to undo.");
+        updateSellActionButtons();
+        return;
+      }
+      const entry = sellUndoStack[sellUndoStack.length - 1];
+      const label = `${entry.qty} × ${entry.name || "item"}`;
+      if (!confirm(`Undo last sale of ${label}? Stock and sold totals will be restored for that action.`)) {
+        return;
+      }
+      const tr = findInventoryRowForUndo(entry);
+      if (!tr) {
+        sellUndoStack.pop();
+        persistSellUndoStack();
+        setSellError(`Cannot undo: item "${entry.name || "unknown"}" is no longer in inventory.`);
+        updateSellActionButtons();
+        return;
+      }
+      const n = Math.max(0, Math.floor(parseNum(entry.qty)));
+      if (!(n > 0)) {
+        sellUndoStack.pop();
+        persistSellUndoStack();
+        updateSellActionButtons();
+        return;
+      }
+      const qty = parseNum(tr.querySelector(".qty").value);
+      const prevSold = Math.max(0, parseNum(tr.dataset.sold));
+      const restore = Math.min(n, prevSold);
+      tr.querySelector(".qty").value = String(qty + restore);
+      tr.dataset.sold = String(Math.max(0, prevSold - restore));
+      sellUndoStack.pop();
+      persistSellUndoStack();
+      const name = tr.querySelector(".item-name").value.trim() || entry.name || "item";
+      setSellError("");
+      scheduleSave(`Undid sale of ${restore} × ${name}`);
+      recalculate();
+    }
+
+    function resetAllSales() {
+      if (!getRole()?.canEdit) {
+        setSellError("You do not have permission to reset sales.");
+        return;
+      }
+      const rows = [...inventoryBody.querySelectorAll("tr")];
+      let totalSold = 0;
+      let affected = 0;
+      rows.forEach((tr) => {
+        const sold = Math.max(0, parseNum(tr.dataset.sold));
+        if (sold > 0) {
+          totalSold += sold;
+          affected += 1;
+        }
+      });
+      if (totalSold <= 0) {
+        setSellError("No sales to reset.");
+        updateSellActionButtons();
+        return;
+      }
+      if (
+        !confirm(
+          `Reset all sales?\n\nThis restores ${totalSold.toLocaleString()} sold unit(s) across ${affected} item(s) back into stock and sets every sold total to 0. This cannot be undone from the Undo stack.`
+        )
+      ) {
+        return;
+      }
+      rows.forEach((tr) => {
+        const sold = Math.max(0, parseNum(tr.dataset.sold));
+        if (sold <= 0) return;
+        const qty = parseNum(tr.querySelector(".qty").value);
+        tr.querySelector(".qty").value = String(qty + sold);
+        tr.dataset.sold = "0";
+      });
+      clearSellUndoStack();
+      setSellError("");
+      scheduleSave(`Reset all sales (${totalSold} units restored to stock)`);
       recalculate();
     }
 
@@ -4591,6 +4790,9 @@ service cloud.firestore {
       addRow({ name: "", qty: 1, cost: 0, sell: 0, sold: 0 });
       scheduleSave("Added an inventory item");
     });
+
+    document.getElementById("undoSaleBtn").addEventListener("click", () => undoLastSale());
+    document.getElementById("resetSalesBtn").addEventListener("click", () => resetAllSales());
 
     document.getElementById("addParty").addEventListener("click", () => {
       if (!getRole()?.canEditSplit) return;
