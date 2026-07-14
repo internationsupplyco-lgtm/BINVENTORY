@@ -384,6 +384,46 @@
       align-items: end;
       margin-bottom: 0.55rem;
     }
+    .foundation-block {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: 10px;
+      padding: 1rem 1.05rem;
+      margin-bottom: 1.25rem;
+    }
+    .foundation-block h3 {
+      margin: 0 0 0.25rem;
+      font-size: 1.05rem;
+    }
+    .foundation-block .foundation-sub {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin: 0 0 0.85rem;
+    }
+    .foundation-edit-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.5rem;
+      align-items: end;
+    }
+    @media (max-width: 720px) {
+      .foundation-edit-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    .party-card.foundation-card {
+      border-color: rgba(245, 158, 11, 0.45);
+      background: rgba(245, 158, 11, 0.1);
+    }
+    .role-foundation {
+      background: rgba(245, 158, 11, 0.22);
+      color: #fbbf24;
+    }
+    .equity-remainder-note {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin: 0.35rem 0 0.85rem;
+    }
     .pct-warn {
       background: rgba(245, 158, 11, 0.12);
       border: 1px solid rgba(245, 158, 11, 0.35);
@@ -516,12 +556,39 @@
     .welcome-actions .btn-primary,
     .welcome-actions .btn-ghost { width: 100%; }
 
+    .chat-page-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.15rem;
+    }
+    .chat-page-top .page-title { margin-bottom: 0; }
+    .chat-page-top .page-sub { margin-bottom: 0.35rem; }
+    .chat-page-actions { display: flex; gap: 0.45rem; flex-shrink: 0; align-self: center; }
+    .chat-pip-docked-hint {
+      color: var(--muted);
+      font-size: 0.9rem;
+      padding: 1.25rem 1rem;
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      text-align: center;
+    }
     .chat-card {
       display: flex;
       flex-direction: column;
       height: min(70vh, 640px);
       padding: 0;
       overflow: hidden;
+    }
+    .chat-pip .chat-card {
+      height: 100%;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      background: transparent;
     }
     .chat-messages {
       flex: 1 1 auto;
@@ -531,6 +598,62 @@
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
+    }
+    .chat-pip {
+      position: fixed;
+      z-index: 80;
+      display: flex;
+      flex-direction: column;
+      min-width: 260px;
+      min-height: 280px;
+      max-width: calc(100vw - 16px);
+      max-height: calc(100vh - 16px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+      overflow: hidden;
+      resize: both;
+    }
+    .chat-pip.hidden { display: none !important; }
+    .chat-pip-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 0.65rem;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+      flex-shrink: 0;
+    }
+    .chat-pip-header:active { cursor: grabbing; }
+    .chat-pip-title {
+      flex: 1;
+      font-size: 0.88rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      min-width: 0;
+    }
+    .chat-pip-header .btn-ghost {
+      padding: 0.3rem 0.55rem;
+      font-size: 0.78rem;
+      flex-shrink: 0;
+    }
+    .chat-pip-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    @media (max-width: 800px) {
+      .chat-pip {
+        min-width: 240px;
+        width: min(320px, calc(100vw - 20px)) !important;
+        max-height: min(420px, calc(100vh - 24px));
+      }
     }
     .chat-empty {
       color: var(--muted);
@@ -789,6 +912,11 @@
           <div class="stat"><label>Equity parties</label><div class="value" id="dashParties">0</div></div>
           <div class="stat"><label>Last edit</label><div class="value" id="dashLastEdit" style="font-size:0.95rem">—</div></div>
         </div>
+        <div class="card" id="dashEquityCard">
+          <h2>Equity payments</h2>
+          <p class="equity-remainder-note" id="dashEquityNote">Foundation is paid first; remaining profit splits among parties.</p>
+          <div class="party-grid" id="dashEquityPayments"></div>
+        </div>
         <div class="card">
           <h2>Quick inventory</h2>
           <div class="table-wrap">
@@ -876,10 +1004,31 @@
 
       <section class="page hidden" id="page-equity">
         <h1 class="page-title">Equity split</h1>
-        <p class="page-sub">Any number of parties. Shares should total 100%.</p>
+        <p class="page-sub">Foundation is calculated first from net profit. Remaining profit splits among unlimited parties (shares should total 100%).</p>
         <div class="card">
+          <div class="foundation-block" id="foundationEditor">
+            <h3>Foundation <span class="role-pill role-foundation">Priority · first</span></h3>
+            <p class="foundation-sub">Taken from net profit before any party share. Edit amount as % of profit or a fixed $.</p>
+            <div class="foundation-edit-row">
+              <div class="field">
+                <label for="foundationMode">Amount type</label>
+                <select id="foundationMode">
+                  <option value="pct">Percent of net profit</option>
+                  <option value="fixed">Fixed $</option>
+                </select>
+              </div>
+              <div class="field" id="foundationPctField">
+                <label for="foundationPct">Foundation %</label>
+                <input type="number" id="foundationPct" min="0" max="100" step="0.01" value="0" />
+              </div>
+              <div class="field hidden" id="foundationFixedField">
+                <label for="foundationFixed">Foundation $</label>
+                <input type="number" id="foundationFixed" min="0" step="0.01" value="0" />
+              </div>
+            </div>
+          </div>
           <div class="card-header">
-            <h2>Parties</h2>
+            <h2>Parties (of remainder)</h2>
             <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
               <button type="button" class="btn-primary" id="addParty">+ Add party</button>
               <button type="button" class="btn-ghost" id="normalizeParties">Normalize to 100%</button>
@@ -888,20 +1037,33 @@
           <div id="pctStatus" class="pct-ok">Shares total 100%</div>
           <div id="partyEditor"></div>
           <h3 style="margin-top:1.25rem">Payments from net profit</h3>
+          <p class="equity-remainder-note" id="equityPaymentNote"></p>
           <div class="party-grid" id="partyPayments"></div>
         </div>
       </section>
 
       <section class="page hidden" id="page-chat">
-        <h1 class="page-title">Team chat</h1>
-        <p class="page-sub">Messages sync with the workspace (local invite, other tabs, or live Firestore).</p>
-        <div class="card chat-card">
-          <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
-          <div class="chat-status" id="chatStatus" aria-live="polite"></div>
-          <form class="chat-compose" id="chatForm" autocomplete="off">
-            <input type="text" id="chatInput" maxlength="2000" placeholder="Write a message…" autocomplete="off" />
-            <button type="submit" class="btn-primary" id="chatSendBtn">Send</button>
-          </form>
+        <div class="chat-page-top">
+          <div>
+            <h1 class="page-title">Team chat</h1>
+            <p class="page-sub">Messages sync with the workspace (local invite, other tabs, or live Firestore).</p>
+          </div>
+          <div class="chat-page-actions">
+            <button type="button" class="btn-ghost" id="chatPopOutBtn" title="Open chat as a floating window">Pop out</button>
+          </div>
+        </div>
+        <div id="chatPageHost">
+          <div class="card chat-card" id="chatCard">
+            <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
+            <div class="chat-status" id="chatStatus" aria-live="polite"></div>
+            <form class="chat-compose" id="chatForm" autocomplete="off">
+              <input type="text" id="chatInput" maxlength="2000" placeholder="Write a message…" autocomplete="off" />
+              <button type="submit" class="btn-primary" id="chatSendBtn">Send</button>
+            </form>
+          </div>
+        </div>
+        <div class="chat-pip-docked-hint hidden" id="chatPipDockedHint">
+          Chat is floating on screen. Drag its header to move it, or press <strong>Dock</strong> to put it back here.
         </div>
       </section>
 
@@ -1103,6 +1265,14 @@ service cloud.firestore {
     </main>
   </div>
 
+  <div id="chatPip" class="chat-pip hidden" aria-hidden="true" role="dialog" aria-label="Team chat">
+    <div class="chat-pip-header" id="chatPipHandle">
+      <span class="chat-pip-title">Team chat</span>
+      <button type="button" class="btn-ghost" id="chatPipDockBtn" title="Dock chat back to the Chat page">Dock</button>
+    </div>
+    <div class="chat-pip-body" id="chatPipHost"></div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/hash-wasm@4.12.0/dist/index.umd.min.js" data-hash-wasm="1"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -1118,6 +1288,7 @@ service cloud.firestore {
     const SETUP_KEY = "inventory-split-setup";
     const WS_PREFIX = "inventory-split-ws:";
     const FIREBASE_LS_KEY = "inventory-split-firebase";
+    const CHAT_PIP_KEY = "inventory-split-chat-pip";
     const INVITE_TYPE = "inventory-split-invite";
     const DEFAULT_LOGIN_TITLE = "Inventory Split";
     const MAX_CHAT_MESSAGES = 200;
@@ -1211,6 +1382,8 @@ service cloud.firestore {
       { id: "p2", name: "Party B", pct: 40 },
     ];
 
+    const DEFAULT_FOUNDATION = { mode: "pct", pct: 0, fixed: 0 };
+
     const fmt = (n) =>
       new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
     const parseNum = (v) => {
@@ -1223,6 +1396,15 @@ service cloud.firestore {
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
+
+    function normalizeFoundation(raw) {
+      const f = raw && typeof raw === "object" ? raw : {};
+      return {
+        mode: f.mode === "fixed" ? "fixed" : "pct",
+        pct: Math.max(0, parseNum(f.pct)),
+        fixed: Math.max(0, parseNum(f.fixed)),
+      };
+    }
 
     function toHex(buf) {
       return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -1638,6 +1820,7 @@ service cloud.firestore {
         fixedCosts: clean.fixedCosts,
         targetUnits: clean.targetUnits,
         parties: clean.parties,
+        foundation: normalizeFoundation(clean.foundation),
         activity: clean.activity,
         chatMessages: clean.chatMessages,
         accounts: clean.accounts,
@@ -1871,6 +2054,10 @@ service cloud.firestore {
             workspaceState = ensureAccounts({ ...emptyState(), ...remote });
             workspaceState.roleDefs = normalizeRoleDefs(workspaceState.roleDefs);
             workspaceState.chatMessages = normalizeChatMessages(workspaceState.chatMessages);
+            workspaceState.foundation = normalizeFoundation(workspaceState.foundation);
+            if (!workspaceState.parties?.length) {
+              workspaceState.parties = DEFAULT_PARTIES.map((p) => ({ ...p }));
+            }
             lastRemoteUpdatedAt = workspaceState.updatedAt || null;
             localStorage.setItem(dataKey(id), JSON.stringify(workspaceState));
             if (workspaceState.loginTitle) {
@@ -1980,6 +2167,7 @@ service cloud.firestore {
         fixedCosts: 0,
         targetUnits: "",
         parties: DEFAULT_PARTIES.map((p) => ({ ...p })),
+        foundation: { ...DEFAULT_FOUNDATION },
         activity: [],
         chatMessages: [],
         accounts: [],
@@ -2163,6 +2351,7 @@ service cloud.firestore {
       currentUser = null;
       document.body.classList.add("login-mode");
       document.body.classList.remove("app-mode");
+      hideChatPipForAuth();
       unsubscribeFirestore();
       if (channel) {
         try { channel.close(); } catch (_) {}
@@ -2346,6 +2535,7 @@ service cloud.firestore {
         parties: rawState.parties?.length
           ? rawState.parties
           : DEFAULT_PARTIES.map((p) => ({ ...p })),
+        foundation: normalizeFoundation(rawState.foundation),
         activity: rawState.activity || [],
         chatMessages: normalizeChatMessages(rawState.chatMessages),
         accounts: importedAccounts,
@@ -2389,6 +2579,7 @@ service cloud.firestore {
         const raw = localStorage.getItem(dataKey());
         let data = raw ? JSON.parse(raw) : emptyState();
         if (!data.parties?.length) data.parties = DEFAULT_PARTIES.map((p) => ({ ...p }));
+        data.foundation = normalizeFoundation(data.foundation);
         if (!Array.isArray(data.activity)) data.activity = [];
         if (!Array.isArray(data.items)) data.items = [];
         data.roleDefs = normalizeRoleDefs(data.roleDefs);
@@ -2568,6 +2759,7 @@ service cloud.firestore {
       showPage("dashboard");
       updateAddPeopleCta();
       refreshFirebaseUi();
+      restoreChatPipIfNeeded();
     }
 
     function showPage(page) {
@@ -2591,6 +2783,228 @@ service cloud.firestore {
       if (!el) return;
       el.textContent = text || "";
       el.className = "chat-status" + (mode ? " " + mode : "");
+    }
+
+    function defaultChatPipPrefs() {
+      const w = Math.min(360, Math.max(280, window.innerWidth - 24));
+      const h = Math.min(480, Math.max(320, Math.floor(window.innerHeight * 0.55)));
+      return {
+        enabled: false,
+        x: Math.max(8, window.innerWidth - w - 16),
+        y: Math.max(8, window.innerHeight - h - 16),
+        w,
+        h,
+      };
+    }
+
+    function loadChatPipPrefs() {
+      try {
+        const raw = localStorage.getItem(CHAT_PIP_KEY);
+        if (!raw) return defaultChatPipPrefs();
+        const parsed = JSON.parse(raw);
+        const base = defaultChatPipPrefs();
+        return {
+          enabled: !!parsed.enabled,
+          x: Number.isFinite(parsed.x) ? parsed.x : base.x,
+          y: Number.isFinite(parsed.y) ? parsed.y : base.y,
+          w: Number.isFinite(parsed.w) ? Math.max(260, parsed.w) : base.w,
+          h: Number.isFinite(parsed.h) ? Math.max(280, parsed.h) : base.h,
+        };
+      } catch (_) {
+        return defaultChatPipPrefs();
+      }
+    }
+
+    function saveChatPipPrefs(partial) {
+      const next = { ...loadChatPipPrefs(), ...partial };
+      localStorage.setItem(CHAT_PIP_KEY, JSON.stringify(next));
+      return next;
+    }
+
+    function clampChatPipToViewport() {
+      const pip = document.getElementById("chatPip");
+      if (!pip || pip.classList.contains("hidden")) return;
+      const pad = 8;
+      const rect = pip.getBoundingClientRect();
+      let w = rect.width;
+      let h = rect.height;
+      const maxW = Math.max(260, window.innerWidth - pad * 2);
+      const maxH = Math.max(280, window.innerHeight - pad * 2);
+      if (w > maxW) {
+        w = maxW;
+        pip.style.width = w + "px";
+      }
+      if (h > maxH) {
+        h = maxH;
+        pip.style.height = h + "px";
+      }
+      let x = parseFloat(pip.style.left);
+      let y = parseFloat(pip.style.top);
+      if (!Number.isFinite(x)) x = rect.left;
+      if (!Number.isFinite(y)) y = rect.top;
+      x = Math.min(Math.max(pad, x), Math.max(pad, window.innerWidth - w - pad));
+      y = Math.min(Math.max(pad, y), Math.max(pad, window.innerHeight - h - pad));
+      pip.style.left = x + "px";
+      pip.style.top = y + "px";
+      saveChatPipPrefs({ x, y, w, h, enabled: true });
+    }
+
+    function applyChatPipGeometry(prefs) {
+      const pip = document.getElementById("chatPip");
+      if (!pip) return;
+      const p = prefs || loadChatPipPrefs();
+      pip.style.width = p.w + "px";
+      pip.style.height = p.h + "px";
+      pip.style.left = p.x + "px";
+      pip.style.top = p.y + "px";
+    }
+
+    function isChatPipEnabled() {
+      const pip = document.getElementById("chatPip");
+      return !!(pip && !pip.classList.contains("hidden"));
+    }
+
+    function mountChatCard(toPip) {
+      const card = document.getElementById("chatCard");
+      const pageHost = document.getElementById("chatPageHost");
+      const pipHost = document.getElementById("chatPipHost");
+      const hint = document.getElementById("chatPipDockedHint");
+      const popBtn = document.getElementById("chatPopOutBtn");
+      if (!card || !pageHost || !pipHost) return;
+      if (toPip) {
+        if (card.parentElement !== pipHost) pipHost.appendChild(card);
+        hint?.classList.remove("hidden");
+        if (popBtn) popBtn.disabled = true;
+      } else {
+        if (card.parentElement !== pageHost) pageHost.appendChild(card);
+        hint?.classList.add("hidden");
+        if (popBtn) popBtn.disabled = false;
+      }
+    }
+
+    function setChatPipEnabled(enabled, { persist = true } = {}) {
+      const pip = document.getElementById("chatPip");
+      if (!pip) return;
+      const meta = getRole();
+      if (enabled && meta && meta.canChat === false) enabled = false;
+      if (enabled && !currentUser) enabled = false;
+
+      if (enabled) {
+        applyChatPipGeometry(loadChatPipPrefs());
+        mountChatCard(true);
+        pip.classList.remove("hidden");
+        pip.setAttribute("aria-hidden", "false");
+        clampChatPipToViewport();
+        renderChat(true);
+        if (persist) saveChatPipPrefs({ enabled: true });
+      } else {
+        mountChatCard(false);
+        pip.classList.add("hidden");
+        pip.setAttribute("aria-hidden", "true");
+        if (persist) saveChatPipPrefs({ enabled: false });
+        if (document.getElementById("page-chat") && !document.getElementById("page-chat").classList.contains("hidden")) {
+          renderChat(false);
+        }
+      }
+    }
+
+    function restoreChatPipIfNeeded() {
+      const prefs = loadChatPipPrefs();
+      const meta = getRole();
+      if (prefs.enabled && currentUser && !(meta && meta.canChat === false)) {
+        setChatPipEnabled(true, { persist: false });
+      } else {
+        setChatPipEnabled(false, { persist: false });
+      }
+    }
+
+    function hideChatPipForAuth() {
+      const pip = document.getElementById("chatPip");
+      if (!pip) return;
+      mountChatCard(false);
+      pip.classList.add("hidden");
+      pip.setAttribute("aria-hidden", "true");
+    }
+
+    function initChatPipUi() {
+      const pip = document.getElementById("chatPip");
+      const handle = document.getElementById("chatPipHandle");
+      const popBtn = document.getElementById("chatPopOutBtn");
+      const dockBtn = document.getElementById("chatPipDockBtn");
+      if (!pip || !handle) return;
+
+      popBtn?.addEventListener("click", () => setChatPipEnabled(true));
+      dockBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        setChatPipEnabled(false);
+      });
+
+      let drag = null;
+      handle.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return;
+        if (e.target.closest("button")) return;
+        const rect = pip.getBoundingClientRect();
+        drag = {
+          id: e.pointerId,
+          ox: e.clientX - rect.left,
+          oy: e.clientY - rect.top,
+        };
+        try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+        e.preventDefault();
+      });
+      handle.addEventListener("pointermove", (e) => {
+        if (!drag || e.pointerId !== drag.id) return;
+        const w = pip.getBoundingClientRect().width;
+        const h = pip.getBoundingClientRect().height;
+        const pad = 8;
+        let x = e.clientX - drag.ox;
+        let y = e.clientY - drag.oy;
+        const maxX = Math.max(pad, window.innerWidth - w - pad);
+        const maxY = Math.max(pad, window.innerHeight - h - pad);
+        x = Math.min(Math.max(pad, x), maxX);
+        y = Math.min(Math.max(pad, y), maxY);
+        pip.style.left = x + "px";
+        pip.style.top = y + "px";
+      });
+      const endDrag = (e) => {
+        if (!drag || (e && e.pointerId !== drag.id)) return;
+        drag = null;
+        clampChatPipToViewport();
+      };
+      handle.addEventListener("pointerup", endDrag);
+      handle.addEventListener("pointercancel", endDrag);
+
+      let resizeTimer = null;
+      let clamping = false;
+      const observer = new ResizeObserver(() => {
+        if (pip.classList.contains("hidden") || clamping || drag) return;
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          clamping = true;
+          try {
+            const rect = pip.getBoundingClientRect();
+            const pad = 8;
+            let x = parseFloat(pip.style.left);
+            let y = parseFloat(pip.style.top);
+            if (!Number.isFinite(x)) x = rect.left;
+            if (!Number.isFinite(y)) y = rect.top;
+            const w = rect.width;
+            const h = rect.height;
+            x = Math.min(Math.max(pad, x), Math.max(pad, window.innerWidth - w - pad));
+            y = Math.min(Math.max(pad, y), Math.max(pad, window.innerHeight - h - pad));
+            pip.style.left = x + "px";
+            pip.style.top = y + "px";
+            saveChatPipPrefs({ enabled: true, x, y, w, h });
+          } finally {
+            clamping = false;
+          }
+        }, 150);
+      });
+      observer.observe(pip);
+
+      window.addEventListener("resize", () => {
+        if (isChatPipEnabled()) clampChatPipToViewport();
+      });
     }
 
     function renderChat(forceScroll) {
@@ -2676,6 +3090,9 @@ service cloud.firestore {
       document.getElementById("addRow").disabled = !meta.canEdit;
       document.getElementById("addParty").disabled = !meta.canEditSplit;
       document.getElementById("normalizeParties").disabled = !meta.canEditSplit;
+      document.getElementById("foundationMode").disabled = !meta.canEditSplit;
+      document.getElementById("foundationPct").disabled = !meta.canEditSplit;
+      document.getElementById("foundationFixed").disabled = !meta.canEditSplit;
       fixedCostsEl.disabled = !meta.canEditBreakEven;
       targetUnitsEl.disabled = !meta.canEditBreakEven;
       inventoryBody.querySelectorAll("input").forEach((i) => (i.disabled = !meta.canEdit));
@@ -2702,9 +3119,12 @@ service cloud.firestore {
       const chatSend = document.getElementById("chatSendBtn");
       const chatInput = document.getElementById("chatInput");
       const navChat = document.getElementById("navChat");
+      const popBtn = document.getElementById("chatPopOutBtn");
       if (chatSend) chatSend.disabled = denyChat;
       if (chatInput) chatInput.disabled = denyChat;
       if (navChat) navChat.classList.toggle("hidden", denyChat);
+      if (popBtn) popBtn.disabled = denyChat || isChatPipEnabled();
+      if (denyChat && isChatPipEnabled()) setChatPipEnabled(false);
     }
 
     function createRow(data = {}) {
@@ -2795,8 +3215,96 @@ service cloud.firestore {
       return workspaceState.parties.reduce((s, p) => s + parseNum(p.pct), 0);
     }
 
+    /** Foundation takes its share first; remaining profit splits among parties by %. */
+    function computeEquitySplit(netProfit) {
+      const foundation = normalizeFoundation(workspaceState.foundation);
+      workspaceState.foundation = foundation;
+      const totalPct = partyTotalPct();
+      const partyShares = workspaceState.parties.map((p) => {
+        const share = totalPct > 0 ? (parseNum(p.pct) / totalPct) * 100 : 0;
+        return { id: p.id, name: p.name, pct: parseNum(p.pct), share };
+      });
+
+      if (!(netProfit > 0)) {
+        return {
+          foundation,
+          foundationAmount: 0,
+          remaining: 0,
+          parties: partyShares.map((p) => ({ ...p, amount: 0 })),
+        };
+      }
+
+      let foundationAmount =
+        foundation.mode === "fixed"
+          ? foundation.fixed
+          : (netProfit * foundation.pct) / 100;
+      foundationAmount = Math.max(0, Math.min(foundationAmount, netProfit));
+      const remaining = Math.max(0, netProfit - foundationAmount);
+
+      return {
+        foundation,
+        foundationAmount,
+        remaining,
+        parties: partyShares.map((p) => ({
+          ...p,
+          amount: (remaining * p.share) / 100,
+        })),
+      };
+    }
+
+    function foundationLabel(foundation) {
+      if (foundation.mode === "fixed") return `Fixed ${fmt(foundation.fixed)}`;
+      return `${foundation.pct.toFixed(2)}% of net profit`;
+    }
+
+    function renderEquityPaymentCards(split) {
+      const foundationCard = `<div class="party-card foundation-card">
+            <div class="role-pill role-foundation">Foundation · priority</div>
+            <div class="amount">${fmt(split.foundationAmount)}</div>
+            <div class="note">${escapeHtml(foundationLabel(split.foundation))} · before parties</div>
+          </div>`;
+      const partyCards = split.parties
+        .map(
+          (p) => `<div class="party-card">
+            <div class="role-pill role-partner">${escapeHtml(p.name)} · ${p.share.toFixed(1)}% of remainder</div>
+            <div class="amount">${fmt(p.amount)}</div>
+            <div class="note">Equity payment</div>
+          </div>`
+        )
+        .join("");
+      return foundationCard + partyCards;
+    }
+
+    function syncFoundationEditor() {
+      const foundation = normalizeFoundation(workspaceState.foundation);
+      workspaceState.foundation = foundation;
+      const modeEl = document.getElementById("foundationMode");
+      const pctEl = document.getElementById("foundationPct");
+      const fixedEl = document.getElementById("foundationFixed");
+      if (!modeEl || !pctEl || !fixedEl) return;
+      modeEl.value = foundation.mode;
+      if (document.activeElement !== pctEl) pctEl.value = foundation.pct;
+      if (document.activeElement !== fixedEl) fixedEl.value = foundation.fixed;
+      document.getElementById("foundationPctField").classList.toggle("hidden", foundation.mode !== "pct");
+      document.getElementById("foundationFixedField").classList.toggle("hidden", foundation.mode !== "fixed");
+    }
+
+    function readFoundationFromEditor() {
+      if (!getRole()?.canEditSplit) return false;
+      const mode = document.getElementById("foundationMode").value === "fixed" ? "fixed" : "pct";
+      workspaceState.foundation = normalizeFoundation({
+        mode,
+        pct: parseNum(document.getElementById("foundationPct").value),
+        fixed: parseNum(document.getElementById("foundationFixed").value),
+      });
+      document.getElementById("foundationPctField").classList.toggle("hidden", mode !== "pct");
+      document.getElementById("foundationFixedField").classList.toggle("hidden", mode !== "fixed");
+      return true;
+    }
+
     function renderPartyEditor() {
       const canEdit = getRole()?.canEditSplit;
+      syncFoundationEditor();
       const editor = document.getElementById("partyEditor");
       editor.innerHTML = workspaceState.parties
         .map(
@@ -2807,7 +3315,7 @@ service cloud.firestore {
             <input type="text" class="party-name" value="${escapeHtml(p.name)}" ${canEdit ? "" : "disabled"} />
           </div>
           <div class="field">
-            <label>Share %</label>
+            <label>Share % of remainder</label>
             <input type="number" class="party-pct" min="0" max="100" step="0.01" value="${p.pct}" ${canEdit ? "" : "disabled"} />
           </div>
           <button type="button" class="btn-ghost btn-danger remove-party ${canEdit ? "" : "hidden"}" ${canEdit ? "" : "disabled"}>Remove</button>
@@ -2852,8 +3360,8 @@ service cloud.firestore {
       const ok = Math.abs(total - 100) < 0.05;
       el.className = ok ? "pct-ok" : "pct-warn";
       el.textContent = ok
-        ? `Shares total ${total.toFixed(2)}%`
-        : `Shares total ${total.toFixed(2)}% (should be 100%). Use Normalize or edit %.`;
+        ? `Party shares total ${total.toFixed(2)}% of remainder after Foundation`
+        : `Party shares total ${total.toFixed(2)}% (should be 100% of remainder). Use Normalize or edit %.`;
     }
 
     function getNetProfit() {
@@ -2864,18 +3372,19 @@ service cloud.firestore {
     }
 
     function renderPartyPayments(netProfit) {
-      const totalPct = partyTotalPct();
-      document.getElementById("partyPayments").innerHTML = workspaceState.parties
-        .map((p) => {
-          const share = totalPct > 0 ? (parseNum(p.pct) / totalPct) * 100 : 0;
-          const amount = netProfit > 0 ? (netProfit * share) / 100 : 0;
-          return `<div class="party-card">
-            <div class="role-pill role-partner">${escapeHtml(p.name)} · ${share.toFixed(1)}%</div>
-            <div class="amount">${fmt(amount)}</div>
-            <div class="note">Equity payment</div>
-          </div>`;
-        })
-        .join("");
+      const split = computeEquitySplit(netProfit);
+      const note = document.getElementById("equityPaymentNote");
+      if (note) {
+        if (!(netProfit > 0)) {
+          note.textContent =
+            "Net profit ≤ 0: Foundation and all party payments are $0.";
+        } else {
+          note.textContent = `Net profit ${fmt(netProfit)} → Foundation ${fmt(
+            split.foundationAmount
+          )} first → ${fmt(split.remaining)} remaining split among parties.`;
+        }
+      }
+      document.getElementById("partyPayments").innerHTML = renderEquityPaymentCards(split);
     }
 
     function hideTeamForms() {
@@ -3038,6 +3547,21 @@ service cloud.firestore {
         ? `${workspaceState.updatedBy}`
         : "—";
 
+      const canSeeEquity = !!getRole()?.canSeeEquity;
+      const dashEquityCard = document.getElementById("dashEquityCard");
+      if (dashEquityCard) dashEquityCard.classList.toggle("hidden", !canSeeEquity);
+      if (canSeeEquity) {
+        const split = computeEquitySplit(totals.netProfit);
+        const dashNote = document.getElementById("dashEquityNote");
+        if (dashNote) {
+          dashNote.textContent =
+            totals.netProfit > 0
+              ? `Foundation ${fmt(split.foundationAmount)} first · ${fmt(split.remaining)} left for parties`
+              : "Net profit ≤ 0 — Foundation and parties pay $0.";
+        }
+        document.getElementById("dashEquityPayments").innerHTML = renderEquityPaymentCards(split);
+      }
+
       document.getElementById("dashTable").innerHTML = rows
         .slice(0, 8)
         .map(
@@ -3086,6 +3610,7 @@ service cloud.firestore {
       if (!workspaceState.parties?.length) {
         workspaceState.parties = DEFAULT_PARTIES.map((p) => ({ ...p }));
       }
+      workspaceState.foundation = normalizeFoundation(workspaceState.foundation);
       workspaceState = ensureAccounts(workspaceState);
       workspaceState.chatMessages = normalizeChatMessages(workspaceState.chatMessages);
       renderPartyEditor();
@@ -3790,6 +4315,22 @@ service cloud.firestore {
       recalculate();
     });
 
+    document.getElementById("foundationMode").addEventListener("change", () => {
+      if (!readFoundationFromEditor()) return;
+      scheduleSave("Updated Foundation equity");
+      recalculate();
+    });
+    document.getElementById("foundationPct").addEventListener("input", () => {
+      if (!readFoundationFromEditor()) return;
+      scheduleSave("Updated Foundation equity");
+      recalculate();
+    });
+    document.getElementById("foundationFixed").addEventListener("input", () => {
+      if (!readFoundationFromEditor()) return;
+      scheduleSave("Updated Foundation equity");
+      recalculate();
+    });
+
     [fixedCostsEl, targetUnitsEl].forEach((el) => {
       el.addEventListener("input", () => {
         if (!getRole()?.canEditBreakEven) return;
@@ -3876,6 +4417,7 @@ service cloud.firestore {
       e.preventDefault();
       handleChatSubmit(e);
     });
+    initChatPipUi();
 
     // Cross-tab sync via localStorage (complements BroadcastChannel)
     window.addEventListener("storage", (ev) => {
