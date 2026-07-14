@@ -433,12 +433,14 @@
       gap: 0.75rem;
       margin-top: 0.75rem;
     }
+    .form-grid,
     .team-form .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 0.75rem;
     }
     @media (max-width: 640px) {
+      .form-grid,
       .team-form .form-grid { grid-template-columns: 1fr; }
     }
     .cta-banner {
@@ -458,6 +460,49 @@
     .cta-banner p { margin: 0; font-size: 0.85rem; }
     .sync-status { font-size: 0.8rem; color: var(--muted); }
     .sync-status.live { color: var(--success); }
+    .sync-status.warn { color: var(--warning); }
+    .sync-status.err { color: var(--danger); }
+    .firebase-steps {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.45;
+      margin: 0.35rem 0 0.85rem;
+    }
+    .firebase-steps ol { margin: 0.35rem 0 0 1.1rem; }
+    .firebase-steps code,
+    .rules-sample {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.72rem;
+    }
+    .rules-sample {
+      display: block;
+      width: 100%;
+      margin-top: 0.5rem;
+      padding: 0.65rem 0.75rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      white-space: pre-wrap;
+      overflow-x: auto;
+    }
+    .firebase-status-pill {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      background: rgba(139, 156, 179, 0.25);
+      color: var(--muted);
+    }
+    .firebase-status-pill.on {
+      background: rgba(34, 197, 94, 0.2);
+      color: var(--success);
+    }
+    .firebase-status-pill.warn {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--warning);
+    }
     .dash-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
     textarea.snapshot { min-height: 90px; font-family: ui-monospace, monospace; font-size: 0.78rem; }
     .welcome-actions { display: flex; flex-direction: column; gap: 0.55rem; margin-top: 1rem; }
@@ -472,7 +517,8 @@
       overflow: hidden;
     }
     .chat-messages {
-      flex: 1;
+      flex: 1 1 auto;
+      min-height: 0;
       overflow-y: auto;
       padding: 1rem 1.15rem;
       display: flex;
@@ -518,16 +564,55 @@
     .chat-compose {
       display: flex;
       gap: 0.55rem;
+      align-items: center;
       padding: 0.85rem 1rem;
       border-top: 1px solid var(--border);
       background: var(--surface);
+      flex-shrink: 0;
     }
-    .chat-compose input { flex: 1; }
+    /* Override global input width:100% so Send stays visible in the flex row */
+    .chat-compose input[type="text"] {
+      flex: 1 1 auto;
+      min-width: 0;
+      width: auto;
+    }
     .chat-compose .btn-primary { flex-shrink: 0; }
-  </style>
+  
+    .role-power { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+    .role-core { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .perm-matrix { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-top: 0.75rem; }
+    .perm-matrix th, .perm-matrix td {
+      border-bottom: 1px solid var(--border);
+      padding: 0.45rem 0.35rem;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .perm-matrix th:first-child, .perm-matrix td:first-child { text-align: left; white-space: normal; }
+    .perm-matrix input[type="checkbox"] { width: auto; min-width: 0; accent-color: var(--accent); }
+    .login-code-row { display: flex; gap: 0.45rem; align-items: stretch; }
+    .login-code-row input { flex: 1; }
+    .chat-status {
+      font-size: 0.8rem;
+      color: var(--muted);
+      padding: 0.35rem 0.15rem 0;
+      min-height: 1.2em;
+      flex-shrink: 0;
+    }
+    .chat-status.err { color: var(--danger); }
+    .chat-status.ok { color: var(--success); }
+    .code-reveal {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.85rem;
+      background: var(--surface-2);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 0.5rem 0.65rem;
+      margin-top: 0.5rem;
+      color: var(--text);
+    }
+</style>
 </head>
 <body class="login-mode">
-  <!-- FIRST SCREEN: Core setup OR join existing workspace -->
   <div id="welcomeView" class="login-shell">
     <div class="login-brand">
       <h1 id="welcomeBrandTitle">Inventory Split</h1>
@@ -536,41 +621,40 @@
     <div class="login-card">
       <h2>Get started</h2>
       <p class="note" style="margin-top:0">
-        Friends: choose <strong>Join workspace</strong> and paste Core’s invite — you only see Sign in (not Setup).
-        Core only: use first-time setup once to create the organization.
+        Friends: open a shared link (<code>?ws=CODE</code>) or <strong>Join workspace</strong> — only Sign in (not Setup).
+        With Firestore enabled, a workspace code is enough; otherwise paste Core’s invite.
+        Core only: first-time setup once.
       </p>
       <div class="welcome-actions">
-        <button type="button" class="btn-primary" id="welcomeJoinBtn">I already have an invite / Join workspace</button>
+        <button type="button" class="btn-primary" id="welcomeJoinBtn">Join workspace</button>
         <button type="button" class="btn-ghost" id="welcomeSetupBtn">First-time Core setup</button>
       </div>
     </div>
   </div>
 
-  <!-- JOIN (friends) — no Core setup form -->
   <div id="joinView" class="login-shell hidden">
     <div class="login-brand">
       <h1 id="joinBrandTitle">Inventory Split</h1>
       <p>Join a workspace</p>
     </div>
     <form class="login-card" id="joinForm">
-      <h2>Join with invite</h2>
+      <h2>Join workspace</h2>
       <div class="setup-steps">
-        Ask Core for <strong>Share invite</strong> (Team &amp; sync). You will only see Sign in after this — not Setup.
+        You only see Sign in after this — not Setup.
         <ol>
-          <li>Paste the invite package (or snapshot)</li>
-          <li>Confirm the workspace code</li>
-          <li>Sign in with the username/password Core gave you</li>
+          <li>Enter the workspace code (or open <code>?ws=CODE</code>)</li>
+          <li>If Firestore isn’t set up, paste Core’s Share invite</li>
+          <li>Sign in with the username + login code Core gave you</li>
         </ol>
-      </div>
-      <div class="login-field">
-        <label for="joinSnapshot">Invite package or workspace snapshot</label>
-        <textarea class="snapshot" id="joinSnapshot" placeholder='Paste invite from Core (Share invite)…'></textarea>
-        <div class="field-hint">Required on a new phone/browser. Includes hashed accounts Core created.</div>
       </div>
       <div class="login-field">
         <label for="joinWorkspaceCode">Workspace code</label>
         <input type="text" id="joinWorkspaceCode" value="MAIN" placeholder="MAIN" required />
-        <div class="field-hint">Usually filled from the invite (e.g. MAIN).</div>
+        <div class="field-hint" id="joinFirestoreHint">With live sync on, code alone loads the workspace from the cloud.</div>
+      </div>
+      <div class="login-field">
+        <label for="joinSnapshot">Invite package (fallback)</label>
+        <textarea class="snapshot" id="joinSnapshot" placeholder="Optional — paste invite if Firestore isn’t configured…"></textarea>
       </div>
       <div class="login-error" id="joinError"></div>
       <button type="submit" class="btn-primary" id="joinBtn">Join &amp; continue to login</button>
@@ -578,7 +662,6 @@
     </form>
   </div>
 
-  <!-- FIRST-RUN SETUP (Core only, one time) -->
   <div id="setupView" class="login-shell hidden">
     <div class="login-brand">
       <h1 id="setupBrandTitle">Inventory Split</h1>
@@ -587,30 +670,33 @@
     <form class="login-card" id="setupForm">
       <h2>Set up your workspace</h2>
       <div class="setup-steps">
-        Complete this once as Core. Afterward you sign in and can add other people.
+        Complete once as Core. Pick a simple username and a memorable login code (not a giant random string).
         <ol>
-          <li>Choose your login screen name</li>
-          <li>Confirm Core username &amp; password</li>
-          <li>Optionally set a workspace name/code</li>
+          <li>Choose login screen name</li>
+          <li>Set Core username + login code</li>
+          <li>Optionally set workspace name/code</li>
         </ol>
       </div>
       <div class="login-field">
         <label for="setupLoginTitle">Login screen name</label>
         <input type="text" id="setupLoginTitle" value="Inventory Split" maxlength="80" required />
-        <div class="field-hint">Shown as the title on the sign-in page (you can change it later).</div>
       </div>
       <div class="login-field">
         <label for="setupCoreUser">Core username</label>
-        <input type="text" id="setupCoreUser" value="ESP1234242442S6" autocomplete="username" required />
+        <input type="text" id="setupCoreUser" value="core" autocomplete="username" required />
+        <div class="field-hint">Suggested: <code>core</code> (editable later in Team &amp; sync).</div>
       </div>
       <div class="login-field">
         <label for="setupCoreName">Display name</label>
         <input type="text" id="setupCoreName" value="Core User" required />
       </div>
       <div class="login-field">
-        <label for="setupCorePass">Core password</label>
-        <input type="password" id="setupCorePass" autocomplete="new-password" placeholder="Set or keep existing" />
-        <div class="field-hint" id="setupPassHint">Leave blank to keep the shipped Core password (new hash pipeline).</div>
+        <label for="setupCorePass">Core login code / password</label>
+        <div class="login-code-row">
+          <input type="text" id="setupCorePass" autocomplete="new-password" value="Core-Invite-9" required />
+          <button type="button" class="btn-ghost" id="genSetupCodeBtn">Generate</button>
+        </div>
+        <div class="field-hint" id="setupPassHint">Strong but memorable. Stored as a hash only (SHA-256 → SHA-3 → BLAKE3 → SHA-256).</div>
       </div>
       <div class="login-field">
         <label for="setupWorkspaceName">Workspace name (optional)</label>
@@ -623,7 +709,7 @@
       <div class="login-error" id="setupError"></div>
       <button type="submit" class="btn-primary" id="setupBtn">Finish setup</button>
       <button type="button" class="btn-ghost" id="setupBackBtn" style="width:100%;margin-top:0.5rem">Back</button>
-      <p class="login-hint">Passwords are hashed locally (SHA-256 → SHA-3 → BLAKE3 → SHA-256). Only digests are stored. Friends should use Join existing workspace, not this form.</p>
+      <p class="login-hint">Friends should Join (or open <code>?ws=</code>), not this form. Digests only are stored.</p>
     </form>
   </div>
 
@@ -639,7 +725,7 @@
         <input type="text" id="loginUser" autocomplete="username" required />
       </div>
       <div class="login-field">
-        <label for="loginPass">Password</label>
+        <label for="loginPass">Login code / password</label>
         <input type="password" id="loginPass" autocomplete="current-password" required />
       </div>
       <div class="login-field">
@@ -648,7 +734,7 @@
       </div>
       <div class="login-error" id="loginError"></div>
       <button type="submit" class="btn-primary" id="loginBtn">Sign in</button>
-      <p class="login-hint">Use the username/password Core created for you, and the workspace code from the invite.</p>
+      <p class="login-hint">Use the username + login code Core created for you.</p>
       <button type="button" class="btn-ghost" id="loginJoinLink" style="width:100%;margin-top:0.65rem">Join / re-import invite</button>
     </form>
   </div>
@@ -661,8 +747,8 @@
         <button type="button" class="nav-btn" data-page="inventory">Inventory</button>
         <button type="button" class="nav-btn" data-page="breakeven">Break-even</button>
         <button type="button" class="nav-btn" data-page="equity" id="navEquity">Equity</button>
-        <button type="button" class="nav-btn" data-page="chat">Chat</button>
-        <button type="button" class="nav-btn" data-page="team">Team & sync</button>
+        <button type="button" class="nav-btn" data-page="chat" id="navChat">Chat</button>
+        <button type="button" class="nav-btn" data-page="team">Team &amp; sync</button>
       </nav>
       <div class="user-panel">
         <div class="name" id="userDisplayName">—</div>
@@ -677,12 +763,11 @@
       <div class="cta-banner hidden" id="addPeopleCta">
         <div>
           <strong>Add people to your workspace</strong>
-          <p>Create their accounts, then use Share invite so they can join and sign in (no Setup for them).</p>
+          <p>Create accounts with clear login codes, then share the friend link or invite.</p>
         </div>
         <button type="button" class="btn-primary" id="ctaAddPeople">Manage team</button>
       </div>
 
-      <!-- DASHBOARD -->
       <section class="page" id="page-dashboard">
         <h1 class="page-title">Main dashboard</h1>
         <p class="page-sub">Shared team overview for the active workspace.</p>
@@ -705,7 +790,7 @@
           <div class="dash-actions">
             <button type="button" class="btn-primary" data-goto="inventory">Open inventory</button>
             <button type="button" class="btn-ghost" data-goto="equity" id="dashGotoEquity">Equity split</button>
-            <button type="button" class="btn-ghost" data-goto="team">Team & sync</button>
+            <button type="button" class="btn-ghost" data-goto="team">Team &amp; sync</button>
           </div>
         </div>
         <div class="card">
@@ -714,7 +799,6 @@
         </div>
       </section>
 
-      <!-- INVENTORY -->
       <section class="page hidden" id="page-inventory">
         <h1 class="page-title">Inventory</h1>
         <p class="page-sub">Shared item list for everyone on this workspace.</p>
@@ -738,41 +822,33 @@
                 </tr>
               </thead>
               <tbody id="inventoryBody"></tbody>
-              <tfoot>
-                <tr>
-                  <td colspan="4"><strong>Total inventory</strong></td>
-                  <td class="num readonly" id="totalCost">$0.00</td>
-                  <td class="num readonly" id="totalRevenue">$0.00</td>
-                  <td class="num readonly" id="totalProfit">$0.00</td>
-                  <td></td>
-                </tr>
-              </tfoot>
             </table>
           </div>
-        </div>
-        <div class="card">
-          <h2>Each item</h2>
-          <div class="item-breakdown-grid" id="itemBreakdown"></div>
-        </div>
-        <div class="card">
-          <h2>Summary</h2>
-          <div class="summary-grid">
-            <div class="stat"><label>Total cost</label><div class="value" id="summaryCost">$0.00</div></div>
-            <div class="stat"><label>Total revenue</label><div class="value" id="summaryRevenue">$0.00</div></div>
-            <div class="stat" id="profitStat"><label>Net profit</label><div class="value" id="summaryProfit">$0.00</div></div>
-            <div class="stat"><label>Total units</label><div class="value" id="summaryUnits">0</div></div>
+          <div class="summary-grid" style="margin-top:1rem">
+            <div class="stat"><label>Inventory value</label><div class="value" id="totalCost">$0.00</div></div>
+            <div class="stat"><label>Revenue potential</label><div class="value" id="totalRevenue">$0.00</div></div>
+            <div class="stat"><label>Gross profit</label><div class="value" id="totalProfit">$0.00</div></div>
           </div>
+        </div>
+        <div class="card">
+          <h2>Item breakdown</h2>
+          <div class="item-grid" id="itemBreakdown"></div>
         </div>
       </section>
 
-      <!-- BREAK-EVEN -->
       <section class="page hidden" id="page-breakeven">
         <h1 class="page-title">Break-even</h1>
         <p class="page-sub">Fixed costs and break-even targets for the workspace.</p>
         <div class="card">
-          <div class="field-row">
+          <div class="summary-grid">
+            <div class="stat"><label>Inventory cost</label><div class="value" id="summaryCost">$0.00</div></div>
+            <div class="stat"><label>Revenue</label><div class="value" id="summaryRevenue">$0.00</div></div>
+            <div class="stat" id="profitStat"><label>Net profit</label><div class="value" id="summaryProfit">$0.00</div></div>
+            <div class="stat"><label>Units</label><div class="value" id="summaryUnits">0</div></div>
+          </div>
+          <div class="field-row" style="margin-top:1rem">
             <div class="field">
-              <label for="fixedCosts">Fixed costs</label>
+              <label for="fixedCosts">Fixed / overhead costs</label>
               <input type="number" id="fixedCosts" min="0" step="0.01" value="0" />
             </div>
             <div class="field">
@@ -788,7 +864,6 @@
         </div>
       </section>
 
-      <!-- EQUITY -->
       <section class="page hidden" id="page-equity">
         <h1 class="page-title">Equity split</h1>
         <p class="page-sub">Any number of parties. Shares should total 100%.</p>
@@ -804,31 +879,69 @@
           <div id="partyEditor"></div>
           <h3 style="margin-top:1.25rem">Payments from net profit</h3>
           <div class="party-grid" id="partyPayments"></div>
-          <p class="note">Core can add, rename, remove, and edit %. Partner can view payment amounts. Viewer cannot see this page.</p>
         </div>
       </section>
 
-      <!-- CHAT -->
       <section class="page hidden" id="page-chat">
         <h1 class="page-title">Team chat</h1>
-        <p class="page-sub">Messages for everyone on this workspace code. History syncs with the workspace snapshot.</p>
+        <p class="page-sub">Messages sync with the workspace (local invite, other tabs, or live Firestore).</p>
         <div class="card chat-card">
           <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
-          <form class="chat-compose" id="chatForm">
-            <input type="text" id="chatInput" maxlength="2000" placeholder="Write a message…" autocomplete="off" required />
+          <div class="chat-status" id="chatStatus" aria-live="polite"></div>
+          <form class="chat-compose" id="chatForm" autocomplete="off">
+            <input type="text" id="chatInput" maxlength="2000" placeholder="Write a message…" autocomplete="off" />
             <button type="submit" class="btn-primary" id="chatSendBtn">Send</button>
           </form>
         </div>
       </section>
 
-      <!-- TEAM -->
       <section class="page hidden" id="page-team">
-        <h1 class="page-title">Team & sync</h1>
-        <p class="page-sub">Everyone on the same workspace code shares inventory, equity, accounts, and chat on this sync channel.</p>
+        <h1 class="page-title">Team &amp; sync</h1>
+        <p class="page-sub">Accounts, roles, permissions, invites, and Firestore live sync.</p>
+
+        <div class="card" id="firebaseCard">
+          <div class="card-header">
+            <h2>Cloud Firestore sync</h2>
+            <span class="firebase-status-pill" id="firebaseStatusPill">Not configured</span>
+          </div>
+          <p class="firebase-steps" style="margin-top:0">
+            Firebase web config for project <code>inventory-23fb1</code> is already embedded in this app
+            (GitHub Pages visitors get cloud sync without pasting). Override below only if you rotate keys.
+          </p>
+          <ol class="firebase-steps">
+            <li>Enable <strong>Anonymous</strong> sign-in in Firebase Authentication</li>
+            <li>Create Firestore and publish <code>firestore.rules</code> from this repo</li>
+            <li>Core: First-time setup → share <code>?ws=YOURCODE</code> with friends</li>
+            <li>Optional: paste a different config → Save &amp; enable (this device only)</li>
+          </ol>
+          <div class="field">
+            <label for="firebaseConfigJson">Firebase web config JSON</label>
+            <textarea class="snapshot" id="firebaseConfigJson" placeholder='{"apiKey":"…","authDomain":"….firebaseapp.com","projectId":"…","storageBucket":"….appspot.com","messagingSenderId":"…","appId":"…"}'></textarea>
+            <div class="field-hint">Pre-filled from embedded <code>FIREBASE_CONFIG</code>. Save stores an override in localStorage on this device. Only password digests are written to Firestore — never plaintext.</div>
+          </div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.75rem">
+            <button type="button" class="btn-primary" id="saveFirebaseConfigBtn">Save &amp; enable</button>
+            <button type="button" class="btn-ghost" id="disableFirebaseBtn">Disable on this device</button>
+            <button type="button" class="btn-ghost" id="copyFriendLinkBtn">Copy friend link</button>
+          </div>
+          <div class="login-error" id="firebaseConfigStatus" style="min-height:0;margin-top:0.5rem"></div>
+          <details style="margin-top:0.85rem">
+            <summary style="cursor:pointer;color:var(--muted);font-size:0.85rem">Firestore rules notes (demo)</summary>
+            <p class="note" style="margin-top:0.5rem"><strong>Warning:</strong> open rules are for personal demos only.</p>
+            <pre class="rules-sample">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Prefer Anonymous Auth + firestore.rules from the repo.
+    match /workspaces/{workspaceCode} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}</pre>
+          </details>
+        </div>
 
         <div class="card" id="loginTitleCard">
           <h2>Login screen name</h2>
-          <p class="note" style="margin-top:0">This title appears on the sign-in page for this workspace.</p>
           <div class="field-row" style="margin-top:0.75rem;align-items:end">
             <div class="field" style="flex:1">
               <label for="editLoginTitle">App / login title</label>
@@ -837,6 +950,43 @@
             <button type="button" class="btn-primary" id="saveLoginTitle">Save title</button>
           </div>
           <div class="login-error" id="loginTitleError" style="min-height:0;margin-top:0.5rem"></div>
+        </div>
+
+        <div class="card" id="myLoginCard">
+          <h2>My login code</h2>
+          <p class="note" style="margin-top:0">Change your username and login code anytime. Only the hash is saved.</p>
+          <div class="form-grid">
+            <div class="field">
+              <label for="myUserName">Username</label>
+              <input type="text" id="myUserName" />
+            </div>
+            <div class="field">
+              <label for="myDisplayName">Display name</label>
+              <input type="text" id="myDisplayName" />
+            </div>
+            <div class="field" style="grid-column:1/-1">
+              <label for="myLoginCode">New login code (leave blank to keep)</label>
+              <div class="login-code-row">
+                <input type="text" id="myLoginCode" autocomplete="new-password" placeholder="e.g. Core-Invite-9" />
+                <button type="button" class="btn-ghost" id="genMyCodeBtn">Generate</button>
+              </div>
+            </div>
+          </div>
+          <div class="login-error" id="myLoginError" style="min-height:0;margin-top:0.5rem"></div>
+          <button type="button" class="btn-primary" id="saveMyLoginBtn" style="margin-top:0.65rem">Save my login</button>
+        </div>
+
+        <div class="card" id="rolesCard">
+          <div class="card-header">
+            <h2>Roles &amp; permissions</h2>
+            <button type="button" class="btn-ghost hidden" id="addRoleBtn">+ Custom role</button>
+          </div>
+          <p class="note" style="margin-top:0">Core is always full access and not deletable. Toggle what each role can do.</p>
+          <div class="table-wrap">
+            <table class="perm-matrix" id="permMatrix"></table>
+          </div>
+          <div class="login-error" id="rolesError" style="min-height:0;margin-top:0.5rem"></div>
+          <button type="button" class="btn-primary hidden" id="saveRolesBtn" style="margin-top:0.65rem">Save role permissions</button>
         </div>
 
         <div class="card">
@@ -856,18 +1006,19 @@
                 <label for="newDisplayName">Display name</label>
                 <input type="text" id="newDisplayName" required />
               </div>
-              <div class="field">
-                <label for="newUserPass">Password</label>
-                <input type="password" id="newUserPass" autocomplete="new-password" required />
+              <div class="field" style="grid-column:1/-1">
+                <label for="newUserPass">Login code</label>
+                <div class="login-code-row">
+                  <input type="text" id="newUserPass" autocomplete="new-password" required />
+                  <button type="button" class="btn-ghost" id="genNewCodeBtn">Generate</button>
+                </div>
               </div>
               <div class="field">
                 <label for="newUserRole">Role</label>
-                <select id="newUserRole">
-                  <option value="partner">Partner</option>
-                  <option value="viewer">Viewer</option>
-                </select>
+                <select id="newUserRole"></select>
               </div>
             </div>
+            <div class="code-reveal hidden" id="newCodeReveal"></div>
             <div class="login-error" id="addUserError" style="min-height:0"></div>
             <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
               <button type="submit" class="btn-primary">Create account</button>
@@ -886,16 +1037,16 @@
                 <label for="editDisplayName">Display name</label>
                 <input type="text" id="editDisplayName" required />
               </div>
-              <div class="field">
-                <label for="editUserPass">New password (optional)</label>
-                <input type="password" id="editUserPass" autocomplete="new-password" placeholder="Leave blank to keep" />
+              <div class="field" style="grid-column:1/-1">
+                <label for="editUserPass">New login code (optional)</label>
+                <div class="login-code-row">
+                  <input type="text" id="editUserPass" autocomplete="new-password" placeholder="Leave blank to keep" />
+                  <button type="button" class="btn-ghost" id="genEditCodeBtn">Generate</button>
+                </div>
               </div>
               <div class="field">
                 <label for="editUserRole">Role</label>
-                <select id="editUserRole">
-                  <option value="partner">Partner</option>
-                  <option value="viewer">Viewer</option>
-                </select>
+                <select id="editUserRole"></select>
               </div>
             </div>
             <div class="login-error" id="editUserError" style="min-height:0"></div>
@@ -905,15 +1056,16 @@
             </div>
           </form>
         </div>
+
         <div class="card">
           <h2>Share invite</h2>
           <p class="invite-steps" style="margin-top:0">
-            After you add a person, copy a fresh invite and send it with their username, password, and workspace code.
-            They open this app → <strong>Join workspace</strong> → paste invite → <strong>Sign in</strong> only.
+            With Firestore: send friend link (<code>?ws=CODE</code>) + username/login code.
+            Without: copy invite package for Join → Sign in.
           </p>
           <div class="field-row" style="margin-top:0.5rem;align-items:end">
             <div class="field" style="flex:1">
-              <label>Workspace code to tell friends</label>
+              <label>Workspace code</label>
               <input type="text" id="shareWorkspaceCode" readonly />
             </div>
             <button type="button" class="btn-primary" id="shareInviteBtn">Share invite (copy)</button>
@@ -936,81 +1088,107 @@
     </main>
   </div>
 
-  <!-- SHA-3 + BLAKE3 (WASM). SHA-256 uses Web Crypto. -->
   <script src="https://cdn.jsdelivr.net/npm/hash-wasm@4.12.0/dist/index.umd.min.js" data-hash-wasm="1"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script>
+
     /*
-      Password pipeline (final digest only stored — never plaintext):
-      1) SHA-256(utf8 password)           -> digest1   (Web Crypto)
-      2) SHA-3-256(digest1)               -> digest2   (NIST SHA-3 / Keccak via hash-wasm)
-      3) BLAKE3(digest2)                  -> digest3   (hash-wasm, 32-byte output)
-      4) SHA-256(digest3)                 -> final hex (Web Crypto)
-      Order: SHA-256 → SHA-3 → BLAKE3 → SHA-256
+      Password pipeline (digest only stored):
+      SHA-256 → SHA-3-256 → BLAKE3 → SHA-256
     */
     const HASH_PIPELINE_VERSION = "v4-sha256-sha3-blake3-sha256";
     const SESSION_KEY = "inventory-split-session";
     const SETUP_KEY = "inventory-split-setup";
     const WS_PREFIX = "inventory-split-ws:";
+    const FIREBASE_LS_KEY = "inventory-split-firebase";
     const INVITE_TYPE = "inventory-split-invite";
     const DEFAULT_LOGIN_TITLE = "Inventory Split";
     const MAX_CHAT_MESSAGES = 200;
+    const SUGGESTED_CORE_USER = "core";
+    const SUGGESTED_CORE_CODE = "Core-Invite-9";
 
-    /** Default Core digest for shipped password (new 4-step pipeline). Used if setup leaves password blank. */
-    const DEFAULT_CORE = {
-      username: "ESP1234242442S6",
-      passwordDigest: "6acfe3d59f01f33f0083ae926447b9c48e508dd913d4964c5c375ed93a1b29d7",
+    /** Embed Firebase web config for shared GitHub Pages deploys, or leave blank and paste in Team & sync. */
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBEFGRidmTbSiSMFRunbK6u7cD2hU9KX80",
+      authDomain: "inventory-23fb1.firebaseapp.com",
+      projectId: "inventory-23fb1",
+      storageBucket: "inventory-23fb1.firebasestorage.app",
+      messagingSenderId: "375844786162",
+      appId: "1:375844786162:web:5d69c461a5d7368e52a56b",
+    };
+
+    const PERM_KEYS = [
+      { key: "canEditInventory", label: "Edit inventory" },
+      { key: "canEditBreakEven", label: "Edit break-even" },
+      { key: "canSeeEquity", label: "See equity" },
+      { key: "canEditEquity", label: "Edit equity %" },
+      { key: "canManageUsers", label: "Manage users" },
+      { key: "canManageRoles", label: "Manage roles" },
+      { key: "canChat", label: "Chat" },
+      { key: "canEditLoginTitle", label: "Edit login title" },
+      { key: "canManageSync", label: "Manage Firestore" },
+    ];
+
+    function allPerms(val) {
+      const o = {};
+      PERM_KEYS.forEach((p) => { o[p.key] = !!val; });
+      return o;
+    }
+
+    function defaultRoleDefs() {
+      return {
+        core: {
+          id: "core", label: "Core", locked: true, pillClass: "role-core",
+          banner: null, permissions: allPerms(true),
+        },
+        admin: {
+          id: "admin", label: "Admin", locked: false, pillClass: "role-admin",
+          banner: "Admin: near-full access. Role matrix edits are Core-only by default.",
+          permissions: {
+            ...allPerms(true),
+            canManageRoles: false,
+          },
+        },
+        power: {
+          id: "power", label: "Power User", locked: false, pillClass: "role-power",
+          banner: "Power User: edit inventory & break-even. Equity shares are view-only.",
+          permissions: {
+            ...allPerms(false),
+            canEditInventory: true,
+            canEditBreakEven: true,
+            canSeeEquity: true,
+            canChat: true,
+          },
+        },
+        partner: {
+          id: "partner", label: "Partner", locked: false, pillClass: "role-partner",
+          banner: "Partner: edit inventory. Equity parties/percents are view-only.",
+          permissions: {
+            ...allPerms(false),
+            canEditInventory: true,
+            canSeeEquity: true,
+            canChat: true,
+          },
+        },
+        viewer: {
+          id: "viewer", label: "Viewer", locked: false, pillClass: "role-viewer",
+          banner: "Viewer: read-only. Equity split is hidden.",
+          permissions: {
+            ...allPerms(false),
+            canChat: true,
+          },
+        },
+      };
+    }
+
+    let DEFAULT_CORE = {
+      username: SUGGESTED_CORE_USER,
+      passwordDigest: "",
       name: "Core User",
       role: "core",
       hashVersion: HASH_PIPELINE_VERSION,
-    };
-
-    const DEFAULT_SEED_ACCOUNTS = [
-      { ...DEFAULT_CORE },
-      {
-        username: "partner",
-        passwordDigest: "b3347b1937516ba20311f429f8ac740d9ecf9f76d01bde6bf7857a53666cefb8",
-        name: "Partner User",
-        role: "partner",
-        hashVersion: HASH_PIPELINE_VERSION,
-      },
-      {
-        username: "viewer",
-        passwordDigest: "bacb539b33af733066043b373ef3fd33f5d1476ddf769bff7560e4df6d28c5c0",
-        name: "Viewer User",
-        role: "viewer",
-        hashVersion: HASH_PIPELINE_VERSION,
-      },
-    ];
-
-    // Back-compat aliases used elsewhere in this file
-    const LEGACY_CORE = DEFAULT_CORE;
-    const LEGACY_SEED_ACCOUNTS = DEFAULT_SEED_ACCOUNTS;
-
-    const ROLE_META = {
-      core: {
-        label: "Core",
-        pillClass: "role-admin",
-        canEdit: true,
-        canEditSplit: true,
-        canSeeEquity: true,
-        banner: null,
-      },
-      partner: {
-        label: "Partner",
-        pillClass: "role-partner",
-        canEdit: true,
-        canEditSplit: false,
-        canSeeEquity: true,
-        banner: "Partner: edit inventory. Equity parties/percents are view-only.",
-      },
-      viewer: {
-        label: "Viewer",
-        pillClass: "role-viewer",
-        canEdit: false,
-        canEditSplit: false,
-        canSeeEquity: false,
-        banner: "Viewer: read-only. Equity split is hidden.",
-      },
     };
 
     const DEFAULT_PARTIES = [
@@ -1034,28 +1212,23 @@
     function toHex(buf) {
       return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
     }
-
     function hexToBytes(hex) {
       const clean = String(hex).replace(/^0x/i, "");
       if (clean.length % 2) throw new Error("Invalid hex length");
       const out = new Uint8Array(clean.length / 2);
-      for (let i = 0; i < out.length; i++) {
-        out[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
-      }
+      for (let i = 0; i < out.length; i++) out[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
       return out;
     }
-
     async function sha256Bytes(data) {
-      const bytes =
-        typeof data === "string" ? new TextEncoder().encode(data) : data;
+      const bytes = typeof data === "string" ? new TextEncoder().encode(data) : data;
       return new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
     }
-
     async function ensureHashLibs() {
       if (window.hashwasm?.sha3 && window.hashwasm?.blake3) return;
       await new Promise((resolve, reject) => {
-        const existing = document.querySelector('script[data-hash-wasm]');
+        const existing = document.querySelector("script[data-hash-wasm]");
         if (existing) {
+          if (window.hashwasm?.sha3) return resolve();
           existing.addEventListener("load", () => resolve());
           existing.addEventListener("error", () => reject(new Error("hash-wasm failed to load")));
           return;
@@ -1071,11 +1244,6 @@
         throw new Error("hash-wasm SHA-3 / BLAKE3 unavailable");
       }
     }
-
-    /**
-     * SHA-256 → SHA-3-256 → BLAKE3 → SHA-256 → hex
-     * Intermediate steps chain raw bytes (not hex strings).
-     */
     async function hashPasswordPipeline(password) {
       await ensureHashLibs();
       const { sha3, blake3 } = window.hashwasm;
@@ -1084,6 +1252,285 @@
       const step3 = hexToBytes(await blake3(step2));
       const step4 = await sha256Bytes(step3);
       return toHex(step4);
+    }
+
+    function generateLoginCode(prefix) {
+      const words = ["Oak", "Lake", "Nova", "Summit", "Harbor", "Cedar", "Atlas", "Bridge"];
+      const w = words[Math.floor(Math.random() * words.length)];
+      const n = String(Math.floor(10 + Math.random() * 89));
+      const p = (prefix || "Invite").replace(/[^A-Za-z]/g, "").slice(0, 10) || "Invite";
+      return p + "-" + w + n;
+    }
+
+    function getWsFromUrl() {
+      try {
+        const p = new URLSearchParams(location.search);
+        const ws = (p.get("ws") || p.get("workspace") || "").trim().toUpperCase();
+        return ws || null;
+      } catch {
+        return null;
+      }
+    }
+
+    function friendLink(code) {
+      const u = new URL(location.href);
+      u.searchParams.set("ws", String(code || workspaceId || "MAIN").toUpperCase());
+      return u.toString();
+    }
+
+    // ——— Firebase ———
+    let firebaseApp = null;
+    let firestoreDb = null;
+    let firestoreUnsub = null;
+    let firebaseEnabled = false;
+    let firestorePushTimer = null;
+    let lastRemoteUpdatedAt = null;
+
+    function embeddedFirebaseConfig() {
+      const c = FIREBASE_CONFIG || {};
+      if (!c.apiKey || !c.projectId) return null;
+      return { ...c };
+    }
+
+    function loadFirebaseConfigStored() {
+      try {
+        const raw = localStorage.getItem(FIREBASE_LS_KEY);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        if (!data || !data.enabled || !data.config?.apiKey || !data.config?.projectId) return null;
+        return data;
+      } catch {
+        return null;
+      }
+    }
+
+    function saveFirebaseConfigStored(config, enabled) {
+      localStorage.setItem(
+        FIREBASE_LS_KEY,
+        JSON.stringify({ enabled: !!enabled, config: config || {} })
+      );
+    }
+
+    function activeFirebaseConfig() {
+      const stored = loadFirebaseConfigStored();
+      if (stored?.enabled && stored.config?.projectId) return stored.config;
+      return embeddedFirebaseConfig();
+    }
+
+    function isFirebaseConfigured() {
+      const c = activeFirebaseConfig();
+      return !!(c && c.apiKey && c.projectId);
+    }
+
+    function setFirebasePill(text, cls) {
+      const pill = document.getElementById("firebaseStatusPill");
+      if (!pill) return;
+      pill.textContent = text;
+      pill.className = "firebase-status-pill" + (cls ? " " + cls : "");
+    }
+
+    function setSyncStatus(text, mode) {
+      const el = document.getElementById("syncStatus");
+      if (!el) return;
+      el.textContent = text;
+      el.classList.toggle("live", mode === "live");
+      el.classList.toggle("warn", mode === "warn");
+      el.classList.toggle("err", mode === "err");
+    }
+
+    function initFirebase() {
+      const cfg = activeFirebaseConfig();
+      firebaseEnabled = false;
+      firestoreDb = null;
+      if (!cfg) {
+        setFirebasePill("Not configured");
+        return false;
+      }
+      if (typeof firebase === "undefined" || !firebase.apps) {
+        setFirebasePill("SDK missing", "warn");
+        setSyncStatus("Firebase SDK failed to load", "err");
+        return false;
+      }
+      try {
+        if (!firebase.apps.length) firebaseApp = firebase.initializeApp(cfg);
+        else firebaseApp = firebase.app();
+        firestoreDb = firebase.firestore();
+        firebaseEnabled = true;
+        setFirebasePill("Connected", "on");
+        // Anonymous Auth (optional): enables request.auth != null rules without user passwords
+        if (firebase.auth) {
+          firebase
+            .auth()
+            .signInAnonymously()
+            .then(() => setSyncStatus("Cloud sync: connected", "live"))
+            .catch((err) => {
+              console.warn("Anonymous Auth unavailable — open Firestore rules or enable Anonymous sign-in.", err);
+              setSyncStatus("Cloud sync: connected (no Auth)", "warn");
+            });
+        } else {
+          setSyncStatus("Cloud sync: connected", "live");
+        }
+        return true;
+      } catch (err) {
+        console.error(err);
+        setFirebasePill("Config error", "warn");
+        setSyncStatus("Firebase init failed", "err");
+        firebaseEnabled = false;
+        firestoreDb = null;
+        return false;
+      }
+    }
+
+    function workspaceDocRef(code) {
+      if (!firestoreDb) return null;
+      return firestoreDb.collection("workspaces").doc(String(code || workspaceId).toUpperCase());
+    }
+
+    function stripUndefined(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    function stateForFirestore(state) {
+      const clean = ensureAccounts({ ...emptyState(), ...state });
+      clean.roleDefs = normalizeRoleDefs(clean.roleDefs);
+      clean.chatMessages = normalizeChatMessages(clean.chatMessages).slice(-MAX_CHAT_MESSAGES);
+      clean.activity = (clean.activity || []).slice(0, 30);
+      return stripUndefined({
+        items: clean.items,
+        fixedCosts: clean.fixedCosts,
+        targetUnits: clean.targetUnits,
+        parties: clean.parties,
+        activity: clean.activity,
+        chatMessages: clean.chatMessages,
+        accounts: clean.accounts,
+        roleDefs: clean.roleDefs,
+        setupDone: !!clean.setupDone,
+        setupComplete: !!clean.setupDone,
+        loginTitle: clean.loginTitle,
+        workspaceName: clean.workspaceName,
+        hashVersion: clean.hashVersion || HASH_PIPELINE_VERSION,
+        updatedAt: clean.updatedAt,
+        updatedBy: clean.updatedBy,
+      });
+    }
+
+    async function pushWorkspaceToFirestore(state, id) {
+      if (!firebaseEnabled || !firestoreDb || applyingRemote) return;
+      const ref = workspaceDocRef(id || workspaceId);
+      if (!ref) return;
+      try {
+        await ref.set(stateForFirestore(state || workspaceState), { merge: true });
+        setSyncStatus("Firestore · " + (id || workspaceId), "live");
+      } catch (err) {
+        console.error(err);
+        setSyncStatus("Firestore save failed (offline?)", "err");
+      }
+    }
+
+    function scheduleFirestorePush() {
+      if (!firebaseEnabled) return;
+      clearTimeout(firestorePushTimer);
+      firestorePushTimer = setTimeout(() => {
+        pushWorkspaceToFirestore(workspaceState, workspaceId);
+      }, 280);
+    }
+
+    async function fetchWorkspaceFromFirestore(code) {
+      if (!firebaseEnabled || !firestoreDb) return null;
+      const ref = workspaceDocRef(code);
+      if (!ref) return null;
+      try {
+        const snap = await ref.get();
+        if (!snap.exists) return null;
+        return snap.data();
+      } catch (err) {
+        console.error(err);
+        throw new Error(err?.message || "Could not load workspace from Firestore");
+      }
+    }
+
+    function unsubscribeFirestore() {
+      if (firestoreUnsub) {
+        try { firestoreUnsub(); } catch (_) {}
+        firestoreUnsub = null;
+      }
+    }
+
+    function subscribeWorkspace(code) {
+      unsubscribeFirestore();
+      if (!firebaseEnabled || !firestoreDb) return;
+      const ref = workspaceDocRef(code);
+      if (!ref) return;
+      firestoreUnsub = ref.onSnapshot(
+        (snap) => {
+          if (!snap.exists) return;
+          const remote = snap.data();
+          if (!remote) return;
+          if (remote.updatedAt && remote.updatedAt === lastRemoteUpdatedAt) return;
+          if (remote.updatedAt && remote.updatedAt === workspaceState.updatedAt && !applyingRemote) {
+            lastRemoteUpdatedAt = remote.updatedAt;
+            return;
+          }
+          applyingRemote = true;
+          try {
+            workspaceState = ensureAccounts({ ...emptyState(), ...remote });
+            workspaceState.roleDefs = normalizeRoleDefs(workspaceState.roleDefs);
+            workspaceState.chatMessages = normalizeChatMessages(workspaceState.chatMessages);
+            lastRemoteUpdatedAt = workspaceState.updatedAt || null;
+            localStorage.setItem(dataKey(code), JSON.stringify(workspaceState));
+            if (workspaceState.loginTitle) {
+              saveSetupMeta({
+                loginTitle: workspaceState.loginTitle,
+                workspaceName: workspaceState.workspaceName,
+              });
+            }
+            if (currentUser) {
+              const still = findAccount(currentUser.username);
+              if (still) {
+                currentUser = still;
+                renderAllFromState();
+              } else {
+                showLogin();
+                document.getElementById("loginError").textContent =
+                  "Your account was removed from this workspace.";
+              }
+            }
+            setSyncStatus("Live update · " + String(code).toUpperCase(), "live");
+          } finally {
+            applyingRemote = false;
+          }
+        },
+        (err) => {
+          console.error(err);
+          setSyncStatus("Firestore listener error", "err");
+        }
+      );
+    }
+
+    function refreshFirebaseUi() {
+      const ta = document.getElementById("firebaseConfigJson");
+      const stored = loadFirebaseConfigStored();
+      const embedded = embeddedFirebaseConfig();
+      if (ta && !ta.dataset.touched) {
+        const cfg = stored?.config || embedded || {
+          apiKey: "",
+          authDomain: "",
+          projectId: "",
+          storageBucket: "",
+          messagingSenderId: "",
+          appId: "",
+        };
+        ta.value = JSON.stringify(cfg, null, 2);
+      }
+      if (firebaseEnabled) setFirebasePill("Connected", "on");
+      else if (isFirebaseConfigured()) setFirebasePill("Ready", "on");
+      else setFirebasePill("Not configured");
+      const hint = document.getElementById("joinFirestoreHint");
+      if (hint) {
+        hint.textContent = firebaseEnabled
+          ? "Live sync is on — workspace code can load the cloud workspace."
+          : "With live sync on, code alone loads the workspace from the cloud.";
+      }
     }
 
     let currentUser = null;
@@ -1108,6 +1555,7 @@
         activity: [],
         chatMessages: [],
         accounts: [],
+        roleDefs: defaultRoleDefs(),
         setupDone: false,
         loginTitle: DEFAULT_LOGIN_TITLE,
         workspaceName: "Main workspace",
@@ -1117,9 +1565,48 @@
       };
     }
 
+    function normalizeRoleDefs(raw) {
+      const base = defaultRoleDefs();
+      const out = JSON.parse(JSON.stringify(base));
+      if (raw && typeof raw === "object") {
+        Object.keys(raw).forEach((id) => {
+          const r = raw[id];
+          if (!r || typeof r !== "object") return;
+          if (id === "core") {
+            out.core = {
+              ...base.core,
+              label: r.label || "Core",
+              permissions: allPerms(true),
+            };
+            return;
+          }
+          // Start from built-in defaults (chat ON) so incomplete matrices don't disable chat
+          const basePerms = (base[id] && base[id].permissions) || {
+            ...allPerms(false),
+            canChat: true,
+          };
+          const incoming = r.permissions && typeof r.permissions === "object" ? r.permissions : {};
+          const perms = { ...basePerms, ...incoming };
+          if (!Object.prototype.hasOwnProperty.call(incoming, "canChat")) {
+            perms.canChat = basePerms.canChat !== false;
+          }
+          out[id] = {
+            id,
+            label: String(r.label || (base[id] && base[id].label) || id).trim() || id,
+            locked: !!r.locked,
+            pillClass: r.pillClass || (base[id] && base[id].pillClass) || "role-viewer",
+            banner: r.banner != null ? r.banner : (base[id] && base[id].banner) || null,
+            permissions: perms,
+          };
+        });
+      }
+      out.core = { ...base.core, permissions: allPerms(true) };
+      return out;
+    }
+
     function normalizeAccount(a) {
       if (!a || !a.username || !a.passwordDigest) return null;
-      const role = a.role === "core" || a.role === "partner" || a.role === "viewer" ? a.role : "viewer";
+      const role = String(a.role || "viewer").trim() || "viewer";
       return {
         username: String(a.username).trim(),
         passwordDigest: String(a.passwordDigest),
@@ -1165,8 +1652,32 @@
       localStorage.setItem(SETUP_KEY, JSON.stringify(setupMeta));
     }
 
+    function getRoleDefs() {
+      return normalizeRoleDefs(workspaceState?.roleDefs);
+    }
+
     function getRole() {
-      return currentUser ? ROLE_META[currentUser.role] : null;
+      if (!currentUser) return null;
+      const defs = getRoleDefs();
+      const def = defs[currentUser.role] || defs.viewer;
+      const p = def.permissions || {};
+      const isCore = currentUser.role === "core";
+      return {
+        id: def.id,
+        label: def.label,
+        pillClass: def.pillClass || "role-viewer",
+        canEdit: isCore || !!p.canEditInventory,
+        canEditBreakEven: isCore || !!p.canEditBreakEven,
+        canEditSplit: isCore || !!p.canEditEquity,
+        canSeeEquity: isCore || !!p.canSeeEquity,
+        canManageUsers: isCore || !!p.canManageUsers,
+        canManageRoles: isCore || !!p.canManageRoles,
+        // Signed-in users can chat unless their role explicitly disables it
+        canChat: isCore || p.canChat !== false,
+        canEditLoginTitle: isCore || !!p.canEditLoginTitle,
+        canManageSync: isCore || !!p.canManageSync,
+        banner: isCore ? null : def.banner,
+      };
     }
 
     function dataKey(id = workspaceId) {
@@ -1184,22 +1695,22 @@
     }
 
     function ensureAccounts(data) {
+      data.roleDefs = normalizeRoleDefs(data.roleDefs);
       if (!Array.isArray(data.accounts) || !data.accounts.length) {
-        if (data.setupDone && data.hashVersion === HASH_PIPELINE_VERSION) {
-          data.accounts = [{ ...DEFAULT_CORE }];
-        } else if (!data.setupDone) {
-          data.accounts = DEFAULT_SEED_ACCOUNTS.map((a) => ({ ...a }));
-        } else {
-          data.accounts = [{ ...DEFAULT_CORE }];
-        }
+        if (DEFAULT_CORE.passwordDigest) data.accounts = [{ ...DEFAULT_CORE }];
+        else data.accounts = [];
       }
       data.accounts = data.accounts.map(normalizeAccount).filter(Boolean);
-      if (!data.accounts.some((a) => a.role === "core")) {
+      if (DEFAULT_CORE.passwordDigest && !data.accounts.some((a) => a.role === "core")) {
         data.accounts.unshift({ ...DEFAULT_CORE });
       }
       if (!data.hashVersion) data.hashVersion = null;
-      if (!Array.isArray(data.chatMessages)) data.chatMessages = [];
-      else data.chatMessages = normalizeChatMessages(data.chatMessages);
+      if (data.setupComplete && !data.setupDone) data.setupDone = true;
+      // Accept Firestore alias `chat` as well as `chatMessages`
+      const primary = Array.isArray(data.chatMessages) ? data.chatMessages : [];
+      const alt = Array.isArray(data.chat) ? data.chat : [];
+      data.chatMessages = normalizeChatMessages(primary.length ? primary : alt);
+      if ("chat" in data) delete data.chat;
       return data;
     }
 
@@ -1224,6 +1735,7 @@
       currentUser = null;
       document.body.classList.add("login-mode");
       document.body.classList.remove("app-mode");
+      unsubscribeFirestore();
       if (channel) {
         try { channel.close(); } catch (_) {}
         channel = null;
@@ -1244,10 +1756,13 @@
       hideAuthViews();
       joinView.classList.remove("hidden");
       document.getElementById("joinError").textContent = "";
-      document.getElementById("joinWorkspaceCode").value = setupMeta.defaultWorkspaceId || "MAIN";
+      const urlWs = getWsFromUrl();
+      document.getElementById("joinWorkspaceCode").value =
+        urlWs || setupMeta.defaultWorkspaceId || "MAIN";
       applyLoginBranding(setupMeta.loginTitle || DEFAULT_LOGIN_TITLE, "Join a workspace");
       document.getElementById("joinBrandTitle").textContent =
         setupMeta.loginTitle || DEFAULT_LOGIN_TITLE;
+      refreshFirebaseUi();
     }
 
     function showSetup() {
@@ -1255,8 +1770,16 @@
       hideAuthViews();
       setupView.classList.remove("hidden");
       document.getElementById("setupError").textContent = "";
-      const draft = document.getElementById("setupLoginTitle").value.trim() || DEFAULT_LOGIN_TITLE;
-      applyLoginBranding(draft, "One-time Core setup");
+      if (!document.getElementById("setupCoreUser").value) {
+        document.getElementById("setupCoreUser").value = SUGGESTED_CORE_USER;
+      }
+      if (!document.getElementById("setupCorePass").value) {
+        document.getElementById("setupCorePass").value = SUGGESTED_CORE_CODE;
+      }
+      applyLoginBranding(
+        document.getElementById("setupLoginTitle").value.trim() || DEFAULT_LOGIN_TITLE,
+        "One-time Core setup"
+      );
     }
 
     function showLogin() {
@@ -1266,20 +1789,16 @@
       loginView.classList.remove("hidden");
       document.getElementById("loginError").textContent = "";
       document.getElementById("loginPass").value = "";
-      document.getElementById("workspaceCode").value = setupMeta.defaultWorkspaceId || "MAIN";
+      const urlWs = getWsFromUrl();
+      document.getElementById("workspaceCode").value =
+        urlWs || setupMeta.defaultWorkspaceId || "MAIN";
       refreshLoginTitleFromWorkspaceCode();
     }
 
     function accountsUseCurrentPipeline(accounts) {
       if (!Array.isArray(accounts) || !accounts.length) return false;
       return accounts.every(
-        (a) => a.hashVersion === HASH_PIPELINE_VERSION ||
-          // Allow match against known default digests without explicit version stamp
-          DEFAULT_SEED_ACCOUNTS.some(
-            (d) =>
-              d.username.toLowerCase() === String(a.username).toLowerCase() &&
-              d.passwordDigest === a.passwordDigest
-          )
+        (a) => a.hashVersion === HASH_PIPELINE_VERSION || !!a.passwordDigest
       );
     }
 
@@ -1290,12 +1809,13 @@
           if (!m || typeof m.text !== "string") return null;
           const text = String(m.text).trim();
           if (!text) return null;
+          const role = String(m.role || "viewer");
           return {
             id: String(m.id || "m" + Date.now() + Math.random().toString(16).slice(2)),
             at: m.at || new Date().toISOString(),
             user: String(m.user || m.name || "Unknown").trim() || "Unknown",
             username: String(m.username || "").trim(),
-            role: m.role === "core" || m.role === "partner" || m.role === "viewer" ? m.role : "viewer",
+            role,
             text: text.slice(0, 2000),
           };
         })
@@ -1303,40 +1823,47 @@
         .slice(-MAX_CHAT_MESSAGES);
     }
 
-    /** True when shared workspace data is ready for login (accounts + Core + setupDone). */
     function isWorkspaceReady(data) {
       if (!data || !data.setupDone) return false;
       if (data.hashVersion && data.hashVersion !== HASH_PIPELINE_VERSION) return false;
-      const accounts = Array.isArray(data.accounts) ? data.accounts.map(normalizeAccount).filter(Boolean) : [];
+      const accounts = Array.isArray(data.accounts)
+        ? data.accounts.map(normalizeAccount).filter(Boolean)
+        : [];
       if (!accounts.some((a) => a.role === "core")) return false;
-      if (data.hashVersion === HASH_PIPELINE_VERSION && !accountsUseCurrentPipeline(accounts)) return false;
-      // Allow ready if setupDone + core and either current pipeline or no hashVersion yet but digests present
-      if (!data.hashVersion && !accounts.every((a) => a.passwordDigest)) return false;
+      if (!accounts.every((a) => a.passwordDigest)) return false;
       return true;
     }
 
     function isSetupComplete() {
-      // Device already finished Core setup or joined a workspace
       if (setupMeta.done && setupMeta.hashVersion === HASH_PIPELINE_VERSION) return true;
-      // Or any local workspace snapshot is ready (shared data present)
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (!key || !key.startsWith(WS_PREFIX)) continue;
         try {
-          const data = ensureAccounts({ ...emptyState(), ...JSON.parse(localStorage.getItem(key) || "{}") });
+          const data = ensureAccounts({
+            ...emptyState(),
+            ...JSON.parse(localStorage.getItem(key) || "{}"),
+          });
           if (isWorkspaceReady(data)) return true;
         } catch (_) {}
       }
       return false;
     }
 
-    /** Mark this browser as past first-run (login only). Used after Core setup or friend join. */
     function markDeviceJoined(meta = {}) {
       saveSetupMeta({
         done: true,
-        loginTitle: meta.loginTitle || workspaceState.loginTitle || setupMeta.loginTitle || DEFAULT_LOGIN_TITLE,
+        loginTitle:
+          meta.loginTitle ||
+          workspaceState.loginTitle ||
+          setupMeta.loginTitle ||
+          DEFAULT_LOGIN_TITLE,
         defaultWorkspaceId: (meta.defaultWorkspaceId || workspaceId || "MAIN").toUpperCase(),
-        workspaceName: meta.workspaceName || workspaceState.workspaceName || setupMeta.workspaceName || "Main workspace",
+        workspaceName:
+          meta.workspaceName ||
+          workspaceState.workspaceName ||
+          setupMeta.workspaceName ||
+          "Main workspace",
         hashVersion: meta.hashVersion || workspaceState.hashVersion || HASH_PIPELINE_VERSION,
       });
     }
@@ -1350,7 +1877,7 @@
       });
       return {
         type: INVITE_TYPE,
-        version: 1,
+        version: 2,
         workspaceId: String(id || "MAIN").toUpperCase(),
         state: ready,
       };
@@ -1359,27 +1886,24 @@
     function parseInviteOrSnapshot(rawText, fallbackCode) {
       const parsed = JSON.parse(rawText);
       if (!parsed || typeof parsed !== "object") throw new Error("Invalid invite");
-
       if (parsed.type === INVITE_TYPE && parsed.state) {
-        const code = String(parsed.workspaceId || fallbackCode || "MAIN").toUpperCase();
-        return { workspaceId: code, state: parsed.state };
+        return {
+          workspaceId: String(parsed.workspaceId || fallbackCode || "MAIN").toUpperCase(),
+          state: parsed.state,
+        };
       }
-
-      // Raw workspace snapshot (or wrapped { workspaceId, state })
       if (parsed.state && (parsed.workspaceId || Array.isArray(parsed.state.accounts))) {
         return {
           workspaceId: String(parsed.workspaceId || fallbackCode || "MAIN").toUpperCase(),
           state: parsed.state,
         };
       }
-
       if (Array.isArray(parsed.accounts) || parsed.setupDone || Array.isArray(parsed.items)) {
         return {
           workspaceId: String(parsed.workspaceId || fallbackCode || "MAIN").toUpperCase(),
           state: parsed,
         };
       }
-
       throw new Error("Not an invite or snapshot");
     }
 
@@ -1391,14 +1915,18 @@
       workspaceState = ensureAccounts({
         ...emptyState(),
         ...rawState,
-        parties: rawState.parties?.length ? rawState.parties : DEFAULT_PARTIES.map((p) => ({ ...p })),
+        parties: rawState.parties?.length
+          ? rawState.parties
+          : DEFAULT_PARTIES.map((p) => ({ ...p })),
         activity: rawState.activity || [],
         chatMessages: normalizeChatMessages(rawState.chatMessages),
         accounts: importedAccounts,
+        roleDefs: normalizeRoleDefs(rawState.roleDefs),
         setupDone: true,
         hashVersion: rawState.hashVersion || HASH_PIPELINE_VERSION,
         loginTitle: rawState.loginTitle || setupMeta.loginTitle || DEFAULT_LOGIN_TITLE,
-        workspaceName: rawState.workspaceName || setupMeta.workspaceName || "Main workspace",
+        workspaceName:
+          rawState.workspaceName || setupMeta.workspaceName || "Main workspace",
       });
       if (!isWorkspaceReady(workspaceState)) {
         throw new Error("Invite is missing a completed Core setup or accounts");
@@ -1409,11 +1937,10 @@
         workspaceName: workspaceState.workspaceName,
         hashVersion: workspaceState.hashVersion,
       });
-      persistWorkspace();
+      persistWorkspace(false);
       return workspaceState;
     }
 
-    /** Old HMAC digests are invalid under the new pipeline — force re-setup. */
     function invalidateStalePasswordPipeline() {
       if (!setupMeta.done) return false;
       if (setupMeta.hashVersion === HASH_PIPELINE_VERSION) return false;
@@ -1436,6 +1963,7 @@
         if (!data.parties?.length) data.parties = DEFAULT_PARTIES.map((p) => ({ ...p }));
         if (!Array.isArray(data.activity)) data.activity = [];
         if (!Array.isArray(data.items)) data.items = [];
+        data.roleDefs = normalizeRoleDefs(data.roleDefs);
         data.chatMessages = normalizeChatMessages(data.chatMessages);
         if (!data.loginTitle) data.loginTitle = setupMeta.loginTitle || DEFAULT_LOGIN_TITLE;
         if (!data.workspaceName) data.workspaceName = setupMeta.workspaceName || "Main workspace";
@@ -1455,8 +1983,9 @@
       return getAccounts().find((a) => a.username.toLowerCase() === u) || null;
     }
 
-    function persistWorkspace() {
+    function persistWorkspace(pushCloud = true) {
       if (!Array.isArray(workspaceState.accounts)) workspaceState.accounts = [];
+      workspaceState.roleDefs = normalizeRoleDefs(workspaceState.roleDefs);
       workspaceState.chatMessages = normalizeChatMessages(workspaceState.chatMessages);
       localStorage.setItem(dataKey(), JSON.stringify(workspaceState));
       const inviteText = JSON.stringify(buildInvitePackage(), null, 2);
@@ -1467,8 +1996,9 @@
       if (channel && !applyingRemote) {
         channel.postMessage({ type: "workspace", workspaceId, state: workspaceState });
       }
-      document.getElementById("syncStatus").textContent = "Synced · " + workspaceId;
-      document.getElementById("syncStatus").classList.add("live");
+      if (pushCloud && !applyingRemote) scheduleFirestorePush();
+      if (firebaseEnabled) setSyncStatus("Synced · " + workspaceId, "live");
+      else setSyncStatus("Local · " + workspaceId, "live");
     }
 
     function pushActivity(message) {
@@ -1484,28 +2014,34 @@
 
     function applyLoginBranding(title, subtitle) {
       const t = (title || setupMeta.loginTitle || DEFAULT_LOGIN_TITLE).trim() || DEFAULT_LOGIN_TITLE;
-      document.getElementById("loginBrandTitle").textContent = t;
-      document.getElementById("setupBrandTitle").textContent = t;
-      const welcomeTitle = document.getElementById("welcomeBrandTitle");
-      if (welcomeTitle) welcomeTitle.textContent = t;
-      const joinTitle = document.getElementById("joinBrandTitle");
-      if (joinTitle) joinTitle.textContent = t;
+      ["loginBrandTitle", "setupBrandTitle", "welcomeBrandTitle", "joinBrandTitle"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = t;
+      });
       document.title = t;
       const sub = document.getElementById("loginBrandSub");
-      if (subtitle) sub.textContent = subtitle;
-      else if (setupMeta.workspaceName) sub.textContent = setupMeta.workspaceName;
-      else sub.textContent = "Sign in to your workspace";
+      if (sub) {
+        if (subtitle) sub.textContent = subtitle;
+        else if (setupMeta.workspaceName) sub.textContent = setupMeta.workspaceName;
+        else sub.textContent = "Sign in to your workspace";
+      }
       const appName = document.getElementById("appBrandName");
       if (appName) appName.textContent = t;
       const label = document.getElementById("workspaceLabel");
       if (label) {
         label.textContent =
-          "Workspace " + workspaceId + (workspaceState.workspaceName ? " · " + workspaceState.workspaceName : "");
+          "Workspace " +
+          workspaceId +
+          (workspaceState.workspaceName ? " · " + workspaceState.workspaceName : "");
       }
     }
 
     function refreshLoginTitleFromWorkspaceCode() {
-      const code = (document.getElementById("workspaceCode").value.trim() || setupMeta.defaultWorkspaceId || "MAIN").toUpperCase();
+      const code = (
+        document.getElementById("workspaceCode").value.trim() ||
+        setupMeta.defaultWorkspaceId ||
+        "MAIN"
+      ).toUpperCase();
       const data = readWorkspaceRaw(code);
       const title = (data && data.loginTitle) || setupMeta.loginTitle || DEFAULT_LOGIN_TITLE;
       const name = (data && data.workspaceName) || setupMeta.workspaceName || "";
@@ -1524,15 +2060,18 @@
           if (msg.workspaceId !== workspaceId.toUpperCase()) return;
           applyingRemote = true;
           workspaceState = ensureAccounts({ ...emptyState(), ...msg.state });
+          workspaceState.roleDefs = normalizeRoleDefs(workspaceState.roleDefs);
           workspaceState.chatMessages = normalizeChatMessages(workspaceState.chatMessages);
           localStorage.setItem(dataKey(), JSON.stringify(workspaceState));
           if (workspaceState.loginTitle) {
-            saveSetupMeta({ loginTitle: workspaceState.loginTitle, workspaceName: workspaceState.workspaceName });
+            saveSetupMeta({
+              loginTitle: workspaceState.loginTitle,
+              workspaceName: workspaceState.workspaceName,
+            });
           }
           renderAllFromState();
           applyingRemote = false;
-          document.getElementById("syncStatus").textContent = "Live update received";
-          document.getElementById("syncStatus").classList.add("live");
+          setSyncStatus("Live update received", "live");
         };
       } catch {
         channel = null;
@@ -1558,7 +2097,7 @@
       hideAuthViews();
       appView.classList.remove("hidden");
 
-      const meta = ROLE_META[user.role];
+      const meta = getRole();
       document.getElementById("userDisplayName").textContent = user.name;
       document.getElementById("userRoleLabel").textContent = "@" + user.username;
       const pill = document.getElementById("userRolePill");
@@ -1575,38 +2114,56 @@
 
       document.getElementById("navEquity").classList.toggle("hidden", !meta.canSeeEquity);
       document.getElementById("dashGotoEquity").classList.toggle("hidden", !meta.canSeeEquity);
+      document.getElementById("navChat").classList.toggle("hidden", meta.canChat === false);
 
       connectChannel();
+      if (firebaseEnabled) subscribeWorkspace(workspaceId);
       workspaceState = loadWorkspaceFromStorage();
-      // Ensure setup flags + title live on the workspace
       if (setupMeta.done) {
         workspaceState.setupDone = true;
         if (!workspaceState.loginTitle) workspaceState.loginTitle = setupMeta.loginTitle;
       }
       applyLoginBranding(workspaceState.loginTitle, workspaceState.workspaceName);
       document.getElementById("workspaceLabel").textContent =
-        "Workspace " + workspaceId + (workspaceState.workspaceName ? " · " + workspaceState.workspaceName : "");
+        "Workspace " +
+        workspaceId +
+        (workspaceState.workspaceName ? " · " + workspaceState.workspaceName : "");
       renderAllFromState();
       showPage("dashboard");
       updateAddPeopleCta();
+      refreshFirebaseUi();
     }
 
     function showPage(page) {
       const meta = getRole();
       if (page === "equity" && !meta?.canSeeEquity) page = "dashboard";
+      if (page === "chat" && meta && meta.canChat === false) page = "dashboard";
       document.querySelectorAll(".page").forEach((el) => el.classList.add("hidden"));
       document.getElementById("page-" + page)?.classList.remove("hidden");
       document.querySelectorAll(".nav-btn").forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.page === page);
       });
       if (page === "team") renderTeamPage();
-      if (page === "chat") renderChat(true);
+      if (page === "chat") {
+        renderChat(true);
+        setChatStatus("");
+      }
+    }
+
+    function setChatStatus(text, mode) {
+      const el = document.getElementById("chatStatus");
+      if (!el) return;
+      el.textContent = text || "";
+      el.className = "chat-status" + (mode ? " " + mode : "");
     }
 
     function renderChat(forceScroll) {
-      const list = document.getElementById("chatMessages");
-      if (!list) return;
-      const messages = normalizeChatMessages(workspaceState.chatMessages);
+      const list = document.getElementById("chatMessages") || document.getElementById("chatMessageList");
+      if (!list) {
+        console.warn("Chat message list element missing");
+        return;
+      }
+      const messages = normalizeChatMessages(workspaceState.chatMessages || []);
       workspaceState.chatMessages = messages;
       const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 80;
       if (!messages.length) {
@@ -1614,57 +2171,77 @@
         return;
       }
       const me = (currentUser?.username || "").toLowerCase();
+      const defs = getRoleDefs();
       list.innerHTML = messages
         .map((m) => {
-          const meta = ROLE_META[m.role] || ROLE_META.viewer;
+          const def = defs[m.role] || defs.viewer || { label: m.role, pillClass: "role-viewer" };
           const mine = me && m.username && m.username.toLowerCase() === me;
           const when = m.at ? new Date(m.at).toLocaleString() : "";
           return `<div class="chat-bubble${mine ? " mine" : ""}">
             <div class="chat-meta">
               <span class="sender">${escapeHtml(m.user)}</span>
-              <span class="role-pill ${meta.pillClass}">${meta.label}</span>
+              <span class="role-pill ${def.pillClass || "role-viewer"}">${escapeHtml(def.label || m.role)}</span>
               <span class="time">${escapeHtml(when)}</span>
             </div>
             <div class="chat-text">${escapeHtml(m.text)}</div>
           </div>`;
         })
         .join("");
-      if (forceScroll || nearBottom) {
-        list.scrollTop = list.scrollHeight;
-      }
+      if (forceScroll || nearBottom) list.scrollTop = list.scrollHeight;
     }
 
     function sendChatMessage(text) {
-      if (!currentUser) return;
-      const cleaned = String(text || "").trim().slice(0, 2000);
-      if (!cleaned) return;
-      const msg = {
-        id: "c" + Date.now().toString(36) + Math.random().toString(16).slice(2, 8),
-        at: new Date().toISOString(),
-        user: currentUser.name,
-        username: currentUser.username,
-        role: currentUser.role,
-        text: cleaned,
-      };
-      workspaceState.chatMessages = normalizeChatMessages([
-        ...(workspaceState.chatMessages || []),
-        msg,
-      ]);
-      workspaceState.updatedAt = msg.at;
-      workspaceState.updatedBy = currentUser.name;
-      persistWorkspace();
-      renderChat(true);
+      try {
+        if (!currentUser) {
+          setChatStatus("Sign in to chat.", "err");
+          return false;
+        }
+        const meta = getRole();
+        // Always allow signed-in users unless role explicitly revoked chat
+        if (meta && meta.canChat === false) {
+          setChatStatus("Your role cannot use chat.", "err");
+          return false;
+        }
+        const cleaned = String(text || "").trim().slice(0, 2000);
+        if (!cleaned) {
+          setChatStatus("Type a message first.", "err");
+          return false;
+        }
+        const msg = {
+          id: "c" + Date.now().toString(36) + Math.random().toString(16).slice(2, 8),
+          at: new Date().toISOString(),
+          user: currentUser.name || currentUser.username,
+          username: currentUser.username,
+          role: currentUser.role,
+          text: cleaned,
+        };
+        if (!Array.isArray(workspaceState.chatMessages)) workspaceState.chatMessages = [];
+        workspaceState.chatMessages = normalizeChatMessages([
+          ...workspaceState.chatMessages,
+          msg,
+        ]);
+        workspaceState.updatedAt = msg.at;
+        workspaceState.updatedBy = currentUser.name || currentUser.username;
+        persistWorkspace(true);
+        renderChat(true);
+        setChatStatus("Sent", "ok");
+        setTimeout(() => setChatStatus(""), 1200);
+        return true;
+      } catch (err) {
+        console.error(err);
+        setChatStatus(err?.message || "Could not send message", "err");
+        return false;
+      }
     }
 
     function applyPermissions() {
       const meta = getRole();
       if (!meta) return;
-      const isCore = currentUser?.role === "core";
       document.getElementById("addRow").disabled = !meta.canEdit;
       document.getElementById("addParty").disabled = !meta.canEditSplit;
       document.getElementById("normalizeParties").disabled = !meta.canEditSplit;
-      fixedCostsEl.disabled = !meta.canEdit;
-      targetUnitsEl.disabled = !meta.canEdit;
+      fixedCostsEl.disabled = !meta.canEditBreakEven;
+      targetUnitsEl.disabled = !meta.canEditBreakEven;
       inventoryBody.querySelectorAll("input").forEach((i) => (i.disabled = !meta.canEdit));
       inventoryBody.querySelectorAll(".remove-row").forEach((btn) => {
         btn.disabled = !meta.canEdit;
@@ -1677,10 +2254,21 @@
         btn.disabled = !meta.canEditSplit;
         btn.classList.toggle("hidden", !meta.canEditSplit);
       });
-      document.getElementById("showAddUserBtn").classList.toggle("hidden", !isCore);
-      document.getElementById("loginTitleCard").classList.toggle("hidden", !isCore);
-      document.getElementById("editLoginTitle").disabled = !isCore;
-      document.getElementById("saveLoginTitle").disabled = !isCore;
+      document.getElementById("showAddUserBtn").classList.toggle("hidden", !meta.canManageUsers);
+      document.getElementById("loginTitleCard").classList.toggle("hidden", !meta.canEditLoginTitle);
+      document.getElementById("editLoginTitle").disabled = !meta.canEditLoginTitle;
+      document.getElementById("saveLoginTitle").disabled = !meta.canEditLoginTitle;
+      document.getElementById("firebaseCard").classList.toggle("hidden", !meta.canManageSync && currentUser?.role !== "core");
+      document.getElementById("rolesCard").classList.toggle("hidden", !(meta.canManageRoles || currentUser?.role === "core"));
+      document.getElementById("saveRolesBtn").classList.toggle("hidden", !meta.canManageRoles);
+      document.getElementById("addRoleBtn").classList.toggle("hidden", !meta.canManageRoles);
+      const denyChat = meta.canChat === false;
+      const chatSend = document.getElementById("chatSendBtn");
+      const chatInput = document.getElementById("chatInput");
+      const navChat = document.getElementById("navChat");
+      if (chatSend) chatSend.disabled = denyChat;
+      if (chatInput) chatInput.disabled = denyChat;
+      if (navChat) navChat.classList.toggle("hidden", denyChat);
     }
 
     function createRow(data = {}) {
@@ -1859,18 +2447,81 @@
       document.getElementById("editUserForm").classList.add("hidden");
       document.getElementById("addUserError").textContent = "";
       document.getElementById("editUserError").textContent = "";
+      document.getElementById("newCodeReveal").classList.add("hidden");
+    }
+
+    function roleOptionsHtml(selected, allowCore) {
+      const defs = getRoleDefs();
+      return Object.values(defs)
+        .filter((r) => allowCore || r.id !== "core")
+        .map(
+          (r) =>
+            `<option value="${escapeHtml(r.id)}" ${selected === r.id ? "selected" : ""}>${escapeHtml(r.label)}</option>`
+        )
+        .join("");
+    }
+
+    function renderPermMatrix() {
+      const table = document.getElementById("permMatrix");
+      if (!table) return;
+      const defs = getRoleDefs();
+      const canEdit = !!getRole()?.canManageRoles;
+      const roles = Object.values(defs);
+      table.innerHTML =
+        `<thead><tr><th>Permission</th>${roles
+          .map((r) => `<th>${escapeHtml(r.label)}</th>`)
+          .join("")}</tr></thead><tbody>` +
+        PERM_KEYS.map((pk) => {
+          return `<tr><td>${escapeHtml(pk.label)}</td>${roles
+            .map((r) => {
+              const locked = r.id === "core";
+              const checked = locked || !!r.permissions?.[pk.key];
+              return `<td><input type="checkbox" data-role="${escapeHtml(r.id)}" data-perm="${pk.key}" ${
+                checked ? "checked" : ""
+              } ${!canEdit || locked ? "disabled" : ""} /></td>`;
+            })
+            .join("")}</tr>`;
+        }).join("") +
+        `</tbody>`;
+    }
+
+    function collectPermMatrixIntoState() {
+      const defs = getRoleDefs();
+      document.querySelectorAll("#permMatrix input[type=checkbox]").forEach((box) => {
+        const role = box.getAttribute("data-role");
+        const perm = box.getAttribute("data-perm");
+        if (!defs[role] || role === "core") return;
+        defs[role].permissions[perm] = box.checked;
+      });
+      defs.core.permissions = allPerms(true);
+      workspaceState.roleDefs = defs;
+    }
+
+    function fillMyLoginForm() {
+      if (!currentUser) return;
+      document.getElementById("myUserName").value = currentUser.username;
+      document.getElementById("myDisplayName").value = currentUser.name;
+      document.getElementById("myLoginCode").value = "";
+      document.getElementById("myLoginError").textContent = "";
     }
 
     function renderTeamPage() {
-      const isCore = currentUser?.role === "core";
-      document.getElementById("editLoginTitle").value = workspaceState.loginTitle || setupMeta.loginTitle || DEFAULT_LOGIN_TITLE;
+      const meta = getRole();
+      document.getElementById("editLoginTitle").value =
+        workspaceState.loginTitle || setupMeta.loginTitle || DEFAULT_LOGIN_TITLE;
       document.getElementById("loginTitleError").textContent = "";
-      document.getElementById("teamList").innerHTML = getAccounts()
-        .map((a) => {
-          const meta = ROLE_META[a.role] || ROLE_META.viewer;
-          const isCoreRow = a.role === "core";
-          const actions = isCore
-            ? `<div class="team-row-actions">
+      fillMyLoginForm();
+      renderPermMatrix();
+      refreshFirebaseUi();
+
+      const canManage = !!meta?.canManageUsers;
+      document.getElementById("teamList").innerHTML =
+        getAccounts()
+          .map((a) => {
+            const def = getRoleDefs()[a.role] || getRoleDefs().viewer;
+            const isCoreRow = a.role === "core";
+            const actions = canManage
+              ? `<div class="team-row-actions">
                 <button type="button" class="btn-ghost" data-edit="${escapeHtml(a.username)}">Edit</button>
                 ${
                   isCoreRow
@@ -1878,16 +2529,16 @@
                     : `<button type="button" class="btn-ghost btn-danger" data-remove="${escapeHtml(a.username)}">Remove</button>`
                 }
               </div>`
-            : `<span class="role-pill ${meta.pillClass}">${meta.label}</span>`;
-          return `<div class="team-row">
+              : `<span class="role-pill ${def.pillClass}">${escapeHtml(def.label)}</span>`;
+            return `<div class="team-row">
             <div>
               <strong>${escapeHtml(a.name)}</strong>
-              <div class="note" style="margin:0">@${escapeHtml(a.username)} · ${meta.label}</div>
+              <div class="note" style="margin:0">@${escapeHtml(a.username)} · ${escapeHtml(def.label)}</div>
             </div>
-            ${isCore ? `<span class="role-pill ${meta.pillClass}">${meta.label}</span>${actions}` : actions}
+            ${canManage ? `<span class="role-pill ${def.pillClass}">${escapeHtml(def.label)}</span>${actions}` : actions}
           </div>`;
-        })
-        .join("") || "<p class='note'>No accounts yet.</p>";
+          })
+          .join("") || "<p class='note'>No accounts yet.</p>";
 
       document.querySelectorAll("[data-edit]").forEach((btn) => {
         btn.addEventListener("click", () => openEditUser(btn.getAttribute("data-edit")));
@@ -1904,7 +2555,7 @@
     }
 
     function openEditUser(username) {
-      if (currentUser?.role !== "core") return;
+      if (!getRole()?.canManageUsers) return;
       const acc = findAccount(username);
       if (!acc) return;
       hideTeamForms();
@@ -1914,17 +2565,14 @@
       document.getElementById("editDisplayName").value = acc.name;
       document.getElementById("editUserPass").value = "";
       const roleSel = document.getElementById("editUserRole");
-      roleSel.innerHTML =
-        acc.role === "core"
-          ? `<option value="core">Core</option>`
-          : `<option value="partner">Partner</option><option value="viewer">Viewer</option>`;
+      roleSel.innerHTML = roleOptionsHtml(acc.role, acc.role === "core");
       roleSel.value = acc.role;
       roleSel.disabled = acc.role === "core";
-      document.getElementById("editUserName").disabled = acc.role === "core";
+      document.getElementById("editUserName").disabled = false;
     }
 
     function removeUser(username) {
-      if (currentUser?.role !== "core") return;
+      if (!getRole()?.canManageUsers) return;
       const acc = findAccount(username);
       if (!acc || acc.role === "core") {
         alert("Core account cannot be removed.");
@@ -1948,8 +2596,7 @@
       const ps = document.getElementById("dashProfitStat");
       ps.classList.toggle("profit", totals.netProfit > 0);
       ps.classList.toggle("loss", totals.netProfit < 0);
-      document.getElementById("dashUnits").textContent =
-        `${rows.length} / ${totals.totalUnits}`;
+      document.getElementById("dashUnits").textContent = `${rows.length} / ${totals.totalUnits}`;
       document.getElementById("dashParties").textContent = String(workspaceState.parties.length);
       document.getElementById("dashLastEdit").textContent = workspaceState.updatedBy
         ? `${workspaceState.updatedBy}`
@@ -1968,7 +2615,9 @@
           .slice(0, 12)
           .map((a) => {
             const when = a.at ? new Date(a.at).toLocaleString() : "";
-            return `<li><strong>${escapeHtml(a.user)}</strong> (${escapeHtml(a.role)}) — ${escapeHtml(a.message)} <span style="float:right">${when}</span></li>`;
+            return `<li><strong>${escapeHtml(a.user)}</strong> (${escapeHtml(a.role)}) — ${escapeHtml(
+              a.message
+            )} <span style="float:right">${when}</span></li>`;
           })
           .join("") || "<li>No activity yet.</li>";
 
@@ -1994,9 +2643,7 @@
     function renderAllFromState() {
       inventoryBody.innerHTML = "";
       rowId = 0;
-      const items = workspaceState.items?.length
-        ? workspaceState.items
-        : emptyState().items;
+      const items = workspaceState.items?.length ? workspaceState.items : emptyState().items;
       items.forEach((item) => inventoryBody.appendChild(createRow(item)));
       fixedCostsEl.value = workspaceState.fixedCosts ?? 0;
       targetUnitsEl.value = workspaceState.targetUnits ?? "";
@@ -2008,8 +2655,12 @@
       renderPartyEditor();
       applyPermissions();
       recalculate();
-      document.getElementById("snapshotOut").value = JSON.stringify(workspaceState, null, 2);
-      if (document.getElementById("page-team") && !document.getElementById("page-team").classList.contains("hidden")) {
+      const snap = document.getElementById("snapshotOut");
+      if (snap) snap.value = JSON.stringify(buildInvitePackage(), null, 2);
+      if (
+        document.getElementById("page-team") &&
+        !document.getElementById("page-team").classList.contains("hidden")
+      ) {
         renderTeamPage();
       }
       renderChat(false);
@@ -2053,36 +2704,67 @@
       renderDashboard(rows, { totalCost, totalRevenue, totalUnits, netProfit });
     }
 
+    // ——— Events ———
     document.getElementById("setupLoginTitle").addEventListener("input", (e) => {
       const t = e.target.value.trim() || DEFAULT_LOGIN_TITLE;
       document.getElementById("setupBrandTitle").textContent = t;
       document.title = t;
     });
 
-    // ——— Welcome / Join (friends never forced through Core setup) ———
     document.getElementById("welcomeJoinBtn").addEventListener("click", showJoin);
     document.getElementById("welcomeSetupBtn").addEventListener("click", showSetup);
     document.getElementById("joinBackBtn").addEventListener("click", showWelcome);
     document.getElementById("setupBackBtn").addEventListener("click", showWelcome);
     document.getElementById("loginJoinLink").addEventListener("click", showJoin);
 
-    document.getElementById("joinForm").addEventListener("submit", (e) => {
+    document.getElementById("genSetupCodeBtn").addEventListener("click", () => {
+      document.getElementById("setupCorePass").value = generateLoginCode("Core");
+    });
+    document.getElementById("genMyCodeBtn").addEventListener("click", () => {
+      document.getElementById("myLoginCode").value = generateLoginCode(
+        currentUser?.role === "core" ? "Core" : "Invite"
+      );
+    });
+    document.getElementById("genNewCodeBtn").addEventListener("click", () => {
+      const role = document.getElementById("newUserRole").value || "Invite";
+      document.getElementById("newUserPass").value = generateLoginCode(role);
+    });
+    document.getElementById("genEditCodeBtn").addEventListener("click", () => {
+      const role = document.getElementById("editUserRole").value || "Invite";
+      document.getElementById("editUserPass").value = generateLoginCode(role);
+    });
+
+    document.getElementById("joinForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const errorEl = document.getElementById("joinError");
-      const codeInput = (document.getElementById("joinWorkspaceCode").value.trim() || "MAIN").toUpperCase();
+      const codeInput = (
+        document.getElementById("joinWorkspaceCode").value.trim() || "MAIN"
+      ).toUpperCase();
       const raw = document.getElementById("joinSnapshot").value.trim();
+      const btn = document.getElementById("joinBtn");
       errorEl.textContent = "";
-
+      btn.disabled = true;
+      btn.textContent = "Joining…";
       try {
         if (raw) {
           const { workspaceId: id, state } = parseInviteOrSnapshot(raw, codeInput);
           document.getElementById("joinWorkspaceCode").value = id;
           applyJoinedWorkspace(id, state);
+        } else if (firebaseEnabled) {
+          const remote = await fetchWorkspaceFromFirestore(codeInput);
+          if (!remote || !isWorkspaceReady(ensureAccounts({ ...emptyState(), ...remote }))) {
+            errorEl.textContent =
+              "No ready workspace found in Firestore for code " +
+              codeInput +
+              ". Ask Core to finish setup with sync enabled, or paste an invite.";
+            return;
+          }
+          applyJoinedWorkspace(codeInput, remote);
         } else {
           const existing = readWorkspaceRaw(codeInput);
           if (!existing || !isWorkspaceReady(ensureAccounts({ ...emptyState(), ...existing }))) {
             errorEl.textContent =
-              "On a new device you must paste Core’s Share invite package. Workspace code alone cannot sync across phones.";
+              "On a new device paste Core’s Share invite, or enable Firestore and use the same config + workspace code.";
             return;
           }
           applyJoinedWorkspace(codeInput, existing);
@@ -2095,8 +2777,10 @@
         refreshLoginTitleFromWorkspaceCode();
       } catch (err) {
         console.error(err);
-        errorEl.textContent =
-          err?.message || "Could not join. Paste a valid invite package from Core’s Share invite button.";
+        errorEl.textContent = err?.message || "Could not join workspace.";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Join & continue to login";
       }
     });
 
@@ -2104,27 +2788,29 @@
       const raw = document.getElementById("joinSnapshot").value.trim();
       if (!raw) return;
       try {
-        const { workspaceId: id } = parseInviteOrSnapshot(raw, document.getElementById("joinWorkspaceCode").value);
+        const { workspaceId: id } = parseInviteOrSnapshot(
+          raw,
+          document.getElementById("joinWorkspaceCode").value
+        );
         if (id) document.getElementById("joinWorkspaceCode").value = id;
-        const parsed = JSON.parse(raw);
-        const state = parsed.type === INVITE_TYPE ? parsed.state : parsed.state || parsed;
-        if (state?.loginTitle) {
-          document.getElementById("joinBrandTitle").textContent = state.loginTitle;
-        }
       } catch (_) {}
     });
 
-    // ——— Setup ———
     document.getElementById("setupForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const errorEl = document.getElementById("setupError");
       const btn = document.getElementById("setupBtn");
-      const loginTitle = document.getElementById("setupLoginTitle").value.trim() || DEFAULT_LOGIN_TITLE;
+      const loginTitle =
+        document.getElementById("setupLoginTitle").value.trim() || DEFAULT_LOGIN_TITLE;
       const username = document.getElementById("setupCoreUser").value.trim();
       const displayName = document.getElementById("setupCoreName").value.trim() || "Core User";
-      const password = document.getElementById("setupCorePass").value;
-      const workspaceName = document.getElementById("setupWorkspaceName").value.trim() || "Main workspace";
-      const code = (document.getElementById("setupWorkspaceCode").value.trim() || "MAIN").toUpperCase();
+      const password =
+        document.getElementById("setupCorePass").value.trim() || SUGGESTED_CORE_CODE;
+      const workspaceName =
+        document.getElementById("setupWorkspaceName").value.trim() || "Main workspace";
+      const code = (
+        document.getElementById("setupWorkspaceCode").value.trim() || "MAIN"
+      ).toUpperCase();
 
       if (!username) {
         errorEl.textContent = "Core username is required.";
@@ -2136,11 +2822,7 @@
       errorEl.textContent = "";
 
       try {
-        let digest = DEFAULT_CORE.passwordDigest;
-        if (password) {
-          digest = await hashPasswordPipeline(password);
-        }
-
+        const digest = await hashPasswordPipeline(password);
         workspaceId = code;
         const existing = readWorkspaceRaw(code) || emptyState();
         const coreAccount = {
@@ -2150,7 +2832,6 @@
           role: "core",
           hashVersion: HASH_PIPELINE_VERSION,
         };
-        // New setup: Core-only roster (seed partner/viewer removed unless already present with current pipeline)
         const priorAccounts = Array.isArray(existing.accounts)
           ? existing.accounts.map(normalizeAccount).filter(Boolean)
           : [];
@@ -2158,13 +2839,13 @@
           (a) =>
             a.role !== "core" &&
             existing.setupDone &&
-            existing.hashVersion === HASH_PIPELINE_VERSION &&
-            a.hashVersion === HASH_PIPELINE_VERSION
+            existing.hashVersion === HASH_PIPELINE_VERSION
         );
         workspaceState = {
           ...emptyState(),
           ...existing,
           accounts: [coreAccount, ...others],
+          roleDefs: normalizeRoleDefs(existing.roleDefs),
           chatMessages: normalizeChatMessages(existing.chatMessages),
           setupDone: true,
           loginTitle,
@@ -2173,7 +2854,8 @@
           updatedAt: new Date().toISOString(),
           updatedBy: displayName,
         };
-        persistWorkspace();
+        persistWorkspace(true);
+        if (firebaseEnabled) await pushWorkspaceToFirestore(workspaceState, code);
         markDeviceJoined({
           loginTitle,
           defaultWorkspaceId: code,
@@ -2183,10 +2865,13 @@
         document.getElementById("loginUser").value = username;
         showLogin();
         document.getElementById("loginError").textContent =
-          "Setup complete. Sign in as Core, add people, then Share invite so friends can Join → Login.";
+          "Setup complete. Sign in as Core, add people, configure roles, then share ?ws=" +
+          code +
+          " (or an invite).";
       } catch (err) {
         console.error(err);
-        errorEl.textContent = "Could not complete setup (crypto / hash libs unavailable). Use HTTPS or localhost.";
+        errorEl.textContent =
+          "Could not complete setup (crypto / hash libs unavailable). Use HTTPS or localhost.";
       } finally {
         btn.disabled = false;
         btn.textContent = "Finish setup";
@@ -2199,15 +2884,46 @@
       const password = document.getElementById("loginPass").value;
       const errorEl = document.getElementById("loginError");
       const btn = document.getElementById("loginBtn");
-      workspaceId = (document.getElementById("workspaceCode").value.trim() || "MAIN").toUpperCase();
+      workspaceId = (
+        document.getElementById("workspaceCode").value.trim() || "MAIN"
+      ).toUpperCase();
 
       btn.disabled = true;
       btn.textContent = "Checking…";
       errorEl.textContent = "";
 
       try {
-        workspaceState = loadWorkspaceFromStorage();
-        const ready = isWorkspaceReady(workspaceState) || (setupMeta.done && workspaceState.setupDone);
+        if (firebaseEnabled) {
+          try {
+            const remote = await fetchWorkspaceFromFirestore(workspaceId);
+            if (remote && isWorkspaceReady(ensureAccounts({ ...emptyState(), ...remote }))) {
+              workspaceState = ensureAccounts({ ...emptyState(), ...remote });
+              localStorage.setItem(dataKey(), JSON.stringify(workspaceState));
+              markDeviceJoined({
+                loginTitle: workspaceState.loginTitle,
+                defaultWorkspaceId: workspaceId,
+                workspaceName: workspaceState.workspaceName,
+                hashVersion: workspaceState.hashVersion,
+              });
+            } else {
+              workspaceState = loadWorkspaceFromStorage();
+            }
+          } catch (err) {
+            workspaceState = loadWorkspaceFromStorage();
+            if (!isWorkspaceReady(workspaceState)) {
+              errorEl.textContent =
+                "Could not load workspace from Firestore (" +
+                (err?.message || "offline") +
+                ").";
+              return;
+            }
+          }
+        } else {
+          workspaceState = loadWorkspaceFromStorage();
+        }
+
+        const ready =
+          isWorkspaceReady(workspaceState) || (setupMeta.done && workspaceState.setupDone);
         if (!ready) {
           errorEl.textContent = "This workspace is not on this device yet.";
           showJoin();
@@ -2215,13 +2931,13 @@
           document.getElementById("joinError").textContent =
             "Paste Core’s Share invite for code " +
             workspaceId +
-            ", then continue to Sign in. Only Core uses First-time setup.";
+            ", or enable Firestore with the same config.";
           return;
         }
         const digest = await hashPasswordPipeline(password);
         const user = findAccount(username);
         if (!user || user.passwordDigest !== digest) {
-          errorEl.textContent = "Invalid username or password.";
+          errorEl.textContent = "Invalid username or login code.";
           return;
         }
         markDeviceJoined({
@@ -2233,15 +2949,20 @@
         showApp(user);
       } catch (err) {
         console.error(err);
-        errorEl.textContent = "Could not verify password (crypto / hash libs unavailable). Use HTTPS or localhost.";
+        errorEl.textContent =
+          "Could not verify login code (crypto / hash libs unavailable). Use HTTPS or localhost.";
       } finally {
         btn.disabled = false;
         btn.textContent = "Sign in";
       }
     });
 
-    document.getElementById("workspaceCode").addEventListener("input", refreshLoginTitleFromWorkspaceCode);
-    document.getElementById("workspaceCode").addEventListener("change", refreshLoginTitleFromWorkspaceCode);
+    document
+      .getElementById("workspaceCode")
+      .addEventListener("input", refreshLoginTitleFromWorkspaceCode);
+    document
+      .getElementById("workspaceCode")
+      .addEventListener("change", refreshLoginTitleFromWorkspaceCode);
 
     document.getElementById("logoutBtn").addEventListener("click", showLogin);
 
@@ -2254,9 +2975,11 @@
 
     document.getElementById("ctaAddPeople").addEventListener("click", () => {
       showPage("team");
-      if (currentUser?.role === "core") {
+      if (getRole()?.canManageUsers) {
         hideTeamForms();
         document.getElementById("addUserForm").classList.remove("hidden");
+        document.getElementById("newUserRole").innerHTML = roleOptionsHtml("partner", false);
+        document.getElementById("newUserPass").value = generateLoginCode("Partner");
       }
     });
 
@@ -2265,24 +2988,25 @@
       document.getElementById("addUserForm").classList.remove("hidden");
       document.getElementById("newUserName").value = "";
       document.getElementById("newDisplayName").value = "";
-      document.getElementById("newUserPass").value = "";
-      document.getElementById("newUserRole").value = "partner";
+      document.getElementById("newUserRole").innerHTML = roleOptionsHtml("partner", false);
+      document.getElementById("newUserPass").value = generateLoginCode("Partner");
+      document.getElementById("newCodeReveal").classList.add("hidden");
     });
     document.getElementById("cancelAddUser").addEventListener("click", hideTeamForms);
     document.getElementById("cancelEditUser").addEventListener("click", hideTeamForms);
 
     document.getElementById("addUserForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      if (currentUser?.role !== "core") return;
+      if (!getRole()?.canManageUsers) return;
       const errorEl = document.getElementById("addUserError");
       const username = document.getElementById("newUserName").value.trim();
       const name = document.getElementById("newDisplayName").value.trim();
-      const password = document.getElementById("newUserPass").value;
+      const password = document.getElementById("newUserPass").value.trim();
       const role = document.getElementById("newUserRole").value;
       errorEl.textContent = "";
 
       if (!username || !name || !password) {
-        errorEl.textContent = "Username, display name, and password are required.";
+        errorEl.textContent = "Username, display name, and login code are required.";
         return;
       }
       if (role === "core") {
@@ -2301,25 +3025,29 @@
         ];
         pushActivity(`Added team member @${username} (${role})`);
         persistWorkspace();
-        hideTeamForms();
+        const reveal = document.getElementById("newCodeReveal");
+        reveal.classList.remove("hidden");
+        reveal.textContent =
+          "Save this now — @" + username + " login code: " + password + " (shown once here).";
+        document.getElementById("addUserForm").reset();
+        document.getElementById("newUserRole").innerHTML = roleOptionsHtml("partner", false);
         renderTeamPage();
         updateAddPeopleCta();
         const status = document.getElementById("shareInviteStatus");
         if (status) {
           status.style.color = "var(--success)";
           status.textContent =
-            "@" + username + " added. Click Share invite (copy) and send them the package + their password.";
+            "@" + username + " added. Share the friend link / invite with their login code.";
         }
-        showPage("team");
       } catch (err) {
         console.error(err);
-        errorEl.textContent = "Could not hash password.";
+        errorEl.textContent = "Could not hash login code.";
       }
     });
 
     document.getElementById("editUserForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      if (currentUser?.role !== "core") return;
+      if (!getRole()?.canManageUsers) return;
       const errorEl = document.getElementById("editUserError");
       const key = document.getElementById("editUserKey").value;
       const acc = findAccount(key);
@@ -2329,7 +3057,7 @@
       }
       const username = document.getElementById("editUserName").value.trim();
       const name = document.getElementById("editDisplayName").value.trim();
-      const password = document.getElementById("editUserPass").value;
+      const password = document.getElementById("editUserPass").value.trim();
       let role = document.getElementById("editUserRole").value;
       errorEl.textContent = "";
 
@@ -2337,9 +3065,8 @@
         errorEl.textContent = "Username and display name are required.";
         return;
       }
-      if (acc.role === "core") {
-        role = "core";
-      } else if (role === "core") {
+      if (acc.role === "core") role = "core";
+      else if (role === "core") {
         errorEl.textContent = "Cannot promote to Core.";
         return;
       }
@@ -2360,6 +3087,10 @@
           currentUser = findAccount(username);
           document.getElementById("userDisplayName").textContent = currentUser.name;
           document.getElementById("userRoleLabel").textContent = "@" + currentUser.username;
+          localStorage.setItem(
+            SESSION_KEY,
+            JSON.stringify({ username: currentUser.username, workspaceId })
+          );
         }
         pushActivity(`Updated team member @${username}`);
         persistWorkspace();
@@ -2371,9 +3102,107 @@
       }
     });
 
+    document.getElementById("saveMyLoginBtn").addEventListener("click", async () => {
+      if (!currentUser) return;
+      const errorEl = document.getElementById("myLoginError");
+      const username = document.getElementById("myUserName").value.trim();
+      const name = document.getElementById("myDisplayName").value.trim();
+      const password = document.getElementById("myLoginCode").value.trim();
+      errorEl.textContent = "";
+      if (!username || !name) {
+        errorEl.textContent = "Username and display name are required.";
+        return;
+      }
+      const clash = findAccount(username);
+      if (clash && clash.username.toLowerCase() !== currentUser.username.toLowerCase()) {
+        errorEl.textContent = "That username is already taken.";
+        return;
+      }
+      try {
+        let digest = currentUser.passwordDigest;
+        if (password) digest = await hashPasswordPipeline(password);
+        const prev = currentUser.username;
+        workspaceState.accounts = getAccounts().map((a) =>
+          a.username.toLowerCase() === prev.toLowerCase()
+            ? {
+                username,
+                passwordDigest: digest,
+                name,
+                role: a.role,
+                hashVersion: HASH_PIPELINE_VERSION,
+              }
+            : a
+        );
+        currentUser = findAccount(username);
+        document.getElementById("userDisplayName").textContent = currentUser.name;
+        document.getElementById("userRoleLabel").textContent = "@" + currentUser.username;
+        localStorage.setItem(
+          SESSION_KEY,
+          JSON.stringify({ username: currentUser.username, workspaceId })
+        );
+        pushActivity("Updated own login");
+        persistWorkspace();
+        fillMyLoginForm();
+        errorEl.style.color = "var(--success)";
+        errorEl.textContent = password ? "Login code updated." : "Profile saved.";
+        setTimeout(() => {
+          errorEl.style.color = "";
+          errorEl.textContent = "";
+        }, 2000);
+        renderTeamPage();
+      } catch (err) {
+        console.error(err);
+        errorEl.textContent = "Could not save login.";
+      }
+    });
+
+    document.getElementById("saveRolesBtn").addEventListener("click", () => {
+      if (!getRole()?.canManageRoles) return;
+      collectPermMatrixIntoState();
+      pushActivity("Updated role permissions");
+      persistWorkspace();
+      const err = document.getElementById("rolesError");
+      err.style.color = "var(--success)";
+      err.textContent = "Role permissions saved.";
+      applyPermissions();
+      renderTeamPage();
+      setTimeout(() => {
+        err.style.color = "";
+        err.textContent = "";
+      }, 2000);
+    });
+
+    document.getElementById("addRoleBtn").addEventListener("click", () => {
+      if (!getRole()?.canManageRoles) return;
+      const name = prompt("New role name (e.g. Contractor)");
+      if (!name) return;
+      const id = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_|_$/g, "")
+        .slice(0, 24);
+      if (!id || getRoleDefs()[id]) {
+        alert("Invalid or duplicate role id.");
+        return;
+      }
+      const defs = getRoleDefs();
+      defs[id] = {
+        id,
+        label: name.trim(),
+        locked: false,
+        pillClass: "role-viewer",
+        banner: null,
+        permissions: { ...allPerms(false), canChat: true },
+      };
+      workspaceState.roleDefs = defs;
+      persistWorkspace();
+      renderTeamPage();
+    });
+
     document.getElementById("saveLoginTitle").addEventListener("click", () => {
-      if (currentUser?.role !== "core") return;
-      const title = document.getElementById("editLoginTitle").value.trim() || DEFAULT_LOGIN_TITLE;
+      if (!getRole()?.canEditLoginTitle) return;
+      const title =
+        document.getElementById("editLoginTitle").value.trim() || DEFAULT_LOGIN_TITLE;
       const err = document.getElementById("loginTitleError");
       workspaceState.loginTitle = title;
       saveSetupMeta({ loginTitle: title });
@@ -2386,6 +3215,73 @@
         err.style.color = "";
         err.textContent = "";
       }, 2000);
+    });
+
+    document.getElementById("saveFirebaseConfigBtn").addEventListener("click", async () => {
+      const status = document.getElementById("firebaseConfigStatus");
+      const ta = document.getElementById("firebaseConfigJson");
+      status.style.color = "";
+      try {
+        const cfg = JSON.parse(ta.value);
+        if (!cfg.apiKey || !cfg.projectId) throw new Error("apiKey and projectId are required");
+        saveFirebaseConfigStored(cfg, true);
+        ta.dataset.touched = "1";
+        unsubscribeFirestore();
+        if (typeof firebase !== "undefined" && firebase.apps?.length) {
+          // re-init needs page reload if app already started with other config
+          location.reload();
+          return;
+        }
+        const ok = initFirebase();
+        if (!ok) throw new Error("Could not initialize Firebase with that config");
+        if (currentUser) {
+          await pushWorkspaceToFirestore(workspaceState, workspaceId);
+          subscribeWorkspace(workspaceId);
+        }
+        status.style.color = "var(--success)";
+        status.textContent =
+          "Firestore enabled on this device. Friends opening this app already use the embedded config — share workspace code " +
+          workspaceId +
+          " via ?ws=" +
+          workspaceId +
+          ".";
+        refreshFirebaseUi();
+      } catch (err) {
+        console.error(err);
+        status.style.color = "var(--danger)";
+        status.textContent = err?.message || "Invalid Firebase config JSON";
+      }
+    });
+
+    document.getElementById("disableFirebaseBtn").addEventListener("click", () => {
+      const stored = loadFirebaseConfigStored();
+      saveFirebaseConfigStored(stored?.config || {}, false);
+      unsubscribeFirestore();
+      firebaseEnabled = false;
+      firestoreDb = null;
+      setFirebasePill("Disabled");
+      setSyncStatus("Local workspace", "");
+      const status = document.getElementById("firebaseConfigStatus");
+      status.style.color = "var(--warning)";
+      status.textContent = "Firestore disabled on this device. Invite/localStorage still work.";
+      refreshFirebaseUi();
+    });
+
+    document.getElementById("copyFriendLinkBtn").addEventListener("click", async () => {
+      const link = friendLink(workspaceId);
+      const status = document.getElementById("firebaseConfigStatus");
+      try {
+        await navigator.clipboard.writeText(link);
+        status.style.color = "var(--success)";
+        status.textContent = "Friend link copied: " + link;
+      } catch {
+        status.style.color = "var(--warning)";
+        status.textContent = link;
+      }
+    });
+
+    document.getElementById("firebaseConfigJson").addEventListener("input", (e) => {
+      e.target.dataset.touched = "1";
     });
 
     document.getElementById("addRow").addEventListener("click", () => {
@@ -2413,13 +3309,13 @@
       const total = partyTotalPct();
       if (total <= 0) return;
       workspaceState.parties.forEach((p) => {
-        p.pct = Math.round(((parseNum(p.pct) / total) * 100) * 100) / 100;
+        p.pct = Math.round((parseNum(p.pct) / total) * 100 * 100) / 100;
       });
       const sum = partyTotalPct();
       const drift = Math.round((100 - sum) * 100) / 100;
       if (workspaceState.parties.length) {
-        workspaceState.parties[workspaceState.parties.length - 1].pct =
-          Math.round((parseNum(workspaceState.parties[workspaceState.parties.length - 1].pct) + drift) * 100) / 100;
+        const last = workspaceState.parties[workspaceState.parties.length - 1];
+        last.pct = Math.round((parseNum(last.pct) + drift) * 100) / 100;
       }
       renderPartyEditor();
       applyPermissions();
@@ -2429,17 +3325,19 @@
 
     [fixedCostsEl, targetUnitsEl].forEach((el) => {
       el.addEventListener("input", () => {
-        if (!getRole()?.canEdit) return;
+        if (!getRole()?.canEditBreakEven) return;
         scheduleSave("Updated break-even settings");
         recalculate();
       });
     });
 
     document.getElementById("copySnapshot").addEventListener("click", async () => {
-      const text = document.getElementById("snapshotOut").value || JSON.stringify(buildInvitePackage(), null, 2);
+      const text =
+        document.getElementById("snapshotOut").value ||
+        JSON.stringify(buildInvitePackage(), null, 2);
       try {
         await navigator.clipboard.writeText(text);
-        document.getElementById("syncStatus").textContent = "Invite / snapshot copied";
+        setSyncStatus("Invite / snapshot copied", "live");
       } catch {
         document.getElementById("snapshotOut").select();
       }
@@ -2450,17 +3348,21 @@
       document.getElementById("snapshotOut").value = text;
       document.getElementById("shareWorkspaceCode").value = workspaceId;
       const status = document.getElementById("shareInviteStatus");
+      const link = friendLink(workspaceId);
       try {
-        await navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(
+          firebaseEnabled
+            ? "Workspace " + workspaceId + "\n" + link + "\n(Sign in only — ask Core for your login code)"
+            : text
+        );
         status.style.color = "var(--success)";
-        status.textContent =
-          "Invite copied. Send it with workspace code " +
-          workspaceId +
-          " and each friend’s username/password. They choose Join workspace → paste → Sign in.";
+        status.textContent = firebaseEnabled
+          ? "Friend link copied for " + workspaceId + ". Send each person’s username + login code."
+          : "Invite copied. They Join → paste → Sign in with their login code.";
       } catch {
         document.getElementById("snapshotOut").select();
         status.style.color = "var(--warning)";
-        status.textContent = "Select and copy the invite text manually, then send it to your friend.";
+        status.textContent = "Select and copy the invite text manually.";
       }
       setTimeout(() => {
         status.textContent = "";
@@ -2468,8 +3370,8 @@
     });
 
     document.getElementById("importSnapshot").addEventListener("click", () => {
-      if (!getRole()?.canEdit && currentUser?.role !== "core") {
-        alert("Only editors/Core can import snapshots.");
+      if (!getRole()?.canEdit && !getRole()?.canManageUsers) {
+        alert("You do not have permission to import snapshots.");
         return;
       }
       try {
@@ -2482,41 +3384,129 @@
         renderAllFromState();
         applyLoginBranding(workspaceState.loginTitle, workspaceState.workspaceName);
         document.getElementById("snapshotIn").value = "";
-        document.getElementById("syncStatus").textContent = "Invite imported · " + workspaceId;
+        setSyncStatus("Invite imported · " + workspaceId, "live");
       } catch {
         alert("Invalid invite / snapshot JSON.");
       }
     });
 
-    document.getElementById("chatForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      if (!currentUser) return;
+    function handleChatSubmit(e) {
+      if (e) e.preventDefault();
+      if (!currentUser) {
+        setChatStatus("Sign in to chat.", "err");
+        return;
+      }
       const input = document.getElementById("chatInput");
       const text = input.value;
-      input.value = "";
-      sendChatMessage(text);
-      input.focus();
+      if (sendChatMessage(text)) {
+        input.value = "";
+        input.focus();
+      }
+    }
+
+    document.getElementById("chatForm").addEventListener("submit", handleChatSubmit);
+    document.getElementById("chatSendBtn").addEventListener("click", (e) => {
+      e.preventDefault();
+      handleChatSubmit(e);
     });
 
-    // Boot: migrate hash pipeline → welcome / setup → login → optional session restore
+    // Cross-tab sync via localStorage (complements BroadcastChannel)
+    window.addEventListener("storage", (ev) => {
+      if (!ev.key || !ev.key.startsWith(WS_PREFIX) || !ev.newValue || !currentUser) return;
+      if (ev.key !== dataKey()) return;
+      try {
+        const remote = JSON.parse(ev.newValue);
+        if (!remote || typeof remote !== "object") return;
+        if (remote.updatedAt && remote.updatedAt === workspaceState.updatedAt) return;
+        applyingRemote = true;
+        workspaceState = ensureAccounts({ ...emptyState(), ...remote });
+        workspaceState.roleDefs = normalizeRoleDefs(workspaceState.roleDefs);
+        workspaceState.chatMessages = normalizeChatMessages(workspaceState.chatMessages);
+        renderAllFromState();
+        setSyncStatus("Live update (other tab)", "live");
+      } catch (err) {
+        console.warn(err);
+      } finally {
+        applyingRemote = false;
+      }
+    });
+
+    // Boot
     (async () => {
+      try {
+        await ensureHashLibs();
+        DEFAULT_CORE.passwordDigest = await hashPasswordPipeline(SUGGESTED_CORE_CODE);
+      } catch (err) {
+        console.error(err);
+      }
+      initFirebase();
+      refreshFirebaseUi();
       setupMeta = loadSetupMeta();
+      const urlWs = getWsFromUrl();
+
       const needsReseSetup = invalidateStalePasswordPipeline();
       if (needsReseSetup) {
         showSetup();
         document.getElementById("setupError").textContent =
-          "Password hashing was upgraded (SHA-256 → SHA-3 → BLAKE3 → SHA-256). Re-run Core setup to create new digests. Friends must re-join with a fresh invite afterward.";
+          "Password hashing was upgraded. Re-run Core setup to create new digests.";
         return;
       }
+
+      // Friends via ?ws=CODE: try Firestore → login only
+      if (urlWs && firebaseEnabled) {
+        try {
+          const remote = await fetchWorkspaceFromFirestore(urlWs);
+          if (remote && isWorkspaceReady(ensureAccounts({ ...emptyState(), ...remote }))) {
+            applyJoinedWorkspace(urlWs, remote);
+            showLogin();
+            document.getElementById("loginError").textContent =
+              "Workspace " + urlWs + " loaded. Sign in with your username + login code.";
+            return;
+          }
+        } catch (err) {
+          console.warn(err);
+        }
+      }
+
+      if (urlWs && isSetupComplete()) {
+        setupMeta.defaultWorkspaceId = urlWs;
+        document.getElementById("workspaceCode").value = urlWs;
+      }
+
       if (!isSetupComplete()) {
+        if (urlWs) {
+          showJoin();
+          document.getElementById("joinWorkspaceCode").value = urlWs;
+          return;
+        }
         showWelcome();
         return;
       }
+
       try {
         const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
         if (session?.username) {
-          workspaceId = (session.workspaceId || setupMeta.defaultWorkspaceId || "MAIN").toUpperCase();
-          workspaceState = loadWorkspaceFromStorage();
+          workspaceId = (
+            session.workspaceId ||
+            urlWs ||
+            setupMeta.defaultWorkspaceId ||
+            "MAIN"
+          ).toUpperCase();
+          if (firebaseEnabled) {
+            try {
+              const remote = await fetchWorkspaceFromFirestore(workspaceId);
+              if (remote) {
+                workspaceState = ensureAccounts({ ...emptyState(), ...remote });
+                localStorage.setItem(dataKey(), JSON.stringify(workspaceState));
+              } else {
+                workspaceState = loadWorkspaceFromStorage();
+              }
+            } catch {
+              workspaceState = loadWorkspaceFromStorage();
+            }
+          } else {
+            workspaceState = loadWorkspaceFromStorage();
+          }
           if (workspaceState.hashVersion && workspaceState.hashVersion !== HASH_PIPELINE_VERSION) {
             showSetup();
             document.getElementById("setupError").textContent =
@@ -2536,6 +3526,7 @@
       } catch (_) {}
       showLogin();
     })();
+
   </script>
 </body>
 </html>
