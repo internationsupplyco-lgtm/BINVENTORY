@@ -550,6 +550,81 @@
       font-size: 0.82rem;
       color: var(--muted);
     }
+    .batch-formula {
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.45;
+      margin: 0 0 1rem;
+      padding: 0.65rem 0.75rem;
+      background: var(--surface-2);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .batch-formula code {
+      font-size: 0.78rem;
+      color: var(--text);
+      background: rgba(59, 130, 246, 0.12);
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+    }
+    .batch-check {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 0.35rem;
+      min-height: 2.4rem;
+    }
+    .batch-check input { width: auto; accent-color: var(--accent); }
+    .batch-error {
+      color: var(--danger);
+      font-size: 0.85rem;
+      margin: 0 0 0.75rem;
+      min-height: 1.2em;
+    }
+    .batch-log-actions { white-space: nowrap; text-align: right; }
+    .chart-range-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-bottom: 1rem;
+    }
+    .chart-range-btn {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 0.45rem 0.85rem;
+      font: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .chart-range-btn:hover { color: var(--text); border-color: var(--accent); }
+    .chart-range-btn.active {
+      background: rgba(59, 130, 246, 0.18);
+      border-color: var(--accent);
+      color: var(--text);
+      font-weight: 600;
+    }
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+      min-height: 280px;
+      height: clamp(280px, 45vh, 420px);
+    }
+    .chart-kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .chart-empty {
+      color: var(--muted);
+      font-size: 0.9rem;
+      padding: 1.5rem 0.5rem;
+      text-align: center;
+    }
     .pct-warn {
       background: rgba(245, 158, 11, 0.12);
       border: 1px solid rgba(245, 158, 11, 0.35);
@@ -1065,7 +1140,9 @@
       <nav class="nav-list" id="navList">
         <button type="button" class="nav-btn active" data-page="dashboard">Dashboard</button>
         <button type="button" class="nav-btn" data-page="inventory">Inventory</button>
-        <button type="button" class="nav-btn" data-page="sell">Sell</button>
+        <button type="button" class="nav-btn" data-page="sell">Sales</button>
+        <button type="button" class="nav-btn" data-page="batch">Next batch</button>
+        <button type="button" class="nav-btn" data-page="charts">Sales chart</button>
         <button type="button" class="nav-btn" data-page="breakeven">Break-even</button>
         <button type="button" class="nav-btn" data-page="equity" id="navEquity">Equity</button>
         <button type="button" class="nav-btn" data-page="chat" id="navChat"><span class="nav-chat-label">Chat <span class="chat-unread-badge hidden" id="navChatBadge" aria-hidden="true"></span></span></button>
@@ -1119,6 +1196,8 @@
           <div class="dash-actions">
             <button type="button" class="btn-primary" data-goto="inventory">Open inventory</button>
             <button type="button" class="btn-ghost" data-goto="sell">Record sales</button>
+            <button type="button" class="btn-ghost" data-goto="batch">Next batch</button>
+            <button type="button" class="btn-ghost" data-goto="charts">Sales chart</button>
             <button type="button" class="btn-ghost" data-goto="equity" id="dashGotoEquity">Equity split</button>
             <button type="button" class="btn-ghost" data-goto="team">Team &amp; sync</button>
           </div>
@@ -1167,12 +1246,12 @@
       </section>
 
       <section class="page hidden" id="page-sell">
-        <h1 class="page-title">Sell</h1>
+        <h1 class="page-title">Sales</h1>
         <p class="page-sub">Record units sold. Stock drops by the amount sold; totals sync with inventory and the workspace.</p>
         <div class="kpi-grid">
           <div class="stat"><label>Gross sales revenue</label><div class="value" id="sellGrossRev">$0.00</div></div>
           <div class="stat"><label>Units sold</label><div class="value" id="sellUnitsSold">0</div></div>
-          <div class="stat"><label>Sell profit (after fixed + sales overhead)</label><div class="value" id="sellProfitVal">$0.00</div></div>
+          <div class="stat"><label>Sales profit (after fixed + sales overhead)</label><div class="value" id="sellProfitVal">$0.00</div></div>
           <div class="stat"><label>Stock on hand</label><div class="value" id="sellStockOnHand">0</div></div>
         </div>
         <div class="card" id="sellOverheadCard" style="margin-top:1rem">
@@ -1229,13 +1308,152 @@
         <div class="card" id="sellEquityCard">
           <h2>Equity from sales</h2>
           <p class="sell-method-note" id="sellMethodNote">
-            Sell profit = sold margin − sales overhead paid − allocated fixed costs.
+            Sales profit = sold margin − sales overhead paid − allocated fixed costs.
             Sales overhead pays down a recover budget from sales (margin, % of revenue, or $ / unit).
             Fixed costs use sold-unit share: fixed × soldUnits / (soldUnits + stock).
-            Foundation takes its cut from sell-profit first; remaining parties split the rest.
+            Foundation takes its cut from sales profit first; remaining parties split the rest.
           </p>
           <p class="equity-remainder-note" id="sellEquityNote"></p>
           <div class="party-grid" id="sellEquityPayments"></div>
+        </div>
+      </section>
+
+      <section class="page hidden" id="page-batch">
+        <h1 class="page-title">Next batch</h1>
+        <p class="page-sub">Log daily sales (units, sell price, cost) to plan the next production batch from recent demand.</p>
+        <p class="batch-formula" id="batchFormulaNote">
+          Next batch ≈ <code>avg daily sold × days of cover</code>, optionally
+          <code>max(0, that − stock on hand)</code>. Avg daily uses logged sales
+          (all days, or last N calendar days).
+        </p>
+        <div class="card">
+          <h2>Planner settings</h2>
+          <div class="field-row">
+            <div class="field">
+              <label for="batchDaysOfCover">Days of cover</label>
+              <input type="number" id="batchDaysOfCover" min="1" max="365" step="1" value="7" />
+              <div class="field-hint">How many days of stock you want after this batch (default 7).</div>
+            </div>
+            <div class="field">
+              <label for="batchLookbackDays">Lookback days (0 = all)</label>
+              <input type="number" id="batchLookbackDays" min="0" max="365" step="1" value="0" />
+              <div class="field-hint">Only count sales within the last N calendar days.</div>
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <label class="batch-check" for="batchDeductStock">
+                <input type="checkbox" id="batchDeductStock" checked />
+                Subtract stock on hand from target
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="card" id="batchLogCard">
+          <div class="card-header">
+            <h2>Log a sales day</h2>
+          </div>
+          <p class="batch-error" id="batchError" aria-live="polite"></p>
+          <p class="sell-viewer-note hidden" id="batchViewerNote">View only — Edit inventory permission is required to log or delete daily sales.</p>
+          <div class="field-row" id="batchLogForm">
+            <div class="field">
+              <label for="batchItemSelect">Product</label>
+              <select id="batchItemSelect"></select>
+              <div class="field-hint">Pick inventory, or choose Custom name.</div>
+            </div>
+            <div class="field hidden" id="batchCustomNameField">
+              <label for="batchCustomName">Custom product name</label>
+              <input type="text" id="batchCustomName" maxlength="80" placeholder="Product name" />
+            </div>
+            <div class="field">
+              <label for="batchSaleDate">Date</label>
+              <input type="date" id="batchSaleDate" />
+            </div>
+            <div class="field">
+              <label for="batchSaleQty">Units sold</label>
+              <input type="number" id="batchSaleQty" min="1" step="1" value="1" />
+            </div>
+            <div class="field">
+              <label for="batchSaleSell">Sell price / unit</label>
+              <input type="number" id="batchSaleSell" min="0" step="0.01" value="0" />
+            </div>
+            <div class="field">
+              <label for="batchSaleCost">Cost / unit</label>
+              <input type="number" id="batchSaleCost" min="0" step="0.01" value="0" />
+            </div>
+          </div>
+          <button type="button" class="btn-primary" id="batchLogBtn">Log sales day</button>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h2>Suggested next batch</h2>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th class="num">Days logged</th>
+                  <th class="num">Avg daily</th>
+                  <th class="num">Target stock</th>
+                  <th class="num">On hand</th>
+                  <th class="num">Next batch</th>
+                  <th class="num">Avg margin / u</th>
+                  <th class="num">Avg daily profit</th>
+                </tr>
+              </thead>
+              <tbody id="batchSuggestBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h2>Daily sales log</h2>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Product</th>
+                  <th class="num">Qty</th>
+                  <th class="num">Sell</th>
+                  <th class="num">Cost</th>
+                  <th class="num">Margin / u</th>
+                  <th class="num">Day profit</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="batchLogBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="page hidden" id="page-charts">
+        <h1 class="page-title">Sales chart</h1>
+        <p class="page-sub">Revenue from daily sales logged on Next batch. Bars show sell revenue ($); hover for units.</p>
+        <div class="card">
+          <div class="card-header">
+            <h2 id="salesChartTitle">Revenue</h2>
+            <button type="button" class="btn-ghost" data-goto="batch">Log daily sales</button>
+          </div>
+          <div class="chart-range-bar" id="salesChartRanges" role="tablist" aria-label="Chart time range">
+            <button type="button" class="chart-range-btn" data-range="day">Day</button>
+            <button type="button" class="chart-range-btn active" data-range="month">Month</button>
+            <button type="button" class="chart-range-btn" data-range="ytd">YTD</button>
+            <button type="button" class="chart-range-btn" data-range="year">Year</button>
+            <button type="button" class="chart-range-btn" data-range="all">All</button>
+          </div>
+          <p class="batch-formula" id="salesChartHint">Month: one bar per day in the current month.</p>
+          <div class="chart-kpis">
+            <div class="stat"><label>Revenue in range</label><div class="value" id="salesChartRev">$0.00</div></div>
+            <div class="stat"><label>Units in range</label><div class="value" id="salesChartUnits">0</div></div>
+            <div class="stat"><label>Days with sales</label><div class="value" id="salesChartDays">0</div></div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="salesChartCanvas" aria-label="Sales revenue bar chart"></canvas>
+          </div>
+          <p class="chart-empty hidden" id="salesChartEmpty">No daily sales in this range yet. Log dated sales on Next batch.</p>
         </div>
       </section>
 
@@ -1589,6 +1807,7 @@ service cloud.firestore {
   <div id="chatToastHost" class="chat-toast-host" aria-live="polite" aria-relevant="additions"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/hash-wasm@4.12.0/dist/index.umd.min.js" data-hash-wasm="1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -1705,6 +1924,11 @@ service cloud.firestore {
       ratePct: 0,
       perUnit: 0,
     };
+    const DEFAULT_BATCH_PLANNER = {
+      daysOfCover: 7,
+      lookbackDays: 0,
+      deductStock: true,
+    };
 
     const fmt = (n) =>
       new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
@@ -1738,6 +1962,51 @@ service cloud.firestore {
         ratePct: Math.max(0, parseNum(o.ratePct)),
         perUnit: Math.max(0, parseNum(o.perUnit)),
       };
+    }
+
+    function newDailySaleId() {
+      return "ds_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+    }
+
+    function normalizeBatchPlanner(raw) {
+      const b = raw && typeof raw === "object" ? raw : {};
+      const daysOfCover = Math.round(parseNum(b.daysOfCover));
+      const lookbackDays = Math.round(parseNum(b.lookbackDays));
+      return {
+        daysOfCover: Math.max(1, Math.min(365, daysOfCover > 0 ? daysOfCover : DEFAULT_BATCH_PLANNER.daysOfCover)),
+        lookbackDays: Math.max(0, Math.min(365, Number.isFinite(lookbackDays) ? lookbackDays : 0)),
+        deductStock: b.deductStock !== false,
+      };
+    }
+
+    function normalizeDailySale(raw) {
+      const s = raw && typeof raw === "object" ? raw : {};
+      const itemName = String(s.itemName ?? s.name ?? "").trim() || "Unnamed item";
+      let date = String(s.date || "").trim().slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        date = new Date().toISOString().slice(0, 10);
+      }
+      return {
+        id: String(s.id || newDailySaleId()),
+        date,
+        itemName,
+        qty: Math.max(0, Math.floor(parseNum(s.qty))),
+        sell: Math.max(0, parseNum(s.sell)),
+        cost: Math.max(0, parseNum(s.cost)),
+        at: s.at ? String(s.at) : new Date().toISOString(),
+        by: String(s.by || ""),
+      };
+    }
+
+    function normalizeDailySales(list) {
+      if (!Array.isArray(list)) return [];
+      return list.map(normalizeDailySale).filter((s) => s.qty > 0);
+    }
+
+    function itemKey(name) {
+      return String(name || "")
+        .trim()
+        .toLowerCase();
     }
 
     /**
@@ -2207,6 +2476,8 @@ service cloud.firestore {
         chatMessages: clean.chatMessages,
         accounts: clean.accounts,
         roleDefs: clean.roleDefs,
+        dailySales: normalizeDailySales(clean.dailySales),
+        batchPlanner: normalizeBatchPlanner(clean.batchPlanner),
         setupDone: !!clean.setupDone,
         setupComplete: !!clean.setupDone,
         loginTitle: clean.loginTitle,
@@ -2438,6 +2709,8 @@ service cloud.firestore {
             workspaceState.chatMessages = normalizeChatMessages(workspaceState.chatMessages);
             workspaceState.foundation = normalizeFoundation(workspaceState.foundation);
             workspaceState.variableOverhead = normalizeVariableOverhead(workspaceState.variableOverhead);
+            workspaceState.dailySales = normalizeDailySales(workspaceState.dailySales);
+            workspaceState.batchPlanner = normalizeBatchPlanner(workspaceState.batchPlanner);
             if (!workspaceState.parties?.length) {
               workspaceState.parties = DEFAULT_PARTIES.map((p) => ({ ...p }));
             }
@@ -2563,6 +2836,8 @@ service cloud.firestore {
         chatMessages: [],
         accounts: [],
         roleDefs: defaultRoleDefs(),
+        dailySales: [],
+        batchPlanner: { ...DEFAULT_BATCH_PLANNER },
         setupDone: false,
         loginTitle: DEFAULT_LOGIN_TITLE,
         workspaceName: "Main workspace",
@@ -2737,6 +3012,8 @@ service cloud.firestore {
       data.items = normalizeItems(Array.isArray(data.items) ? data.items : []);
       data.foundation = normalizeFoundation(data.foundation);
       data.variableOverhead = normalizeVariableOverhead(data.variableOverhead);
+      data.dailySales = normalizeDailySales(data.dailySales);
+      data.batchPlanner = normalizeBatchPlanner(data.batchPlanner);
       return data;
     }
 
@@ -2959,6 +3236,8 @@ service cloud.firestore {
         chatMessages: normalizeChatMessages(rawState.chatMessages),
         accounts: importedAccounts,
         roleDefs: normalizeRoleDefs(rawState.roleDefs),
+        dailySales: normalizeDailySales(rawState.dailySales),
+        batchPlanner: normalizeBatchPlanner(rawState.batchPlanner),
         setupDone: true,
         hashVersion: rawState.hashVersion || HASH_PIPELINE_VERSION,
         loginTitle: rawState.loginTitle || setupMeta.loginTitle || DEFAULT_LOGIN_TITLE,
@@ -3001,6 +3280,8 @@ service cloud.firestore {
         if (!data.parties?.length) data.parties = DEFAULT_PARTIES.map((p) => ({ ...p }));
         data.foundation = normalizeFoundation(data.foundation);
         data.variableOverhead = normalizeVariableOverhead(data.variableOverhead);
+        data.dailySales = normalizeDailySales(data.dailySales);
+        data.batchPlanner = normalizeBatchPlanner(data.batchPlanner);
         if (!Array.isArray(data.activity)) data.activity = [];
         if (!Array.isArray(data.items)) data.items = [];
         data.items = normalizeItems(data.items);
@@ -3205,6 +3486,12 @@ service cloud.firestore {
         renderChat(true);
         setChatStatus("");
         refreshChatNotifyUi();
+      }
+      if (page === "batch") {
+        renderBatchPage();
+      }
+      if (page === "charts") {
+        renderSalesChart();
       }
     }
 
@@ -3909,6 +4196,7 @@ service cloud.firestore {
       if (popBtn) popBtn.disabled = denyChat || isChatPipEnabled();
       if (denyChat && isChatPipEnabled()) setChatPipEnabled(false);
       updateSellActionButtons();
+      applyBatchFormPermissions();
     }
 
     function createRow(data = {}) {
@@ -4387,9 +4675,9 @@ service cloud.firestore {
         if (note) {
           if (!(metrics.sellProfit > 0)) {
             note.textContent =
-              "Sell profit ≤ 0: Foundation and all party payments from sales are $0.";
+              "Sales profit ≤ 0: Foundation and all party payments from sales are $0.";
           } else {
-            note.textContent = `Sell profit ${fmt(metrics.sellProfit)} (margin ${fmt(
+            note.textContent = `Sales profit ${fmt(metrics.sellProfit)} (margin ${fmt(
               metrics.soldMargin
             )} − sales overhead ${fmt(metrics.overhead.paid)} − allocated fixed ${fmt(
               metrics.allocatedFixed
@@ -4532,6 +4820,693 @@ service cloud.firestore {
       setSellError("");
       scheduleSave(`Reset all sales (${totalSold} units restored to stock)`);
       recalculate();
+    }
+
+    function setBatchError(msg) {
+      const el = document.getElementById("batchError");
+      if (el) el.textContent = msg || "";
+    }
+
+    function todayISODate() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function addCalendarDays(isoDate, delta) {
+      const parts = String(isoDate).split("-").map(Number);
+      const d = new Date(parts[0], (parts[1] || 1) - 1, parts[2] || 1);
+      d.setDate(d.getDate() + delta);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function readBatchPlannerFromEditor() {
+      const daysEl = document.getElementById("batchDaysOfCover");
+      const lookEl = document.getElementById("batchLookbackDays");
+      const deductEl = document.getElementById("batchDeductStock");
+      if (!daysEl || !lookEl || !deductEl) {
+        return normalizeBatchPlanner(workspaceState.batchPlanner);
+      }
+      return normalizeBatchPlanner({
+        daysOfCover: parseNum(daysEl.value),
+        lookbackDays: parseNum(lookEl.value),
+        deductStock: !!deductEl.checked,
+      });
+    }
+
+    function writeBatchPlannerToEditor() {
+      const planner = normalizeBatchPlanner(workspaceState.batchPlanner);
+      workspaceState.batchPlanner = planner;
+      const daysEl = document.getElementById("batchDaysOfCover");
+      const lookEl = document.getElementById("batchLookbackDays");
+      const deductEl = document.getElementById("batchDeductStock");
+      if (daysEl && document.activeElement !== daysEl) daysEl.value = planner.daysOfCover;
+      if (lookEl && document.activeElement !== lookEl) lookEl.value = planner.lookbackDays;
+      if (deductEl) deductEl.checked = planner.deductStock;
+    }
+
+    function saveBatchPlannerSettings() {
+      if (!getRole()?.canEdit) return;
+      workspaceState.batchPlanner = readBatchPlannerFromEditor();
+      scheduleSave("Updated next-batch planner settings");
+      renderBatchPage();
+    }
+
+    function inventoryStockByKey() {
+      const map = new Map();
+      getRows().forEach((r) => {
+        const key = itemKey(r.name);
+        if (!key) return;
+        const prev = map.get(key) || { name: r.name, qty: 0, cost: r.cost, sell: r.sell };
+        prev.qty += r.qty;
+        prev.cost = r.cost;
+        prev.sell = r.sell;
+        map.set(key, prev);
+      });
+      return map;
+    }
+
+    function filterDailySalesForPlanner(sales, planner) {
+      const list = normalizeDailySales(sales);
+      if (!(planner.lookbackDays > 0)) return list;
+      const cutoff = addCalendarDays(todayISODate(), -planner.lookbackDays + 1);
+      return list.filter((s) => s.date >= cutoff);
+    }
+
+    function computeBatchSuggestions() {
+      const planner = normalizeBatchPlanner(workspaceState.batchPlanner);
+      const sales = filterDailySalesForPlanner(workspaceState.dailySales, planner);
+      const stockMap = inventoryStockByKey();
+      const byItem = new Map();
+
+      sales.forEach((s) => {
+        const key = itemKey(s.itemName);
+        if (!key) return;
+        let g = byItem.get(key);
+        if (!g) {
+          g = {
+            key,
+            name: s.itemName,
+            totalQty: 0,
+            totalRev: 0,
+            totalCost: 0,
+            dates: new Set(),
+          };
+          byItem.set(key, g);
+        }
+        g.totalQty += s.qty;
+        g.totalRev += s.qty * s.sell;
+        g.totalCost += s.qty * s.cost;
+        g.dates.add(s.date);
+        g.name = s.itemName;
+      });
+
+      const rows = [...byItem.values()].map((g) => {
+        const distinctDays = Math.max(1, g.dates.size);
+        const denom =
+          planner.lookbackDays > 0 ? planner.lookbackDays : distinctDays;
+        const avgDaily = g.totalQty / Math.max(1, denom);
+        const targetStock = avgDaily * planner.daysOfCover;
+        const inv = stockMap.get(g.key);
+        const onHand = inv ? inv.qty : 0;
+        const nextBatch = planner.deductStock
+          ? Math.max(0, Math.ceil(targetStock - onHand))
+          : Math.max(0, Math.ceil(targetStock));
+        const avgSell = g.totalQty > 0 ? g.totalRev / g.totalQty : 0;
+        const avgCost = g.totalQty > 0 ? g.totalCost / g.totalQty : 0;
+        const marginPerUnit = avgSell - avgCost;
+        const avgDailyProfit = avgDaily * marginPerUnit;
+        return {
+          name: inv?.name || g.name,
+          daysLogged: g.dates.size,
+          avgDaily,
+          targetStock,
+          onHand,
+          nextBatch,
+          marginPerUnit,
+          avgDailyProfit,
+          linked: !!inv,
+        };
+      });
+
+      rows.sort((a, b) => a.name.localeCompare(b.name));
+      return { planner, rows };
+    }
+
+    function fillBatchItemSelect(preserveValue) {
+      const sel = document.getElementById("batchItemSelect");
+      if (!sel) return;
+      const prev = preserveValue != null ? preserveValue : sel.value;
+      const rows = getRows();
+      const options = rows
+        .map(
+          (r, idx) =>
+            `<option value="idx:${idx}">${escapeHtml(r.name)}</option>`
+        )
+        .join("");
+      sel.innerHTML =
+        options +
+        `<option value="custom">Custom name…</option>`;
+      if (prev && [...sel.options].some((o) => o.value === prev)) {
+        sel.value = prev;
+      } else if (rows.length) {
+        sel.value = "idx:0";
+      } else {
+        sel.value = "custom";
+      }
+      const customField = document.getElementById("batchCustomNameField");
+      if (customField) customField.classList.toggle("hidden", sel.value !== "custom");
+    }
+
+    function syncBatchPriceFromSelection() {
+      const sel = document.getElementById("batchItemSelect");
+      const sellEl = document.getElementById("batchSaleSell");
+      const costEl = document.getElementById("batchSaleCost");
+      if (!sel || !sellEl || !costEl) return;
+      const customField = document.getElementById("batchCustomNameField");
+      if (customField) customField.classList.toggle("hidden", sel.value !== "custom");
+      if (sel.value === "custom") return;
+      const m = /^idx:(\d+)$/.exec(sel.value);
+      if (!m) return;
+      const rows = getRows();
+      const row = rows[Number(m[1])];
+      if (!row) return;
+      if (document.activeElement !== sellEl) sellEl.value = row.sell;
+      if (document.activeElement !== costEl) costEl.value = row.cost;
+    }
+
+    function applyBatchFormPermissions() {
+      const meta = getRole();
+      const canEdit = !!meta?.canEdit;
+      const ids = [
+        "batchDaysOfCover",
+        "batchLookbackDays",
+        "batchDeductStock",
+        "batchItemSelect",
+        "batchCustomName",
+        "batchSaleDate",
+        "batchSaleQty",
+        "batchSaleSell",
+        "batchSaleCost",
+        "batchLogBtn",
+      ];
+      ids.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !canEdit;
+      });
+      const note = document.getElementById("batchViewerNote");
+      if (note) note.classList.toggle("hidden", canEdit);
+      if (!canEdit) setBatchError("");
+    }
+
+    function renderBatchPage() {
+      if (!document.getElementById("page-batch")) return;
+      writeBatchPlannerToEditor();
+      fillBatchItemSelect();
+      syncBatchPriceFromSelection();
+      const dateEl = document.getElementById("batchSaleDate");
+      if (dateEl && !dateEl.value) dateEl.value = todayISODate();
+
+      const { planner, rows } = computeBatchSuggestions();
+      const formula = document.getElementById("batchFormulaNote");
+      if (formula) {
+        const look =
+          planner.lookbackDays > 0
+            ? `last ${planner.lookbackDays} calendar day(s)`
+            : "all logged days (÷ distinct dates)";
+        formula.innerHTML =
+          `Next batch ≈ <code>avg daily sold × ${planner.daysOfCover} days of cover</code>` +
+          (planner.deductStock
+            ? `, then <code>max(0, target − stock on hand)</code>`
+            : ` (stock not subtracted)`) +
+          `. Avg daily from ${look}.`;
+      }
+
+      const suggestBody = document.getElementById("batchSuggestBody");
+      if (suggestBody) {
+        suggestBody.innerHTML = rows.length
+          ? rows
+              .map(
+                (r) => `<tr>
+                  <td>${escapeHtml(r.name)}${
+                    r.linked ? "" : ' <span class="note">(not in inventory)</span>'
+                  }</td>
+                  <td class="num">${r.daysLogged}</td>
+                  <td class="num">${r.avgDaily.toFixed(2)}</td>
+                  <td class="num">${Math.ceil(r.targetStock).toLocaleString()}</td>
+                  <td class="num">${r.onHand.toLocaleString()}</td>
+                  <td class="num" style="font-weight:700;color:var(--accent)">${r.nextBatch.toLocaleString()}</td>
+                  <td class="num" style="color:${
+                    r.marginPerUnit < 0
+                      ? "var(--danger)"
+                      : r.marginPerUnit > 0
+                        ? "var(--success)"
+                        : ""
+                  }">${fmt(r.marginPerUnit)}</td>
+                  <td class="num" style="color:${
+                    r.avgDailyProfit < 0
+                      ? "var(--danger)"
+                      : r.avgDailyProfit > 0
+                        ? "var(--success)"
+                        : ""
+                  }">${fmt(r.avgDailyProfit)}</td>
+                </tr>`
+              )
+              .join("")
+          : `<tr><td colspan="8" class="note">No daily sales logged yet. Log a day above to see batch suggestions.</td></tr>`;
+      }
+
+      const canEdit = !!getRole()?.canEdit;
+      const logBody = document.getElementById("batchLogBody");
+      if (logBody) {
+        const sales = normalizeDailySales(workspaceState.dailySales).slice().sort((a, b) => {
+          if (a.date !== b.date) return b.date.localeCompare(a.date);
+          return String(b.at).localeCompare(String(a.at));
+        });
+        logBody.innerHTML = sales.length
+          ? sales
+              .map((s) => {
+                const margin = s.sell - s.cost;
+                const dayProfit = s.qty * margin;
+                return `<tr data-sale-id="${escapeHtml(s.id)}">
+                  <td>${escapeHtml(s.date)}</td>
+                  <td>${escapeHtml(s.itemName)}</td>
+                  <td class="num">${s.qty.toLocaleString()}</td>
+                  <td class="num">${fmt(s.sell)}</td>
+                  <td class="num">${fmt(s.cost)}</td>
+                  <td class="num" style="color:${
+                    margin < 0 ? "var(--danger)" : margin > 0 ? "var(--success)" : ""
+                  }">${fmt(margin)}</td>
+                  <td class="num" style="color:${
+                    dayProfit < 0 ? "var(--danger)" : dayProfit > 0 ? "var(--success)" : ""
+                  }">${fmt(dayProfit)}</td>
+                  <td class="batch-log-actions">
+                    <button type="button" class="btn-ghost btn-danger batch-del-btn ${
+                      canEdit ? "" : "hidden"
+                    }" data-sale-id="${escapeHtml(s.id)}" ${canEdit ? "" : "disabled"}>✕</button>
+                  </td>
+                </tr>`;
+              })
+              .join("")
+          : `<tr><td colspan="8" class="note">No daily sales yet.</td></tr>`;
+
+        logBody.querySelectorAll(".batch-del-btn").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            deleteDailySale(btn.getAttribute("data-sale-id"));
+          });
+        });
+      }
+
+      applyBatchFormPermissions();
+    }
+
+    function resolveBatchProductName() {
+      const sel = document.getElementById("batchItemSelect");
+      if (!sel) return "";
+      if (sel.value === "custom") {
+        return (document.getElementById("batchCustomName")?.value || "").trim();
+      }
+      const m = /^idx:(\d+)$/.exec(sel.value);
+      if (!m) return "";
+      const rows = getRows();
+      const row = rows[Number(m[1])];
+      return row ? row.name : "";
+    }
+
+    function logDailySale() {
+      if (!getRole()?.canEdit) {
+        setBatchError("You do not have permission to log daily sales.");
+        return;
+      }
+      const itemName = resolveBatchProductName();
+      if (!itemName) {
+        setBatchError("Choose a product or enter a custom name.");
+        return;
+      }
+      const date = (document.getElementById("batchSaleDate")?.value || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        setBatchError("Enter a valid date.");
+        return;
+      }
+      const qty = Math.floor(parseNum(document.getElementById("batchSaleQty")?.value));
+      if (!(qty > 0)) {
+        setBatchError("Units sold must be at least 1.");
+        return;
+      }
+      const sell = Math.max(0, parseNum(document.getElementById("batchSaleSell")?.value));
+      const cost = Math.max(0, parseNum(document.getElementById("batchSaleCost")?.value));
+      const entry = normalizeDailySale({
+        id: newDailySaleId(),
+        date,
+        itemName,
+        qty,
+        sell,
+        cost,
+        at: new Date().toISOString(),
+        by: currentUser?.name || "",
+      });
+      workspaceState.dailySales = normalizeDailySales([
+        entry,
+        ...(workspaceState.dailySales || []),
+      ]);
+      workspaceState.batchPlanner = readBatchPlannerFromEditor();
+      setBatchError("");
+      const qtyEl = document.getElementById("batchSaleQty");
+      if (qtyEl) qtyEl.value = "1";
+      scheduleSave(`Logged ${qty} × ${itemName} sold on ${date}`);
+      renderBatchPage();
+      renderSalesChart();
+    }
+
+    function deleteDailySale(id) {
+      if (!getRole()?.canEdit) {
+        setBatchError("You do not have permission to delete daily sales.");
+        return;
+      }
+      const saleId = String(id || "");
+      const before = normalizeDailySales(workspaceState.dailySales);
+      const found = before.find((s) => s.id === saleId);
+      if (!found) return;
+      workspaceState.dailySales = before.filter((s) => s.id !== saleId);
+      setBatchError("");
+      scheduleSave(`Removed daily sale: ${found.qty} × ${found.itemName} (${found.date})`);
+      renderBatchPage();
+      renderSalesChart();
+    }
+
+    let salesChartRange = "month";
+    let salesChartInstance = null;
+
+    const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    function saleRevenue(s) {
+      return Math.max(0, s.qty) * Math.max(0, s.sell);
+    }
+
+    function pad2(n) {
+      return String(n).padStart(2, "0");
+    }
+
+    function buildDayLabels(startIso, count) {
+      const out = [];
+      for (let i = 0; i < count; i++) out.push(addCalendarDays(startIso, i));
+      return out;
+    }
+
+    function aggregateDailySalesForChart(range) {
+      const sales = normalizeDailySales(workspaceState.dailySales);
+      const today = todayISODate();
+      const todayParts = today.split("-").map(Number);
+      const year = todayParts[0];
+      const month = todayParts[1];
+      const byDay = new Map();
+      sales.forEach((s) => {
+        const prev = byDay.get(s.date) || { revenue: 0, units: 0 };
+        prev.revenue += saleRevenue(s);
+        prev.units += s.qty;
+        byDay.set(s.date, prev);
+      });
+
+      let labels = [];
+      let keys = [];
+      let title = "Revenue";
+      let hint = "";
+
+      if (range === "day") {
+        // Recent days (last 14 calendar days) — dated daily sales have no hour grain.
+        const start = addCalendarDays(today, -13);
+        keys = buildDayLabels(start, 14);
+        labels = keys.map((d) => {
+          const p = d.split("-");
+          return `${Number(p[1])}/${Number(p[2])}`;
+        });
+        title = "Revenue · last 14 days";
+        hint = "Day: one bar per calendar day for the last 14 days (including today).";
+      } else if (range === "month") {
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const prefix = `${year}-${pad2(month)}-`;
+        keys = [];
+        for (let d = 1; d <= daysInMonth; d++) keys.push(prefix + pad2(d));
+        labels = keys.map((_, i) => String(i + 1));
+        title = `Revenue · ${MONTH_SHORT[month - 1]} ${year}`;
+        hint = "Month: one bar per day of the current month.";
+      } else if (range === "ytd") {
+        keys = [];
+        labels = [];
+        for (let m = 1; m <= month; m++) {
+          keys.push(`${year}-${pad2(m)}`);
+          labels.push(MONTH_SHORT[m - 1]);
+        }
+        title = `Revenue · YTD ${year}`;
+        hint = "YTD: one bar per month from January through the current month.";
+      } else if (range === "year") {
+        keys = [];
+        labels = [];
+        for (let m = 1; m <= 12; m++) {
+          keys.push(`${year}-${pad2(m)}`);
+          labels.push(MONTH_SHORT[m - 1]);
+        }
+        title = `Revenue · ${year}`;
+        hint = "Year: one bar per month for the current calendar year.";
+      } else {
+        // All: by year if data spans more than one calendar year; else by month.
+        const dates = [...byDay.keys()].sort();
+        const years = new Set(dates.map((d) => d.slice(0, 4)));
+        if (years.size > 1 || (dates.length && dates[0].slice(0, 4) !== String(year))) {
+          const minY = dates.length
+            ? Math.min(...[...years].map(Number), year)
+            : year;
+          const maxY = Math.max(...(dates.length ? [...years].map(Number) : [year]), year);
+          keys = [];
+          labels = [];
+          for (let y = minY; y <= maxY; y++) {
+            keys.push(String(y));
+            labels.push(String(y));
+          }
+          title = "Revenue · all years";
+          hint = "All: one bar per calendar year (multi-year history detected).";
+        } else {
+          let minMonth = `${year}-01`;
+          let maxMonth = `${year}-${pad2(month)}`;
+          if (dates.length) {
+            minMonth = dates[0].slice(0, 7);
+            maxMonth = dates[dates.length - 1].slice(0, 7);
+          }
+          keys = [];
+          labels = [];
+          let cur = minMonth;
+          while (cur <= maxMonth) {
+            keys.push(cur);
+            const [y, m] = cur.split("-");
+            labels.push(`${MONTH_SHORT[Number(m) - 1]} ${y}`);
+            let mm = Number(m) + 1;
+            let yy = Number(y);
+            if (mm > 12) {
+              mm = 1;
+              yy += 1;
+            }
+            cur = `${yy}-${pad2(mm)}`;
+          }
+          title = "Revenue · all months";
+          hint = "All: one bar per month across your logged sales history.";
+        }
+      }
+
+      const revenues = [];
+      const units = [];
+      let daysWithSales = 0;
+
+      if (range === "day" || range === "month") {
+        keys.forEach((day) => {
+          const bucket = byDay.get(day) || { revenue: 0, units: 0 };
+          revenues.push(bucket.revenue);
+          units.push(bucket.units);
+          if (bucket.units > 0 || bucket.revenue > 0) daysWithSales += 1;
+        });
+      } else if (range === "ytd" || range === "year") {
+        keys.forEach((ym) => {
+          let rev = 0;
+          let u = 0;
+          byDay.forEach((bucket, day) => {
+            if (day.startsWith(ym)) {
+              rev += bucket.revenue;
+              u += bucket.units;
+              if (bucket.units > 0 || bucket.revenue > 0) daysWithSales += 1;
+            }
+          });
+          revenues.push(rev);
+          units.push(u);
+        });
+      } else if (keys.length && keys[0].length === 4) {
+        // by year
+        keys.forEach((y) => {
+          let rev = 0;
+          let u = 0;
+          byDay.forEach((bucket, day) => {
+            if (day.startsWith(y)) {
+              rev += bucket.revenue;
+              u += bucket.units;
+              if (bucket.units > 0 || bucket.revenue > 0) daysWithSales += 1;
+            }
+          });
+          revenues.push(rev);
+          units.push(u);
+        });
+      } else {
+        // by month for all
+        keys.forEach((ym) => {
+          let rev = 0;
+          let u = 0;
+          byDay.forEach((bucket, day) => {
+            if (day.startsWith(ym)) {
+              rev += bucket.revenue;
+              u += bucket.units;
+              if (bucket.units > 0 || bucket.revenue > 0) daysWithSales += 1;
+            }
+          });
+          revenues.push(rev);
+          units.push(u);
+        });
+      }
+
+      const totalRev = revenues.reduce((a, b) => a + b, 0);
+      const totalUnits = units.reduce((a, b) => a + b, 0);
+      return {
+        labels,
+        revenues,
+        units,
+        title,
+        hint,
+        totalRev,
+        totalUnits,
+        daysWithSales,
+        hasData: totalUnits > 0 || totalRev > 0,
+      };
+    }
+
+    function destroySalesChart() {
+      if (salesChartInstance) {
+        try {
+          salesChartInstance.destroy();
+        } catch (_) {}
+        salesChartInstance = null;
+      }
+    }
+
+    function renderSalesChart() {
+      const canvas = document.getElementById("salesChartCanvas");
+      if (!canvas) return;
+      if (typeof Chart === "undefined") {
+        const empty = document.getElementById("salesChartEmpty");
+        if (empty) {
+          empty.classList.remove("hidden");
+          empty.textContent = "Chart.js failed to load. Check your network / CDN.";
+        }
+        return;
+      }
+
+      document.querySelectorAll("#salesChartRanges .chart-range-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.range === salesChartRange);
+      });
+
+      const data = aggregateDailySalesForChart(salesChartRange);
+      const titleEl = document.getElementById("salesChartTitle");
+      const hintEl = document.getElementById("salesChartHint");
+      const emptyEl = document.getElementById("salesChartEmpty");
+      const wrap = canvas.closest(".chart-wrap");
+      if (titleEl) titleEl.textContent = data.title;
+      if (hintEl) hintEl.textContent = data.hint;
+      const set = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      };
+      set("salesChartRev", fmt(data.totalRev));
+      set("salesChartUnits", data.totalUnits.toLocaleString());
+      set("salesChartDays", String(data.daysWithSales));
+
+      if (emptyEl) emptyEl.classList.toggle("hidden", data.hasData);
+      if (wrap) wrap.classList.toggle("hidden", !data.hasData);
+      if (!data.hasData) {
+        destroySalesChart();
+        if (emptyEl) {
+          emptyEl.textContent =
+            "No daily sales in this range yet. Log dated sales on Next batch.";
+        }
+        return;
+      }
+
+      if (wrap) wrap.classList.remove("hidden");
+      const chartData = {
+        labels: data.labels,
+        datasets: [
+          {
+            label: "Revenue ($)",
+            data: data.revenues,
+            backgroundColor: "rgba(59, 130, 246, 0.65)",
+            borderColor: "rgba(59, 130, 246, 1)",
+            borderWidth: 1,
+            borderRadius: 4,
+            maxBarThickness: 48,
+            units: data.units,
+          },
+        ],
+      };
+      const options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label(ctx) {
+                const rev = ctx.parsed.y || 0;
+                const u = ctx.dataset.units?.[ctx.dataIndex] ?? 0;
+                return [`Revenue: ${fmt(rev)}`, `Units: ${u.toLocaleString()}`];
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { color: "rgba(45, 58, 79, 0.65)" },
+            ticks: { color: "#8b9cb3", maxRotation: 0, autoSkip: true, maxTicksLimit: 16 },
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: "rgba(45, 58, 79, 0.65)" },
+            ticks: {
+              color: "#8b9cb3",
+              callback(v) {
+                return "$" + Number(v).toLocaleString();
+              },
+            },
+          },
+        },
+      };
+
+      if (salesChartInstance) {
+        salesChartInstance.data = chartData;
+        salesChartInstance.options = options;
+        salesChartInstance.update();
+        return;
+      }
+      salesChartInstance = new Chart(canvas.getContext("2d"), {
+        type: "bar",
+        data: chartData,
+        options,
+      });
+    }
+
+    function setSalesChartRange(range) {
+      const allowed = ["day", "month", "ytd", "year", "all"];
+      if (!allowed.includes(range)) return;
+      salesChartRange = range;
+      renderSalesChart();
     }
 
     function syncFoundationEditor() {
@@ -4879,6 +5854,9 @@ service cloud.firestore {
         workspaceState.parties = DEFAULT_PARTIES.map((p) => ({ ...p }));
       }
       workspaceState.foundation = normalizeFoundation(workspaceState.foundation);
+      workspaceState.dailySales = normalizeDailySales(workspaceState.dailySales);
+      workspaceState.batchPlanner = normalizeBatchPlanner(workspaceState.batchPlanner);
+      writeBatchPlannerToEditor();
       workspaceState = ensureAccounts(workspaceState);
       workspaceState.chatMessages = normalizeChatMessages(workspaceState.chatMessages);
       renderPartyEditor();
@@ -4891,6 +5869,18 @@ service cloud.firestore {
         !document.getElementById("page-team").classList.contains("hidden")
       ) {
         renderTeamPage();
+      }
+      if (
+        document.getElementById("page-batch") &&
+        !document.getElementById("page-batch").classList.contains("hidden")
+      ) {
+        renderBatchPage();
+      }
+      if (
+        document.getElementById("page-charts") &&
+        !document.getElementById("page-charts").classList.contains("hidden")
+      ) {
+        renderSalesChart();
       }
       renderChat(false);
     }
@@ -4938,6 +5928,13 @@ service cloud.firestore {
       renderPartyPayments(netProfit);
       renderDashboard(rows, { totalCost, totalRevenue, totalUnits, netProfit });
       renderSellPage();
+      renderBatchPage();
+      if (
+        document.getElementById("page-charts") &&
+        !document.getElementById("page-charts").classList.contains("hidden")
+      ) {
+        renderSalesChart();
+      }
     }
 
     // ——— Events ———
@@ -5559,6 +6556,25 @@ service cloud.firestore {
 
     document.getElementById("undoSaleBtn").addEventListener("click", () => undoLastSale());
     document.getElementById("resetSalesBtn").addEventListener("click", () => resetAllSales());
+
+    document.getElementById("batchLogBtn")?.addEventListener("click", () => logDailySale());
+    document.getElementById("batchItemSelect")?.addEventListener("change", () => {
+      syncBatchPriceFromSelection();
+    });
+    ["batchDaysOfCover", "batchLookbackDays"].forEach((id) => {
+      document.getElementById(id)?.addEventListener("change", () => saveBatchPlannerSettings());
+      document.getElementById(id)?.addEventListener("input", () => {
+        if (!getRole()?.canEdit) return;
+        workspaceState.batchPlanner = readBatchPlannerFromEditor();
+        renderBatchPage();
+      });
+    });
+    document.getElementById("batchDeductStock")?.addEventListener("change", () => saveBatchPlannerSettings());
+    document.getElementById("salesChartRanges")?.addEventListener("click", (e) => {
+      const btn = e.target.closest(".chart-range-btn");
+      if (!btn || !btn.dataset.range) return;
+      setSalesChartRange(btn.dataset.range);
+    });
 
     document.getElementById("addParty").addEventListener("click", () => {
       if (!getRole()?.canEditSplit) return;
