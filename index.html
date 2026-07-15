@@ -783,18 +783,34 @@
       color: var(--muted);
       font-size: 0.9rem;
       padding: 1.25rem 1rem;
-      background: var(--surface);
-      border: 1px dashed var(--border);
-      border-radius: var(--radius);
+      background: rgba(26, 35, 50, 0.55);
+      border: 1px dashed rgba(148, 163, 184, 0.35);
+      border-radius: 12px;
       text-align: center;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
     .chat-card {
+      --chat-glass: rgba(22, 28, 40, 0.62);
+      --chat-glass-2: rgba(36, 48, 68, 0.45);
+      --chat-glass-edge: rgba(255, 255, 255, 0.08);
+      --chat-glass-highlight: rgba(255, 255, 255, 0.04);
       display: flex;
       flex-direction: column;
-      height: min(70vh, 640px);
+      height: min(72vh, 680px);
       padding: 0;
       overflow: hidden;
       position: relative;
+      background:
+        linear-gradient(145deg, var(--chat-glass-highlight), transparent 42%),
+        var(--chat-glass);
+      border: 1px solid var(--chat-glass-edge);
+      border-radius: 14px;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.06) inset,
+        0 12px 40px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(22px) saturate(1.35);
+      -webkit-backdrop-filter: blur(22px) saturate(1.35);
     }
     .chat-pip .chat-card {
       height: 100%;
@@ -802,89 +818,194 @@
       border-radius: 0;
       box-shadow: none;
       background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
-    .chat-toolbar {
+    .chat-layout {
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.55rem 0.75rem;
-      padding: 0.55rem 0.85rem;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface-2);
+      flex: 1 1 auto;
+      min-height: 0;
+      height: 100%;
+    }
+    .chat-rail {
+      width: 176px;
       flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      padding: 0.65rem 0.5rem;
+      border-right: 1px solid var(--chat-glass-edge);
+      background: rgba(12, 16, 24, 0.45);
+      overflow-y: auto;
     }
-    .chat-channel-tabs {
-      display: inline-flex;
-      gap: 0.25rem;
-      padding: 0.15rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
+    .chat-rail-heading {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0.15rem 0.45rem 0.35rem;
     }
-    .chat-tab {
+    .chat-rail-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      width: 100%;
+      text-align: left;
       background: transparent;
       color: var(--muted);
       border: 1px solid transparent;
-      padding: 0.35rem 0.7rem;
+      border-radius: 8px;
+      padding: 0.4rem 0.5rem;
+      font: inherit;
       font-size: 0.82rem;
-      border-radius: 6px;
+      font-weight: 500;
     }
-    .chat-tab:hover { color: var(--text); }
-    .chat-tab.active {
-      background: rgba(59, 130, 246, 0.18);
-      color: #93c5fd;
-      border-color: rgba(59, 130, 246, 0.35);
+    .chat-rail-item:hover { color: var(--text); background: rgba(255, 255, 255, 0.05); }
+    .chat-rail-item.active {
+      color: var(--text);
+      background: rgba(88, 101, 242, 0.22);
+      border-color: rgba(88, 101, 242, 0.35);
+    }
+    .chat-rail-hash {
+      color: var(--muted);
+      font-weight: 700;
+      opacity: 0.75;
+    }
+    .chat-rail-item.active .chat-rail-hash { color: #a5b4fc; }
+    .chat-dm-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .chat-dm-list-item {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 0.35rem 0.4rem;
+      font: inherit;
+      font-size: 0.78rem;
+    }
+    .chat-dm-list-item:hover { color: var(--text); background: rgba(255, 255, 255, 0.05); }
+    .chat-dm-list-item.active {
+      color: var(--text);
+      background: rgba(88, 101, 242, 0.18);
+    }
+    .chat-dm-list-avatar {
+      width: 1.45rem;
+      height: 1.45rem;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.62rem;
+      font-weight: 700;
+      background: rgba(88, 101, 242, 0.35);
+      color: #c7d2fe;
+      flex-shrink: 0;
+    }
+    .chat-dm-list-empty {
+      font-size: 0.72rem;
+      color: var(--muted);
+      padding: 0.25rem 0.45rem;
     }
     .chat-dm-picker {
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.4rem 0.55rem;
-      flex: 1 1 auto;
-      min-width: 0;
+      flex-direction: column;
+      gap: 0.3rem;
+      padding: 0.25rem 0.35rem 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      margin-top: auto;
     }
     .chat-dm-picker.hidden { display: none !important; }
     .chat-dm-picker label {
-      font-size: 0.75rem;
+      font-size: 0.68rem;
       color: var(--muted);
       margin: 0;
     }
     .chat-dm-picker select {
-      width: auto;
-      min-width: 140px;
-      max-width: min(240px, 100%);
-      background: var(--surface);
-      border: 1px solid var(--border);
+      width: 100%;
+      min-width: 0;
+      background: rgba(15, 20, 28, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 6px;
       color: var(--text);
-      padding: 0.35rem 0.5rem;
+      padding: 0.3rem 0.4rem;
       font: inherit;
-      font-size: 0.82rem;
+      font-size: 0.75rem;
+    }
+    .chat-main {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .chat-channel-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--chat-glass-edge);
+      background: rgba(255, 255, 255, 0.03);
+      flex-shrink: 0;
+      min-height: 3rem;
+    }
+    .chat-channel-header .chat-channel-icon {
+      color: var(--muted);
+      font-size: 1.15rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .chat-channel-header .chat-channel-name {
+      font-size: 0.98rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+    .chat-channel-header .chat-channel-sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-left: 0.15rem;
     }
     .chat-messages {
       flex: 1 1 auto;
       min-height: 0;
       overflow-y: auto;
-      padding: 1rem 1.15rem;
+      padding: 0.55rem 0.35rem 0.85rem;
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 0;
     }
     .chat-pip {
       position: fixed;
       z-index: 80;
       display: flex;
       flex-direction: column;
-      min-width: 260px;
-      min-height: 280px;
+      min-width: 280px;
+      min-height: 300px;
       max-width: calc(100vw - 16px);
       max-height: calc(100vh - 16px);
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.05), transparent 40%),
+        rgba(18, 24, 36, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.06) inset,
+        0 16px 48px rgba(0, 0, 0, 0.55);
       overflow: hidden;
       resize: both;
+      backdrop-filter: blur(24px) saturate(1.4);
+      -webkit-backdrop-filter: blur(24px) saturate(1.4);
     }
     .chat-pip.hidden { display: none !important; }
     .chat-pip-header {
@@ -892,8 +1013,8 @@
       align-items: center;
       gap: 0.5rem;
       padding: 0.55rem 0.65rem;
-      background: var(--surface-2);
-      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       cursor: grab;
       user-select: none;
       touch-action: none;
@@ -914,6 +1035,8 @@
       padding: 0.3rem 0.55rem;
       font-size: 0.78rem;
       flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.1);
     }
     .chat-pip-body {
       flex: 1 1 auto;
@@ -922,12 +1045,38 @@
       flex-direction: column;
       overflow: hidden;
     }
+    .chat-pip .chat-rail { width: 128px; padding: 0.45rem 0.35rem; }
     @media (max-width: 800px) {
       .chat-pip {
         min-width: 240px;
-        width: min(320px, calc(100vw - 20px)) !important;
-        max-height: min(420px, calc(100vh - 24px));
+        width: min(340px, calc(100vw - 20px)) !important;
+        max-height: min(440px, calc(100vh - 24px));
       }
+      .chat-pip .chat-rail { display: none; }
+    }
+    @media (max-width: 700px) {
+      .chat-layout { flex-direction: column; }
+      .chat-rail {
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 0.35rem 0.5rem;
+        border-right: none;
+        border-bottom: 1px solid var(--chat-glass-edge);
+        max-height: none;
+        overflow: visible;
+      }
+      .chat-rail-heading { width: 100%; padding-bottom: 0.1rem; }
+      .chat-rail-item { width: auto; }
+      .chat-dm-list {
+        flex-direction: row;
+        flex-wrap: wrap;
+        max-height: none;
+        width: 100%;
+      }
+      .chat-dm-list-item { width: auto; }
+      .chat-dm-picker { margin-top: 0; border-top: none; flex: 1 1 100%; }
     }
     .chat-empty {
       color: var(--muted);
@@ -936,62 +1085,168 @@
       margin: auto;
       padding: 2rem 1rem;
     }
-    .chat-bubble {
-      max-width: min(100%, 560px);
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 0.65rem 0.8rem;
+    .chat-msg {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr);
+      gap: 0.55rem;
+      padding: 0.35rem 0.75rem 0.35rem 0.85rem;
       position: relative;
+      border-radius: 0;
     }
-    .chat-bubble.mine {
-      align-self: flex-end;
-      background: rgba(59, 130, 246, 0.12);
-      border-color: rgba(59, 130, 246, 0.35);
+    .chat-msg:hover {
+      background: rgba(255, 255, 255, 0.03);
     }
-    .chat-bubble.system {
-      align-self: stretch;
-      max-width: 100%;
-      background: rgba(148, 163, 184, 0.08);
-      border-style: dashed;
-      border-color: rgba(148, 163, 184, 0.35);
+    .chat-msg.mine:hover { background: rgba(88, 101, 242, 0.06); }
+    .chat-msg.system {
+      background: rgba(148, 163, 184, 0.05);
     }
-    .chat-bubble.ephemeral {
-      border-color: rgba(245, 158, 11, 0.4);
-      background: rgba(245, 158, 11, 0.08);
+    .chat-msg.ephemeral {
+      background: rgba(245, 158, 11, 0.06);
     }
-    .chat-meta {
+    .chat-msg.ephemeral:hover { background: rgba(245, 158, 11, 0.09); }
+    .chat-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      margin-bottom: 0.3rem;
-      font-size: 0.78rem;
-      color: var(--muted);
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      background: rgba(88, 101, 242, 0.35);
+      color: #c7d2fe;
+      flex-shrink: 0;
+      margin-top: 0.15rem;
+      user-select: none;
     }
-    .chat-meta .sender { color: var(--text); font-weight: 600; font-size: 0.85rem; }
-    .chat-meta .time { margin-left: auto; font-variant-numeric: tabular-nums; }
+    .chat-msg.system .chat-avatar {
+      background: rgba(148, 163, 184, 0.25);
+      color: #cbd5e1;
+    }
+    .chat-msg.ephemeral .chat-avatar {
+      background: rgba(245, 158, 11, 0.28);
+      color: #fde68a;
+    }
+    .chat-msg.mine .chat-avatar {
+      background: rgba(59, 130, 246, 0.4);
+      color: #bfdbfe;
+    }
+    .chat-msg-body { min-width: 0; }
+    .chat-meta {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.5rem;
+      margin-bottom: 0.1rem;
+      font-size: 0.74rem;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+    .chat-meta .sender {
+      color: var(--text);
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .chat-meta .time {
+      font-variant-numeric: tabular-nums;
+      font-size: 0.7rem;
+      opacity: 0.85;
+    }
     .chat-text {
-      font-size: 0.92rem;
+      font-size: 0.9rem;
       white-space: pre-wrap;
       word-break: break-word;
-      line-height: 1.45;
+      line-height: 1.4;
+      color: var(--text);
     }
-    .chat-bubble-actions {
+    .chat-msg-actions {
+      position: absolute;
+      top: 0.15rem;
+      right: 0.55rem;
       display: flex;
-      justify-content: flex-end;
-      gap: 0.35rem;
-      margin-top: 0.4rem;
+      gap: 0.25rem;
+      opacity: 0;
+      pointer-events: none;
+      background: rgba(22, 28, 40, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 0.15rem;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: opacity 0.12s ease;
     }
-    .chat-bubble-actions .btn-ghost {
+    .chat-msg:hover .chat-msg-actions,
+    .chat-msg:focus-within .chat-msg-actions {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    @media (hover: none) {
+      .chat-msg-actions {
+        position: static;
+        opacity: 1;
+        pointer-events: auto;
+        margin-top: 0.35rem;
+        width: fit-content;
+      }
+    }
+    .chat-msg-actions .btn-ghost {
       padding: 0.2rem 0.45rem;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
+      background: transparent;
+      border-color: transparent;
+    }
+    .chat-msg-actions .btn-ghost:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+    }
+    .chat-embed {
+      display: flex;
+      margin-top: 0.35rem;
+      max-width: min(100%, 420px);
+      border-radius: 6px;
+      overflow: hidden;
+      background: rgba(15, 20, 28, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .chat-embed-bar {
+      width: 4px;
+      flex-shrink: 0;
+      background: #5865f2;
+    }
+    .chat-embed[data-kind="sales"] .chat-embed-bar { background: #22c55e; }
+    .chat-embed[data-kind="inventory"] .chat-embed-bar { background: #3b82f6; }
+    .chat-embed[data-kind="equity"] .chat-embed-bar { background: #a855f7; }
+    .chat-embed[data-kind="overhead"] .chat-embed-bar { background: #f59e0b; }
+    .chat-embed[data-kind="batch"] .chat-embed-bar { background: #14b8a6; }
+    .chat-embed[data-kind="tickets"] .chat-embed-bar { background: #ef4444; }
+    .chat-embed[data-kind="help"] .chat-embed-bar { background: #94a3b8; }
+    .chat-embed-inner {
+      padding: 0.55rem 0.7rem 0.6rem;
+      min-width: 0;
+      flex: 1;
+    }
+    .chat-embed-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #c7d2fe;
+      margin-bottom: 0.25rem;
+    }
+    .chat-embed-body {
+      font-size: 0.82rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.4;
+      color: var(--text);
+      opacity: 0.92;
     }
     .chat-compose-wrap {
       position: relative;
       flex-shrink: 0;
-      border-top: 1px solid var(--border);
-      background: var(--surface);
+      border-top: 1px solid var(--chat-glass-edge);
+      background: rgba(12, 16, 24, 0.35);
+      padding: 0 0.75rem 0.75rem;
     }
     .chat-slash-menu {
       position: absolute;
@@ -1000,12 +1255,14 @@
       bottom: calc(100% - 2px);
       max-height: 220px;
       overflow-y: auto;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      box-shadow: var(--shadow);
+      background: rgba(22, 28, 40, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
       z-index: 5;
       padding: 0.3rem;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
     }
     .chat-slash-menu.hidden { display: none !important; }
     .chat-slash-item {
@@ -1022,11 +1279,11 @@
     }
     .chat-slash-item:hover,
     .chat-slash-item.active {
-      background: rgba(59, 130, 246, 0.15);
+      background: rgba(88, 101, 242, 0.22);
     }
     .chat-slash-item .slash-cmd {
       font-weight: 600;
-      color: #93c5fd;
+      color: #a5b4fc;
       margin-right: 0.45rem;
     }
     .chat-slash-item .slash-desc {
@@ -1035,19 +1292,35 @@
     }
     .chat-compose {
       display: flex;
-      gap: 0.55rem;
+      gap: 0.45rem;
       align-items: center;
-      padding: 0.85rem 1rem;
-      background: var(--surface);
+      padding: 0.15rem 0 0;
+      background: transparent;
       flex-shrink: 0;
     }
-    /* Override global input width:100% so Send stays visible in the flex row */
     .chat-compose input[type="text"] {
       flex: 1 1 auto;
       min-width: 0;
       width: auto;
+      background: rgba(15, 20, 28, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      color: var(--text);
+      padding: 0.7rem 0.9rem;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
     }
-    .chat-compose .btn-primary { flex-shrink: 0; }
+    .chat-compose input[type="text"]:focus {
+      outline: none;
+      border-color: rgba(88, 101, 242, 0.55);
+      box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
+    }
+    .chat-compose .btn-primary {
+      flex-shrink: 0;
+      border-radius: 10px;
+      background: #5865f2;
+      padding: 0.65rem 1rem;
+    }
+    .chat-compose .btn-primary:hover:not(:disabled) { background: #4752c4; }
   
     .role-power { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
     .role-core { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
@@ -1063,10 +1336,10 @@
     .login-code-row { display: flex; gap: 0.45rem; align-items: stretch; }
     .login-code-row input { flex: 1; }
     .chat-status {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: var(--muted);
-      padding: 0.35rem 1rem 0;
-      min-height: 1.2em;
+      padding: 0.2rem 1rem 0.15rem;
+      min-height: 1.1em;
       flex-shrink: 0;
     }
     .chat-status.err { color: var(--danger); }
@@ -2024,7 +2297,7 @@
         <div class="chat-page-top">
           <div>
             <h1 class="page-title">Chat</h1>
-            <p class="page-sub">Team channel for everyone, or Direct messages to one person. Type <code>/</code> for commands. Messages sync with the workspace.</p>
+            <p class="page-sub">Team channel for everyone, or Direct messages to one person. Type <code>/</code> for commands — <code>/show …</code> shares with the channel.</p>
           </div>
           <div class="chat-page-actions">
             <button type="button" class="btn-ghost" id="chatEnableNotifyBtn" title="Allow desktop or in-app chat alerts">Enable notifications</button>
@@ -2033,30 +2306,48 @@
         </div>
         <div id="chatPageHost">
           <div class="card chat-card" id="chatCard">
-            <div class="chat-toolbar">
-              <div class="chat-channel-tabs" role="tablist" aria-label="Chat channel">
-                <button type="button" class="chat-tab active" role="tab" aria-selected="true" data-chat-channel="team" id="chatTabTeam">Team</button>
-                <button type="button" class="chat-tab" role="tab" aria-selected="false" data-chat-channel="dm" id="chatTabDirect">Direct</button>
+            <div class="chat-layout">
+              <aside class="chat-rail" aria-label="Channels">
+                <div>
+                  <div class="chat-rail-heading">Channels</div>
+                  <button type="button" class="chat-rail-item chat-tab active" role="tab" aria-selected="true" data-chat-channel="team" id="chatTabTeam">
+                    <span class="chat-rail-hash">#</span> team
+                  </button>
+                </div>
+                <div>
+                  <div class="chat-rail-heading">Direct</div>
+                  <button type="button" class="chat-rail-item chat-tab" role="tab" aria-selected="false" data-chat-channel="dm" id="chatTabDirect">
+                    Direct Messages
+                  </button>
+                  <div class="chat-dm-list" id="chatDmMemberList" aria-label="Direct message teammates"></div>
+                </div>
+                <div class="chat-dm-picker hidden" id="chatDmPicker">
+                  <label for="chatDmPeerSelect" class="hidden">To</label>
+                  <select id="chatDmPeerSelect" class="hidden" aria-label="Direct message teammate">
+                    <option value="">Select teammate…</option>
+                  </select>
+                  <label for="chatDmModerateSelect" id="chatDmModerateLabel" class="hidden">Moderate</label>
+                  <select id="chatDmModerateSelect" class="hidden" aria-label="Moderate any direct thread">
+                    <option value="">Your DMs only</option>
+                  </select>
+                </div>
+              </aside>
+              <div class="chat-main">
+                <header class="chat-channel-header">
+                  <span class="chat-channel-icon" id="chatChannelIcon" aria-hidden="true">#</span>
+                  <span class="chat-channel-name" id="chatChannelName">team</span>
+                  <span class="chat-channel-sub" id="chatChannelSub">Everyone in the workspace</span>
+                </header>
+                <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
+                <div class="chat-status" id="chatStatus" aria-live="polite"></div>
+                <div class="chat-compose-wrap">
+                  <div class="chat-slash-menu hidden" id="chatSlashMenu" role="listbox" aria-label="Slash commands"></div>
+                  <form class="chat-compose" id="chatForm" autocomplete="off">
+                    <input type="text" id="chatInput" maxlength="2000" placeholder="Message #team — or type / for commands" autocomplete="off" />
+                    <button type="submit" class="btn-primary" id="chatSendBtn">Send</button>
+                  </form>
+                </div>
               </div>
-              <div class="chat-dm-picker hidden" id="chatDmPicker">
-                <label for="chatDmPeerSelect">To</label>
-                <select id="chatDmPeerSelect" aria-label="Direct message teammate">
-                  <option value="">Select teammate…</option>
-                </select>
-                <label for="chatDmModerateSelect" id="chatDmModerateLabel" class="hidden">Moderate</label>
-                <select id="chatDmModerateSelect" class="hidden" aria-label="Moderate any direct thread">
-                  <option value="">Your DMs only</option>
-                </select>
-              </div>
-            </div>
-            <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
-            <div class="chat-status" id="chatStatus" aria-live="polite"></div>
-            <div class="chat-compose-wrap">
-              <div class="chat-slash-menu hidden" id="chatSlashMenu" role="listbox" aria-label="Slash commands"></div>
-              <form class="chat-compose" id="chatForm" autocomplete="off">
-                <input type="text" id="chatInput" maxlength="2000" placeholder="Write a message… or type / for commands" autocomplete="off" />
-                <button type="submit" class="btn-primary" id="chatSendBtn">Send</button>
-              </form>
             </div>
           </div>
         </div>
@@ -4150,6 +4441,27 @@ service cloud.firestore {
       return String(raw || "team").toLowerCase() === "dm" ? "dm" : "team";
     }
 
+    function normalizeChatEmbed(raw) {
+      if (!raw || typeof raw !== "object") return null;
+      const kind = String(raw.kind || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, "")
+        .slice(0, 32);
+      const title = String(raw.title || "").trim().slice(0, 120);
+      if (!kind && !title) return null;
+      return { kind: kind || "info", title: title || kind };
+    }
+
+    function chatInitials(name) {
+      const parts = String(name || "?")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+      if (!parts.length) return "?";
+      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
     function normalizeChatMessages(list) {
       if (!Array.isArray(list)) return [];
       return list
@@ -4178,6 +4490,7 @@ service cloud.firestore {
             channel,
             dmKey,
             system: !!m.system,
+            embed: normalizeChatEmbed(m.embed),
           };
         })
         .filter(Boolean)
@@ -5378,6 +5691,7 @@ service cloud.firestore {
       const peerSelect = document.getElementById("chatDmPeerSelect");
       const modSelect = document.getElementById("chatDmModerateSelect");
       const modLabel = document.getElementById("chatDmModerateLabel");
+      const memberList = document.getElementById("chatDmMemberList");
       if (!picker || !peerSelect) return;
 
       const showDm = chatChannelMode === "dm";
@@ -5403,6 +5717,39 @@ service cloud.firestore {
           (o) => o.value.toLowerCase() === prev.toLowerCase()
         )?.value || "";
         chatDmPeer = peerSelect.value;
+      }
+
+      if (memberList) {
+        if (!peers.length) {
+          memberList.innerHTML = `<div class="chat-dm-list-empty">No teammates yet</div>`;
+        } else {
+          const activePeer = (chatDmPeer || "").toLowerCase();
+          memberList.innerHTML = peers
+            .map((a) => {
+              const u = String(a.username);
+              const label = a.name || u;
+              const active = showDm && activePeer && activePeer === u.toLowerCase();
+              return `<button type="button" class="chat-dm-list-item${active ? " active" : ""}" data-dm-user="${escapeHtml(
+                u
+              )}" title="@${escapeHtml(u)}">
+                <span class="chat-dm-list-avatar" aria-hidden="true">${escapeHtml(chatInitials(label))}</span>
+                <span>${escapeHtml(label)}</span>
+              </button>`;
+            })
+            .join("");
+          memberList.querySelectorAll("[data-dm-user]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              chatDmPeer = btn.getAttribute("data-dm-user") || "";
+              chatDmModerateKey = "";
+              chatChannelMode = "dm";
+              const mod = document.getElementById("chatDmModerateSelect");
+              if (mod) mod.value = "";
+              saveChatUiPrefs();
+              updateChatChannelTabsUi();
+              renderChat(true);
+            });
+          });
+        }
       }
 
       const canMod = canModerateAllDms();
@@ -5438,22 +5785,37 @@ service cloud.firestore {
       });
       refreshChatDmPicker();
       const title = document.getElementById("chatPipTitleText");
-      if (title) {
-        if (chatChannelMode === "dm") {
-          const key = activeDmKey();
-          title.textContent = key ? "DM · " + dmKeyLabel(key) : "Direct";
+      const channelName = document.getElementById("chatChannelName");
+      const channelSub = document.getElementById("chatChannelSub");
+      const channelIcon = document.getElementById("chatChannelIcon");
+      let headerName = "team";
+      let headerSub = "Everyone in the workspace";
+      let headerIcon = "#";
+      if (chatChannelMode === "dm") {
+        const key = activeDmKey();
+        headerIcon = "@";
+        if (key) {
+          headerName = dmKeyLabel(key);
+          headerSub = "Direct message";
         } else {
-          title.textContent = "Team chat";
+          headerName = "direct";
+          headerSub = "Pick a teammate from the sidebar";
         }
       }
+      if (title) {
+        title.textContent = chatChannelMode === "dm" ? (activeDmKey() ? "DM · " + headerName : "Direct") : "Team chat";
+      }
+      if (channelName) channelName.textContent = headerName;
+      if (channelSub) channelSub.textContent = headerSub;
+      if (channelIcon) channelIcon.textContent = headerIcon;
       const input = document.getElementById("chatInput");
       if (input) {
         input.placeholder =
           chatChannelMode === "dm"
             ? activeDmKey()
-              ? "Private message… or type / for commands"
+              ? "Message @" + headerName.split(" ↔ ")[0] + " — or type / for commands"
               : "Pick a teammate first…"
-            : "Write a message… or type / for commands";
+            : "Message #team — or type / for commands";
       }
     }
 
@@ -5488,34 +5850,80 @@ service cloud.firestore {
 
     function getSlashCommandDefs() {
       const meta = getRole();
+      const showAliases = [
+        "/show sales",
+        "/show inventory",
+        "/show equity",
+        "/show overhead",
+        "/show batch",
+        "/show tickets",
+        "/show help",
+      ];
       const defs = [
-        { cmd: "/help", aliases: [], desc: "List slash commands" },
-        { cmd: "/sales", aliases: ["/show sales"], desc: "Sales KPIs / revenue summary" },
-        { cmd: "/inventory", aliases: ["/stock"], desc: "Inventory stock totals" },
-        { cmd: "/equity", aliases: [], desc: "Foundation + party amounts (if allowed)" },
+        { cmd: "/help", aliases: [], desc: "List slash commands (only you)" },
+        {
+          cmd: "/show",
+          aliases: showAliases,
+          desc: "Post a summary embed to this channel (everyone)",
+        },
+        { cmd: "/sales", aliases: [], desc: "Sales KPIs — only you" },
+        { cmd: "/inventory", aliases: ["/stock"], desc: "Inventory totals — only you" },
+        { cmd: "/equity", aliases: [], desc: "Equity split — only you (if allowed)" },
         { cmd: "/me", aliases: [], desc: "Who you are in this workspace" },
         { cmd: "/clear", aliases: [], desc: "Clear input and local command replies" },
-        { cmd: "/overhead", aliases: [], desc: "Fixed costs + sales overhead snapshot" },
-        { cmd: "/batch", aliases: [], desc: "Next-batch planner + recent daily sales" },
+        { cmd: "/overhead", aliases: [], desc: "Overhead snapshot — only you" },
+        { cmd: "/batch", aliases: [], desc: "Batch planner — only you" },
         { cmd: "/team", aliases: [], desc: "Switch to Team channel" },
         { cmd: "/dm", aliases: [], desc: "Switch to Direct (optional: /dm username)" },
       ];
       if (meta && (currentUser?.role === "core" || currentUser?.role === "admin")) {
-        defs.push({ cmd: "/tickets", aliases: [], desc: "Open Service ticket counts (Core/Admin)" });
+        defs.push({ cmd: "/tickets", aliases: [], desc: "Ticket counts — only you (Core/Admin)" });
       }
       return defs;
     }
 
     function formatSlashHelp() {
       return (
-        "Slash commands (replies are only visible to you):\n" +
+        "Slash commands\n" +
+        "• /show … posts a real message to this channel (visible to everyone here)\n" +
+        "• Other / commands reply only to you\n\n" +
         getSlashCommandDefs()
           .map((d) => {
-            const extra = d.aliases.length ? " (" + d.aliases.join(", ") + ")" : "";
+            const extra = d.aliases.length ? " (" + d.aliases.slice(0, 3).join(", ") + (d.aliases.length > 3 ? "…" : "") + ")" : "";
             return d.cmd + extra + " — " + d.desc;
           })
           .join("\n")
       );
+    }
+
+    function formatShowHelpBody() {
+      return [
+        "Share a live summary with this channel:",
+        "• /show sales",
+        "• /show inventory",
+        "• /show equity  (needs equity access)",
+        "• /show overhead",
+        "• /show batch",
+        "• /show tickets  (Core/Admin)",
+        "• /show help",
+        "",
+        "Ephemeral lookups (only you): /sales /inventory /equity /overhead /batch /tickets /help",
+      ].join("\n");
+    }
+
+    function buildShowPayload(topicRaw) {
+      const topic = String(topicRaw || "").trim().toLowerCase() || "help";
+      const map = {
+        sales: { kind: "sales", title: "Sales summary", body: formatSalesCommandReply() },
+        inventory: { kind: "inventory", title: "Inventory", body: formatInventoryCommandReply() },
+        stock: { kind: "inventory", title: "Inventory", body: formatInventoryCommandReply() },
+        equity: { kind: "equity", title: "Equity", body: formatEquityCommandReply() },
+        overhead: { kind: "overhead", title: "Overhead", body: formatOverheadCommandReply() },
+        batch: { kind: "batch", title: "Next batch", body: formatBatchCommandReply() },
+        tickets: { kind: "tickets", title: "Service tickets", body: formatTicketsCommandReply() },
+        help: { kind: "help", title: "/show — share with channel", body: formatShowHelpBody() },
+      };
+      return map[topic] || null;
     }
 
     function formatSalesCommandReply() {
@@ -5658,19 +6066,55 @@ service cloud.firestore {
     function matchSlashCommand(raw) {
       const text = String(raw || "").trim();
       if (!text.startsWith("/")) return null;
-      const lower = text.toLowerCase();
-      if (lower === "/show sales" || lower.startsWith("/show sales ")) {
-        return { name: "sales", arg: text.slice("/show sales".length).trim() };
-      }
       const m = text.match(/^\/([a-zA-Z]+)(?:\s+(.*))?$/);
       if (!m) return { name: "unknown", arg: text };
       const name = m[1].toLowerCase();
       const arg = (m[2] || "").trim();
       if (name === "stock") return { name: "inventory", arg };
-      if (name === "show" && arg.toLowerCase().startsWith("sales")) {
-        return { name: "sales", arg: arg.slice(5).trim() };
-      }
       return { name, arg };
+    }
+
+    function runShowCommand(arg) {
+      const topic = String(arg || "").trim().split(/\s+/)[0].toLowerCase();
+      if (!topic) {
+        pushEphemeralChatReply(formatShowHelpBody());
+        return true;
+      }
+      if (topic === "equity") {
+        const meta = getRole();
+        if (!meta?.canSeeEquity) {
+          pushEphemeralChatReply("You do not have permission to show equity.");
+          return true;
+        }
+      }
+      if (topic === "tickets") {
+        if (!canResolveTickets()) {
+          pushEphemeralChatReply("Only Core or Admin can show tickets.");
+          return true;
+        }
+      }
+      const payload = buildShowPayload(topic);
+      if (!payload) {
+        pushEphemeralChatReply('Unknown /show target. Try /show help');
+        return true;
+      }
+      // Equity/tickets formatters may return a permission string — keep that private.
+      if (
+        (topic === "equity" && payload.body.startsWith("You do not have permission")) ||
+        (topic === "tickets" && payload.body.startsWith("Only Core or Admin"))
+      ) {
+        pushEphemeralChatReply(payload.body);
+        return true;
+      }
+      const ok = persistChatMessage({
+        text: payload.body.slice(0, 2000),
+        embed: { kind: payload.kind, title: payload.title },
+      });
+      if (ok) {
+        setChatStatus("Shared with channel", "ok");
+        setTimeout(() => setChatStatus(""), 1200);
+      }
+      return true;
     }
 
     function runSlashCommand(raw) {
@@ -5680,6 +6124,9 @@ service cloud.firestore {
       if (name === "help") {
         pushEphemeralChatReply(formatSlashHelp());
         return true;
+      }
+      if (name === "show") {
+        return runShowCommand(arg);
       }
       if (name === "sales") {
         pushEphemeralChatReply(formatSalesCommandReply());
@@ -5739,7 +6186,7 @@ service cloud.firestore {
             pushEphemeralChatReply('No teammate matching "' + arg + '". Pick someone from the Direct list.');
           }
         } else {
-          pushEphemeralChatReply("Direct mode — pick a teammate above, or use /dm username.");
+          pushEphemeralChatReply("Direct mode — pick a teammate in the sidebar, or use /dm username.");
         }
         return true;
       }
@@ -5778,7 +6225,12 @@ service cloud.firestore {
       if (chatSlashHighlight >= items.length) chatSlashHighlight = 0;
       menu.innerHTML = items
         .map((d, i) => {
-          const label = d.aliases.length ? d.cmd + " · " + d.aliases.join(", ") : d.cmd;
+          const label =
+            d.cmd === "/show"
+              ? "/show …"
+              : d.aliases.length
+                ? d.cmd + " · " + d.aliases.join(", ")
+                : d.cmd;
           return `<button type="button" class="chat-slash-item${
             i === chatSlashHighlight ? " active" : ""
           }" data-slash="${escapeHtml(d.cmd)}" role="option">
@@ -5912,14 +6364,14 @@ service cloud.firestore {
       const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 80;
       const messages = getVisibleChatMessages();
       if (chatChannelMode === "dm" && !activeDmKey()) {
-        list.innerHTML = `<div class="chat-empty">Pick a teammate to start a private Direct thread.</div>`;
+        list.innerHTML = `<div class="chat-empty">Pick a teammate in the sidebar to start a private Direct thread.</div>`;
         return;
       }
       if (!messages.length) {
         list.innerHTML =
           chatChannelMode === "dm"
             ? `<div class="chat-empty">No messages in this Direct thread yet.</div>`
-            : `<div class="chat-empty">No messages yet. Say hello to the team — or type /help.</div>`;
+            : `<div class="chat-empty">No messages yet. Say hello — or type /help · share with /show sales</div>`;
         return;
       }
       const me = (currentUser?.username || "").toLowerCase();
@@ -5932,25 +6384,40 @@ service cloud.firestore {
             : defs[m.role] || defs.viewer || { label: m.role, pillClass: "role-viewer" };
           const mine = !isSystem && me && m.username && m.username.toLowerCase() === me;
           const when = m.at ? new Date(m.at).toLocaleString() : "";
+          const avatarLabel = isSystem ? (m.ephemeral ? "You" : "Sys") : chatInitials(m.user);
+          const embed = normalizeChatEmbed(m.embed);
+          const bodyHtml = embed
+            ? `<div class="chat-embed" data-kind="${escapeHtml(embed.kind)}">
+                <div class="chat-embed-bar" aria-hidden="true"></div>
+                <div class="chat-embed-inner">
+                  <div class="chat-embed-title">${escapeHtml(embed.title)}</div>
+                  <div class="chat-embed-body">${escapeHtml(m.text)}</div>
+                </div>
+              </div>`
+            : `<div class="chat-text">${escapeHtml(m.text)}</div>`;
           const actions =
             !isSystem && m.id && !String(m.id).startsWith("eph")
-              ? `<div class="chat-bubble-actions">
+              ? `<div class="chat-msg-actions">
                   <button type="button" class="btn-ghost chat-report-btn" data-msg-id="${escapeHtml(
                     m.id
                   )}" title="Report to Service portal">Report</button>
                 </div>`
               : "";
-          return `<div class="chat-bubble${mine ? " mine" : ""}${isSystem ? " system" : ""}${
+          return `<div class="chat-msg${mine ? " mine" : ""}${isSystem ? " system" : ""}${
             m.ephemeral ? " ephemeral" : ""
           }" data-msg-id="${escapeHtml(m.id || "")}">
-            <div class="chat-meta">
-              <span class="sender">${escapeHtml(m.user)}</span>
-              <span class="role-pill ${def.pillClass || "role-viewer"}">${escapeHtml(def.label || m.role)}</span>
-              ${m.ephemeral ? `<span class="role-pill role-viewer">Only you</span>` : ""}
-              <span class="time">${escapeHtml(when)}</span>
+            <div class="chat-avatar" aria-hidden="true">${escapeHtml(avatarLabel)}</div>
+            <div class="chat-msg-body">
+              <div class="chat-meta">
+                <span class="sender">${escapeHtml(m.user)}</span>
+                <span class="role-pill ${def.pillClass || "role-viewer"}">${escapeHtml(def.label || m.role)}</span>
+                ${m.ephemeral ? `<span class="role-pill role-viewer">Only you</span>` : ""}
+                ${embed ? `<span class="role-pill role-viewer">Shared</span>` : ""}
+                <span class="time">${escapeHtml(when)}</span>
+              </div>
+              ${bodyHtml}
+              ${actions}
             </div>
-            <div class="chat-text">${escapeHtml(m.text)}</div>
-            ${actions}
           </div>`;
         })
         .join("");
@@ -5963,6 +6430,55 @@ service cloud.firestore {
         });
       });
       if (forceScroll || nearBottom) list.scrollTop = list.scrollHeight;
+    }
+
+    function persistChatMessage({ text, embed = null }) {
+      if (!currentUser) {
+        setChatStatus("Sign in to chat.", "err");
+        return false;
+      }
+      const meta = getRole();
+      if (meta && meta.canChat === false) {
+        setChatStatus("Your role cannot use chat.", "err");
+        return false;
+      }
+      const cleaned = String(text || "").trim().slice(0, 2000);
+      if (!cleaned) {
+        setChatStatus("Type a message first.", "err");
+        return false;
+      }
+      if (chatChannelMode === "dm") {
+        const dmKey = activeDmKey();
+        if (!dmKey) {
+          setChatStatus("Pick a teammate for Direct messages.", "err");
+          return false;
+        }
+        if (canModerateAllDms() && chatDmModerateKey && !isDmParticipant(dmKey, currentUser.username)) {
+          setChatStatus("Moderation view is read-only. Open Your DMs or pick a teammate.", "err");
+          return false;
+        }
+      }
+      const channel = chatChannelMode === "dm" ? "dm" : "team";
+      const dmKey = channel === "dm" ? activeDmKey() : "";
+      const msg = {
+        id: "c" + Date.now().toString(36) + Math.random().toString(16).slice(2, 8),
+        at: new Date().toISOString(),
+        user: currentUser.name || currentUser.username,
+        username: currentUser.username,
+        role: currentUser.role,
+        text: cleaned,
+        channel,
+        dmKey,
+        system: false,
+        embed: normalizeChatEmbed(embed),
+      };
+      if (!Array.isArray(workspaceState.chatMessages)) workspaceState.chatMessages = [];
+      workspaceState.chatMessages = normalizeChatMessages([...workspaceState.chatMessages, msg]);
+      workspaceState.updatedAt = msg.at;
+      workspaceState.updatedBy = currentUser.name || currentUser.username;
+      persistWorkspace(true);
+      renderChat(true);
+      return true;
     }
 
     function sendChatMessage(text) {
@@ -5985,42 +6501,12 @@ service cloud.firestore {
           runSlashCommand(cleaned);
           return true;
         }
-        if (chatChannelMode === "dm") {
-          const dmKey = activeDmKey();
-          if (!dmKey) {
-            setChatStatus("Pick a teammate for Direct messages.", "err");
-            return false;
-          }
-          if (canModerateAllDms() && chatDmModerateKey && !isDmParticipant(dmKey, currentUser.username)) {
-            setChatStatus("Moderation view is read-only. Open Your DMs or pick a teammate.", "err");
-            return false;
-          }
+        const ok = persistChatMessage({ text: cleaned });
+        if (ok) {
+          setChatStatus(chatChannelMode === "dm" ? "Sent privately" : "Sent", "ok");
+          setTimeout(() => setChatStatus(""), 1200);
         }
-        const channel = chatChannelMode === "dm" ? "dm" : "team";
-        const dmKey = channel === "dm" ? activeDmKey() : "";
-        const msg = {
-          id: "c" + Date.now().toString(36) + Math.random().toString(16).slice(2, 8),
-          at: new Date().toISOString(),
-          user: currentUser.name || currentUser.username,
-          username: currentUser.username,
-          role: currentUser.role,
-          text: cleaned,
-          channel,
-          dmKey,
-          system: false,
-        };
-        if (!Array.isArray(workspaceState.chatMessages)) workspaceState.chatMessages = [];
-        workspaceState.chatMessages = normalizeChatMessages([
-          ...workspaceState.chatMessages,
-          msg,
-        ]);
-        workspaceState.updatedAt = msg.at;
-        workspaceState.updatedBy = currentUser.name || currentUser.username;
-        persistWorkspace(true);
-        renderChat(true);
-        setChatStatus(channel === "dm" ? "Sent privately" : "Sent", "ok");
-        setTimeout(() => setChatStatus(""), 1200);
-        return true;
+        return ok;
       } catch (err) {
         console.error(err);
         setChatStatus(err?.message || "Could not send message", "err");
