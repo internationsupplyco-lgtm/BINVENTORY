@@ -1008,6 +1008,50 @@
       -webkit-backdrop-filter: blur(24px) saturate(1.4);
     }
     .chat-pip.hidden { display: none !important; }
+    .chat-pip.pip-glass-morph {
+      transition:
+        opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+        filter 0.42s ease,
+        box-shadow 0.42s ease;
+      will-change: opacity, transform, filter;
+    }
+    .chat-pip.pip-morph-enter {
+      opacity: 0;
+      transform: scale(0.86) translateY(12px);
+      filter: blur(18px) saturate(0.6);
+      box-shadow: 0 0 0 transparent;
+      pointer-events: none;
+    }
+    .chat-pip.pip-morph-exit {
+      opacity: 0;
+      transform: scale(0.9) translateY(8px);
+      filter: blur(16px) saturate(0.7);
+      pointer-events: none;
+    }
+    .chat-glass-shim {
+      position: fixed;
+      z-index: 79;
+      pointer-events: none;
+      border-radius: 14px;
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 45%),
+        rgba(18, 24, 36, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(20px) saturate(1.35);
+      -webkit-backdrop-filter: blur(20px) saturate(1.35);
+      opacity: 0;
+      transform: scale(1);
+      transition:
+        opacity 0.38s ease,
+        transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+        filter 0.42s ease,
+        left 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+        top 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+        width 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+        height 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+      filter: blur(0);
+    }
     .chat-pip-header {
       display: flex;
       align-items: center;
@@ -1547,6 +1591,43 @@
     .ticket-status.in_progress { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
     .ticket-status.resolved { background: rgba(34, 197, 94, 0.18); color: var(--success); }
     .ticket-status.archived { background: rgba(139, 156, 179, 0.2); color: var(--muted); }
+    .ticket-priority {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    .ticket-priority.low { background: rgba(139, 156, 179, 0.22); color: var(--muted); }
+    .ticket-priority.normal { background: rgba(59, 130, 246, 0.18); color: #93c5fd; }
+    .ticket-priority.high { background: rgba(245, 158, 11, 0.22); color: var(--warning); }
+    .ticket-priority.urgent { background: rgba(239, 68, 68, 0.22); color: #fca5a5; }
+    .ticket-badges {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.28rem;
+    }
+    .ticket-claim-pill {
+      font-size: 0.65rem;
+      color: var(--muted);
+      max-width: 110px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .ticket-claim-pill.claimed { color: #86efac; }
+    .service-claim-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      align-items: center;
+      margin: 0.75rem 0 0.25rem;
+    }
     .service-detail-empty {
       color: var(--muted);
       font-size: 0.9rem;
@@ -1596,14 +1677,272 @@
     #page-service select {
       width: 100%;
       background: var(--surface-2);
+      color: var(--text);
       border: 1px solid var(--border);
       border-radius: 8px;
-      color: var(--text);
-      padding: 0.45rem 0.65rem;
+      padding: 0.45rem 0.55rem;
       font: inherit;
-      font-size: 0.85rem;
     }
-    .service-filter-row select { width: auto; }
+    .service-filter-row select { width: auto; min-width: 140px; flex: 1; }
+
+    /* Inventory media slots */
+    .inv-media-cell { white-space: nowrap; }
+    .inv-media-cell .btn-ghost { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+    .inv-media-counts { font-size: 0.68rem; color: var(--muted); margin-top: 0.15rem; }
+    tr.inv-media-panel-row td {
+      background: rgba(15, 20, 28, 0.55);
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 1rem 1rem;
+    }
+    .inv-media-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 900px) {
+      .inv-media-panel { grid-template-columns: 1fr; }
+    }
+    .inv-media-slot h4 {
+      font-size: 0.85rem;
+      margin-bottom: 0.45rem;
+      font-weight: 600;
+    }
+    .inv-media-gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-bottom: 0.55rem;
+      min-height: 2rem;
+    }
+    .inv-media-thumb {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #0a0e14;
+    }
+    .inv-media-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      cursor: pointer;
+    }
+    .inv-media-thumb .inv-media-meta {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      padding: 0.15rem 0.25rem;
+      font-size: 0.55rem;
+      background: rgba(0,0,0,0.65);
+      color: #cbd5e1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .inv-media-thumb .inv-media-del {
+      position: absolute;
+      top: 2px; right: 2px;
+      border: none;
+      background: rgba(0,0,0,0.55);
+      color: #fff;
+      border-radius: 4px;
+      width: 18px; height: 18px;
+      font-size: 0.65rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+    }
+    .inv-model-card {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.45rem 0.55rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface-2);
+      margin-bottom: 0.4rem;
+      font-size: 0.8rem;
+    }
+    .inv-model-card .inv-model-actions { margin-left: auto; display: flex; gap: 0.3rem; }
+    .glb-viewer-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 120;
+      background: rgba(0,0,0,0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .glb-viewer-panel {
+      width: min(720px, 100%);
+      height: min(520px, 90vh);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .glb-viewer-panel header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .glb-viewer-panel header strong { flex: 1; font-size: 0.9rem; }
+    .glb-viewer-canvas-host {
+      flex: 1;
+      min-height: 0;
+      background: #0a0e14;
+    }
+
+
+    .chat-msg.redacted .chat-text { opacity: 0.92; }
+    .chat-filtered-note {
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+      font-style: italic;
+    }
+    .appeal-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 0.85rem;
+      background: var(--surface-2);
+      margin-bottom: 0.55rem;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      color: inherit;
+      font: inherit;
+    }
+    .appeal-card:hover { border-color: rgba(59, 130, 246, 0.45); }
+    .appeal-card.active {
+      border-color: rgba(59, 130, 246, 0.55);
+      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.25);
+    }
+    .appeal-status {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .appeal-status.open { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+    .appeal-status.under_review { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .appeal-status.accepted { background: rgba(34, 197, 94, 0.18); color: var(--success); }
+    .appeal-status.denied { background: rgba(239, 68, 68, 0.18); color: #fca5a5; }
+    .appeal-status.archived { background: rgba(139, 156, 179, 0.2); color: var(--muted); }
+    .appeal-view-toggle {
+      display: inline-flex;
+      gap: 0.3rem;
+      margin-bottom: 0.75rem;
+    }
+    .appeal-view-toggle .btn-ghost.active {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: rgba(59, 130, 246, 0.45);
+      color: #93c5fd;
+    }
+    .service-tabs {
+      display: flex;
+      gap: 0.35rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .service-tabs .btn-ghost.active {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: rgba(59, 130, 246, 0.45);
+      color: #93c5fd;
+    }
+    .inv-media-preview {
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+      background: #0a0e14;
+      vertical-align: middle;
+    }
+    .inv-media-preview.placeholder {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.55rem;
+      color: var(--muted);
+    }
+    model-viewer.inv-model-viewer {
+      width: 100%;
+      height: 160px;
+      background: #0a0e14;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    /* Workspace broadcast liquid glass banner */
+    .broadcast-banner {
+      position: relative;
+      overflow: hidden;
+      margin: 0 0 0.85rem;
+      padding: 0.85rem 1rem;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02) 40%, rgba(59,130,246,0.08)),
+        rgba(20, 28, 42, 0.55);
+      backdrop-filter: blur(22px) saturate(1.45);
+      -webkit-backdrop-filter: blur(22px) saturate(1.45);
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.08) inset,
+        0 10px 32px rgba(0,0,0,0.35);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      transform-origin: top center;
+    }
+    .broadcast-banner.hidden { display: none !important; }
+    .broadcast-banner.bcast-enter {
+      opacity: 0;
+      transform: translateY(-18px) scale(0.94);
+      filter: blur(16px);
+    }
+    .broadcast-banner.bcast-animate {
+      transition:
+        opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+        filter 0.5s ease;
+    }
+    .broadcast-banner-body { flex: 1; min-width: 0; }
+    .broadcast-banner-text {
+      font-size: 0.98rem;
+      font-weight: 560;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .broadcast-banner-meta {
+      margin-top: 0.3rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .broadcast-banner-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      flex-shrink: 0;
+    }
+    .broadcast-compose .field-row { align-items: end; }
+    .broadcast-status { font-size: 0.8rem; margin-top: 0.45rem; min-height: 1.1em; }
+    .broadcast-status.ok { color: var(--success); }
+    .broadcast-status.err { color: var(--danger); }
+
     .code-reveal {
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 0.85rem;
@@ -1899,6 +2238,16 @@
     </aside>
 
     <main class="main">
+      <div id="broadcastBanner" class="broadcast-banner hidden" role="status" aria-live="polite">
+        <div class="broadcast-banner-body">
+          <div class="broadcast-banner-text" id="broadcastBannerText"></div>
+          <div class="broadcast-banner-meta" id="broadcastBannerMeta"></div>
+        </div>
+        <div class="broadcast-banner-actions">
+          <button type="button" class="btn-ghost" id="broadcastDismissBtn" title="Dismiss on this device">Dismiss</button>
+          <button type="button" class="btn-ghost hidden" id="broadcastClearBtn" title="Clear for everyone">Clear for all</button>
+        </div>
+      </div>
       <div class="perm-banner hidden" id="permBanner"></div>
       <div class="cta-banner hidden" id="addPeopleCta">
         <div>
@@ -1944,6 +2293,29 @@
           <h2>Recent activity</h2>
           <ul class="activity-list" id="activityList"></ul>
         </div>
+        <div class="card broadcast-compose hidden" id="dashBroadcastCard">
+          <h2>Broadcast banner</h2>
+          <p class="note" style="margin-top:0">Send a short message to every device on this workspace. It forms as a liquid-glass banner at the top.</p>
+          <div class="field" style="margin-top:0.65rem">
+            <label for="dashBroadcastText">Message</label>
+            <textarea id="dashBroadcastText" maxlength="280" rows="2" placeholder="e.g. Inventory freeze tonight at 8pm 🧊"></textarea>
+          </div>
+          <div class="field-row" style="margin-top:0.55rem">
+            <div class="field" style="flex:0 0 160px;margin:0">
+              <label for="dashBroadcastExpiry">Expires (optional)</label>
+              <select id="dashBroadcastExpiry">
+                <option value="">Until cleared</option>
+                <option value="1h">In 1 hour</option>
+                <option value="6h">In 6 hours</option>
+                <option value="24h">In 24 hours</option>
+                <option value="7d">In 7 days</option>
+              </select>
+            </div>
+            <button type="button" class="btn-primary" id="dashBroadcastSendBtn">Send broadcast</button>
+            <button type="button" class="btn-ghost" id="dashBroadcastClearBtn">Clear for all</button>
+          </div>
+          <div class="broadcast-status" id="dashBroadcastStatus" aria-live="polite"></div>
+        </div>
       </section>
 
       <section class="page hidden" id="page-inventory">
@@ -1966,6 +2338,7 @@
                   <th class="num">Inv. value</th>
                   <th class="num">Revenue</th>
                   <th class="num">Profit</th>
+                  <th>Media</th>
                   <th></th>
                 </tr>
               </thead>
@@ -2361,9 +2734,14 @@
         </div>
       </section>
 
-      <section class="page hidden" id="page-service">
+            <section class="page hidden" id="page-service">
         <h1 class="page-title">Service portal</h1>
-        <p class="page-sub">Report a problem with a screenshot. Core (and Admin) can triage and resolve tickets.</p>
+        <p class="page-sub">Tickets, claims, and appeals. Core/Admin triage; claimers can update claimed tickets.</p>
+        <div class="service-tabs" role="tablist">
+          <button type="button" class="btn-ghost active" data-service-tab="tickets" id="serviceTabTickets">Tickets</button>
+          <button type="button" class="btn-ghost" data-service-tab="appeals" id="serviceTabAppeals">Appeals <span class="chat-unread-badge hidden" id="navAppealsBadge" aria-hidden="true"></span></button>
+        </div>
+        <div id="serviceTicketsPane">
         <div class="service-layout">
           <div class="card">
             <h2>Submit ticket</h2>
@@ -2372,6 +2750,15 @@
               <div class="field">
                 <label for="serviceTicketTitle">Title (optional)</label>
                 <input type="text" id="serviceTicketTitle" maxlength="120" placeholder="Short summary" />
+              </div>
+              <div class="field">
+                <label for="serviceTicketPriority">Priority</label>
+                <select id="serviceTicketPriority">
+                  <option value="low">Low</option>
+                  <option value="normal" selected>Normal</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
               </div>
               <div class="field">
                 <label for="serviceTicketDesc">Description</label>
@@ -2397,32 +2784,58 @@
           </div>
           <div class="card">
             <div class="card-header">
-              <h2>Tickets</h2>
+              <h2 id="serviceListTitle">Active tickets</h2>
               <span class="note" id="serviceListHint" style="margin:0"></span>
+            </div>
+            <div class="appeal-view-toggle" role="tablist" aria-label="Tickets list view">
+              <button type="button" class="btn-ghost active" id="ticketViewActive" data-ticket-view="active">Active</button>
+              <button type="button" class="btn-ghost" id="ticketViewArchive" data-ticket-view="archive">Tickets archive</button>
             </div>
             <div class="service-filter-row">
               <select id="serviceFilterStatus" aria-label="Filter by status">
-                <option value="all">All statuses</option>
+                <option value="all">All (in this view)</option>
                 <option value="open">Open</option>
                 <option value="in_progress">In progress</option>
                 <option value="resolved">Resolved</option>
-                <option value="archived">Archived</option>
               </select>
               <select id="serviceFilterMine" aria-label="Filter ownership">
                 <option value="visible">Visible to me</option>
                 <option value="mine">My tickets</option>
+                <option value="claimed">My claimed</option>
+                <option value="unclaimed">Unclaimed</option>
               </select>
             </div>
             <div class="service-list" id="serviceTicketList"></div>
             <div id="serviceTicketDetail" class="hidden" style="margin-top:1.25rem;border-top:1px solid var(--border);padding-top:1.1rem">
               <div class="card-header">
                 <h3 id="serviceDetailTitle" style="margin:0">Ticket</h3>
-                <span class="ticket-status" id="serviceDetailStatus"></span>
+                <div class="ticket-badges">
+                  <span class="ticket-priority" id="serviceDetailPriority"></span>
+                  <span class="ticket-status" id="serviceDetailStatus"></span>
+                </div>
               </div>
-              <img class="service-detail-shot hidden" id="serviceDetailShot" alt="Ticket screenshot" />
+              <img class="service-detail-shot hidden" id="serviceDetailShot" alt="Ticket screenshot" referrerpolicy="no-referrer" />
               <div class="service-detail-desc" id="serviceDetailDesc"></div>
               <div class="service-detail-meta" id="serviceDetailMeta"></div>
+              <div class="service-claim-bar" id="serviceClaimBar">
+                <span class="ticket-claim-pill" id="serviceClaimLabel">Unclaimed</span>
+                <button type="button" class="btn-primary" id="serviceClaimBtn">Claim</button>
+                <button type="button" class="btn-ghost hidden" id="serviceUnclaimBtn">Unclaim</button>
+              </div>
               <div id="serviceResolvePanel" class="hidden">
+                <div class="field">
+                  <label for="servicePrioritySelect">Priority</label>
+                  <select id="servicePrioritySelect">
+                    <option value="low">Low</option>
+                    <option value="normal">Normal</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="serviceClaimAssign">Reassign claim (Core/Admin)</label>
+                  <input type="text" id="serviceClaimAssign" maxlength="64" placeholder="Username to assign, or blank to keep" />
+                </div>
                 <div class="field">
                   <label for="serviceResolutionNote">Resolution note (optional)</label>
                   <textarea id="serviceResolutionNote" maxlength="2000" placeholder="What was fixed / reply to reporter…"></textarea>
@@ -2438,6 +2851,7 @@
                     </select>
                   </div>
                   <button type="button" class="btn-primary" id="serviceSaveStatusBtn">Update ticket</button>
+                  <button type="button" class="btn-ghost" id="serviceArchiveBtn">Move to archive</button>
                 </div>
               </div>
               <div class="service-status" id="serviceDetailStatusMsg" aria-live="polite"></div>
@@ -2445,9 +2859,91 @@
             <div class="service-detail-empty" id="serviceDetailEmpty">Select a ticket to view details.</div>
           </div>
         </div>
+        </div>
+        <div id="serviceAppealsPane" class="hidden">
+          <div class="service-layout">
+            <div class="card">
+              <h2>Submit appeal</h2>
+              <form id="appealForm" class="service-form" autocomplete="off">
+                <div class="field">
+                  <label for="appealReason">Reason</label>
+                  <select id="appealReason" required>
+                    <option value="chat_report">Chat report</option>
+                    <option value="ticket_resolution">Ticket resolution</option>
+                    <option value="moderation">Moderation</option>
+                    <option value="redaction">Language filter / redaction</option>
+                    <option value="account">Account issue</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="appealRelatedId">Related ticket / message id (optional)</label>
+                  <input type="text" id="appealRelatedId" maxlength="80" placeholder="e.g. t… or c…" />
+                </div>
+                <div class="field">
+                  <label for="appealDesc">Description</label>
+                  <textarea id="appealDesc" maxlength="4000" required placeholder="What are you appealing and why?"></textarea>
+                </div>
+                <button type="submit" class="btn-primary" id="appealSubmitBtn">Submit appeal</button>
+                <div class="service-status" id="appealFormStatus" aria-live="polite"></div>
+              </form>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h2 id="appealListTitle">Appeals</h2>
+                <span class="note" id="appealListHint" style="margin:0"></span>
+              </div>
+              <div class="appeal-view-toggle" role="tablist" aria-label="Appeals list view">
+                <button type="button" class="btn-ghost active" id="appealViewActive" data-appeal-view="active">Active</button>
+                <button type="button" class="btn-ghost" id="appealViewArchive" data-appeal-view="archive">Appeals archive</button>
+              </div>
+              <div class="service-filter-row">
+                <select id="appealFilterStatus" aria-label="Filter appeals by status">
+                  <option value="all">All (in this view)</option>
+                  <option value="open">Open</option>
+                  <option value="under_review">Under review</option>
+                  <option value="accepted">Accepted</option>
+                  <option value="denied">Denied</option>
+                </select>
+              </div>
+              <div class="service-list" id="appealList"></div>
+              <div id="appealDetail" class="hidden" style="margin-top:1.25rem;border-top:1px solid var(--border);padding-top:1.1rem">
+                <div class="card-header">
+                  <h3 id="appealDetailTitle" style="margin:0">Appeal</h3>
+                  <span class="appeal-status" id="appealDetailStatus"></span>
+                </div>
+                <div class="service-detail-desc" id="appealDetailDesc"></div>
+                <div class="service-detail-meta" id="appealDetailMeta"></div>
+                <div id="appealManagePanel" class="hidden">
+                  <div class="field">
+                    <label for="appealDecisionNote">Decision note</label>
+                    <textarea id="appealDecisionNote" maxlength="2000" placeholder="Decision / reply to appellant…"></textarea>
+                  </div>
+                  <div class="service-resolve-bar">
+                    <div class="field">
+                      <label for="appealStatusSelect">Status</label>
+                      <select id="appealStatusSelect">
+                        <option value="open">Open</option>
+                        <option value="under_review">Under review</option>
+                        <option value="accepted">Accepted</option>
+                        <option value="denied">Denied</option>
+                        <option value="archived">Archived</option>
+                      </select>
+                    </div>
+                    <button type="button" class="btn-primary" id="appealSaveBtn">Update appeal</button>
+                    <button type="button" class="btn-ghost" id="appealArchiveBtn">Move to archive</button>
+                  </div>
+                </div>
+                <div class="note" id="appealReporterDecision" style="margin-top:0.75rem"></div>
+                <div class="service-status" id="appealDetailStatusMsg" aria-live="polite"></div>
+              </div>
+              <div class="service-detail-empty" id="appealDetailEmpty">Select an appeal to view details.</div>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <section class="page hidden" id="page-team">
+<section class="page hidden" id="page-team">
         <h1 class="page-title">Team &amp; sync</h1>
         <p class="page-sub">Accounts, roles, permissions, invites, and Firestore live sync.</p>
 
@@ -2460,6 +2956,38 @@
             <label><input type="checkbox" id="teamChatNotifySound" /> Play sound</label>
           </div>
           <p class="chat-notify-hint" id="teamChatNotifyHint"></p>
+        </div>
+        <div class="card hidden" id="chatFilterCard">
+          <h2>Chat language filter</h2>
+          <p class="note" style="margin-top:0">Default blocked words apply on send (team, DM, /show). Core/Admin can add extra words (one per line). Matches are redacted before sync.</p>
+          <div class="field" style="margin-top:0.65rem">
+            <label for="chatFilterWordsInput">Extra blocked words</label>
+            <textarea id="chatFilterWordsInput" class="snapshot" rows="5" placeholder="one word per line"></textarea>
+          </div>
+          <button type="button" class="btn-primary" id="saveChatFilterBtn" style="margin-top:0.55rem">Save filter list</button>
+          <div class="service-status" id="chatFilterStatus" aria-live="polite"></div>
+        </div>
+
+        <div class="card hidden" id="versionHistoryCard">
+          <h2>Version history</h2>
+          <p class="note" style="margin-top:0">
+            Core-only checkpoints of workspace data. Auto-saves after meaningful edits; you can also save a labeled checkpoint.
+            Restore replaces inventory, sales, equity, overhead, tickets index, chat, and appeals by default.
+            Password digests / accounts are <strong>excluded</strong> unless you check “Include accounts”.
+          </p>
+          <div class="field-row" style="margin-top:0.65rem;align-items:end">
+            <div class="field" style="flex:1;margin:0">
+              <label for="versionLabelInput">Checkpoint label (optional)</label>
+              <input type="text" id="versionLabelInput" maxlength="80" placeholder="e.g. Before batch recalculation" />
+            </div>
+            <button type="button" class="btn-primary" id="saveVersionCheckpointBtn">Save checkpoint</button>
+          </div>
+          <label class="note" style="display:flex;gap:0.4rem;align-items:center;margin-top:0.65rem;cursor:pointer">
+            <input type="checkbox" id="versionIncludeAccounts" />
+            Include accounts when restoring (password digests)
+          </label>
+          <div class="service-list" id="versionHistoryList" style="margin-top:0.85rem;max-height:320px"></div>
+          <div class="service-status" id="versionHistoryStatus" aria-live="polite"></div>
         </div>
 
         <div class="card" id="firebaseCard">
@@ -2507,6 +3035,14 @@ service cloud.firestore {
         allow read, write: if request.auth != null
           &amp;&amp; workspaceCode.matches('^[A-Z0-9_\\-]{2,48}$');
       }
+      match /appeals/{appealId} {
+        allow read, write: if request.auth != null
+          &amp;&amp; workspaceCode.matches('^[A-Z0-9_\\-]{2,48}$');
+      }
+      match /versions/{versionId} {
+        allow read, write: if request.auth != null
+          &amp;&amp; workspaceCode.matches('^[A-Z0-9_\\-]{2,48}$');
+      }
     }
   }
 }</pre>
@@ -2523,6 +3059,30 @@ service cloud.firestore {
             <button type="button" class="btn-primary" id="saveLoginTitle">Save title</button>
           </div>
           <div class="login-error" id="loginTitleError" style="min-height:0;margin-top:0.5rem"></div>
+        </div>
+
+        <div class="card broadcast-compose hidden" id="teamBroadcastCard">
+          <h2>Broadcast banner</h2>
+          <p class="note" style="margin-top:0">Core / Admin: push a short announcement to every signed-in device.</p>
+          <div class="field" style="margin-top:0.65rem">
+            <label for="teamBroadcastText">Message</label>
+            <textarea id="teamBroadcastText" maxlength="280" rows="2" placeholder="Workspace-wide notice…"></textarea>
+          </div>
+          <div class="field-row" style="margin-top:0.55rem">
+            <div class="field" style="flex:0 0 160px;margin:0">
+              <label for="teamBroadcastExpiry">Expires (optional)</label>
+              <select id="teamBroadcastExpiry">
+                <option value="">Until cleared</option>
+                <option value="1h">In 1 hour</option>
+                <option value="6h">In 6 hours</option>
+                <option value="24h">In 24 hours</option>
+                <option value="7d">In 7 days</option>
+              </select>
+            </div>
+            <button type="button" class="btn-primary" id="teamBroadcastSendBtn">Send broadcast</button>
+            <button type="button" class="btn-ghost" id="teamBroadcastClearBtn">Clear for all</button>
+          </div>
+          <div class="broadcast-status" id="teamBroadcastStatus" aria-live="polite"></div>
         </div>
 
         <div class="card" id="myLoginCard">
@@ -2723,6 +3283,7 @@ service cloud.firestore {
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
   <script>
 
     /*
@@ -2746,7 +3307,25 @@ service cloud.firestore {
     const TICKET_IMAGE_MAX_WIDTH = 800;
     const TICKET_IMAGE_QUALITY = 0.7;
     const TICKET_STATUSES = ["open", "in_progress", "resolved", "archived"];
+    const TICKET_PRIORITIES = ["low", "normal", "high", "urgent"];
+    const APPEAL_STATUSES = ["open", "under_review", "accepted", "denied", "archived"];
+    const APPEAL_ACTIVE_STATUSES = ["open", "under_review", "accepted", "denied"];
+    const MAX_APPEALS = 80;
+    const APPEALS_SEEN_KEY = "inventory-split-appeals-seen";
+    const DEFAULT_BAD_WORDS = [
+      "fuck", "fucking", "fucker", "shit", "shitty", "asshole", "bitch", "bastard",
+      "damn", "cunt", "dick", "pussy", "slut", "whore", "nigger", "nigga", "faggot",
+      "retard", "retarded", "cock", "piss", "bollocks", "bugger",
+    ];
     const SERVICE_SEEN_KEY = "inventory-split-service-seen";
+    const BROADCAST_DISMISS_KEY = "inventory-split-broadcast-dismissed";
+    const MAX_ITEM_PHOTOS_LOCAL = 6;
+    const MAX_ITEM_PHOTO_CHARS = 180000;
+    const MAX_LOCAL_MODEL_WARN_BYTES = 2 * 1024 * 1024;
+    const MAX_VERSIONS = 15;
+    const MAX_LOCAL_VERSIONS = 5;
+    const VERSION_LOCAL_KEY = "inventory-split-versions:";
+    const VERSION_AUTO_MIN_MS = 45000;
     const SUGGESTED_CORE_USER = "core";
     const SUGGESTED_CORE_CODE = "Core-Invite-9";
 
@@ -3411,7 +3990,23 @@ service cloud.firestore {
       clean.tickets = normalizeTickets(clean.tickets);
       clean.activity = (clean.activity || []).slice(0, 30);
       return stripUndefined({
-        items: normalizeItems(clean.items),
+        items: normalizeItems(clean.items).map((item) => {
+          const it = normalizeItem(item);
+          return stripUndefined({
+            ...it,
+            photos: (it.photos || []).map((p) => {
+              const lean = { ...p };
+              if (lean.url || lean.path) delete lean.dataUrl;
+              else if (lean.dataUrl && lean.dataUrl.length > 100000) delete lean.dataUrl;
+              return lean;
+            }),
+            models: (it.models || []).map((m) => {
+              const lean = { ...m };
+              delete lean.dataUrl;
+              return lean;
+            }),
+          });
+        }),
         fixedCosts: clean.fixedCosts,
         variableOverhead: normalizeVariableOverhead(clean.variableOverhead),
         targetUnits: clean.targetUnits,
@@ -3419,8 +4014,11 @@ service cloud.firestore {
         foundation: normalizeFoundation(clean.foundation),
         activity: clean.activity,
         chatMessages: clean.chatMessages,
-        // Lightweight ticket index only — full screenshots live in tickets subcollection / local storage
+        // Lightweight ticket/appeal index — full docs live in subcollections / local storage
         tickets: clean.tickets.map(ticketForFirestoreList),
+        appeals: normalizeAppeals(clean.appeals).map(appealForFirestoreList),
+        chatFilterWords: normalizeChatFilterWords(clean.chatFilterWords),
+        broadcast: normalizeBroadcast(clean.broadcast),
         accounts: clean.accounts,
         roleDefs: clean.roleDefs,
         dailySales: normalizeDailySales(clean.dailySales),
@@ -3447,6 +4045,7 @@ service cloud.firestore {
         (s.dailySales || []).length,
         (s.chatMessages || []).length,
         (s.tickets || []).length,
+        (s.appeals || []).length,
         (s.activity || []).length,
         s.fixedCosts,
         s.targetUnits,
@@ -3537,6 +4136,7 @@ service cloud.firestore {
         firestoreUnsub = null;
       }
       detachTicketsListener();
+      detachAppealsListener();
     }
 
     function detachTicketsListener() {
@@ -3546,9 +4146,23 @@ service cloud.firestore {
       }
     }
 
+    let appealsUnsub = null;
+
+    function detachAppealsListener() {
+      if (appealsUnsub) {
+        try { appealsUnsub(); } catch (_) {}
+        appealsUnsub = null;
+      }
+    }
+
     function ticketsCollectionRef(code) {
       const doc = workspaceDocRef(code);
       return doc ? doc.collection("tickets") : null;
+    }
+
+    function appealsCollectionRef(code) {
+      const doc = workspaceDocRef(code);
+      return doc ? doc.collection("appeals") : null;
     }
 
     function subscribeTickets(code) {
@@ -3570,7 +4184,16 @@ service cloud.firestore {
             merged.length !== prev.length ||
             merged.some((t, i) => {
               const p = prev[i];
-              return !p || p.id !== t.id || p.updatedAt !== t.updatedAt || p.status !== t.status;
+              return (
+                !p ||
+                p.id !== t.id ||
+                p.updatedAt !== t.updatedAt ||
+                p.status !== t.status ||
+                p.priority !== t.priority ||
+                p.claimedByUsername !== t.claimedByUsername ||
+                !!(p.screenshotUrl || p.screenshotDataUrl || p.thumbDataUrl) !==
+                  !!(t.screenshotUrl || t.screenshotDataUrl || t.thumbDataUrl)
+              );
             });
           if (!changed) {
             syncServiceNotificationsFromState();
@@ -3604,6 +4227,52 @@ service cloud.firestore {
       }
     }
 
+    function subscribeAppeals(code) {
+      if (!firebaseEnabled || !firestoreDb || !firebaseSyncOk) return;
+      const col = appealsCollectionRef(code);
+      if (!col) return;
+      detachAppealsListener();
+      appealsUnsub = col.orderBy("createdAt", "desc").limit(MAX_APPEALS).onSnapshot(
+        (snap) => {
+          if (applyingRemote) return;
+          const remote = [];
+          snap.forEach((doc) => {
+            const data = doc.data() || {};
+            remote.push(normalizeAppeal({ ...data, id: data.id || doc.id }));
+          });
+          const prev = normalizeAppeals(workspaceState.appeals || []);
+          const merged = normalizeAppeals([...prev, ...remote.filter(Boolean)]);
+          workspaceState.appeals = merged;
+          try { localStorage.setItem(dataKey(), JSON.stringify(workspaceState)); } catch (_) {}
+          syncAppealsNotificationsFromState();
+          if (
+            document.getElementById("page-service") &&
+            !document.getElementById("page-service").classList.contains("hidden")
+          ) {
+            renderAppealsPage();
+          }
+        },
+        (err) => console.warn("Appeals listener error", err)
+      );
+    }
+
+    async function pushAppealToFirestore(appeal) {
+      if (!firebaseEnabled || !firestoreDb || !appeal?.id) return;
+      const col = appealsCollectionRef(workspaceId);
+      if (!col) return;
+      try {
+        await ensureFirebaseAuth();
+        await col.doc(appeal.id).set(appealForFirestoreDoc(appeal), { merge: true });
+      } catch (err) {
+        console.warn("Appeal cloud write failed", err);
+      }
+    }
+
+    function versionsCollectionRef(code) {
+      const doc = workspaceDocRef(code);
+      return doc ? doc.collection("versions") : null;
+    }
+
     /** Fully tear down listener + retries (logout / disable / leave workspace). */
     function unsubscribeFirestore() {
       firestoreSubscribeGen += 1;
@@ -3623,6 +4292,7 @@ service cloud.firestore {
         setSyncStatus("Connected · Live · " + id, "live");
       }
       subscribeTickets(id);
+      subscribeAppeals(id);
     }
 
     function beginWorkspaceSubscription(code, { resetRetry } = { resetRetry: true }) {
@@ -3787,6 +4457,7 @@ service cloud.firestore {
             workspaceState.variableOverhead = normalizeVariableOverhead(workspaceState.variableOverhead);
             workspaceState.dailySales = normalizeDailySales(workspaceState.dailySales);
             workspaceState.batchPlanner = normalizeBatchPlanner(workspaceState.batchPlanner);
+            workspaceState.broadcast = normalizeBroadcast(workspaceState.broadcast);
             if (!workspaceState.parties?.length) {
               workspaceState.parties = DEFAULT_PARTIES.map((p) => ({ ...p }));
             }
@@ -3804,6 +4475,7 @@ service cloud.firestore {
               if (still) {
                 currentUser = still;
                 renderAllFromState();
+                renderBroadcastBanner({ animate: true });
               } else {
                 showLogin();
                 document.getElementById("loginError").textContent =
@@ -3919,6 +4591,9 @@ service cloud.firestore {
         activity: [],
         chatMessages: [],
         tickets: [],
+        appeals: [],
+        chatFilterWords: [],
+        broadcast: null,
         accounts: [],
         roleDefs: defaultRoleDefs(),
         dailySales: [],
@@ -3989,9 +4664,43 @@ service cloud.firestore {
       );
     }
 
+    function newItemId() {
+      return "i" + Date.now().toString(36) + Math.random().toString(16).slice(2, 8);
+    }
+
+    function normalizeMediaFile(raw, kind) {
+      if (!raw || typeof raw !== "object") return null;
+      const id = String(raw.id || (kind === "photo" ? "p" : "m") + Math.random().toString(16).slice(2, 10));
+      const out = {
+        id,
+        name: String(raw.name || "file").slice(0, 120),
+        uploadedBy: String(raw.uploadedBy || raw.by || "Unknown").slice(0, 80),
+        uploadedByUsername: String(raw.uploadedByUsername || raw.username || "").slice(0, 64),
+        at: raw.at || new Date().toISOString(),
+        path: raw.path ? String(raw.path) : null,
+        url: raw.url ? String(raw.url) : null,
+        size: Math.max(0, parseNum(raw.size)),
+      };
+      if (kind === "photo") {
+        if (typeof raw.dataUrl === "string" && raw.dataUrl.startsWith("data:image/")) {
+          out.dataUrl = raw.dataUrl.length > MAX_ITEM_PHOTO_CHARS ? null : raw.dataUrl;
+        } else {
+          out.dataUrl = null;
+        }
+      }
+      return out;
+    }
+
     function normalizeItem(raw) {
       const it = raw && typeof raw === "object" ? raw : {};
+      const photos = Array.isArray(it.photos)
+        ? it.photos.map((p) => normalizeMediaFile(p, "photo")).filter(Boolean).slice(0, 24)
+        : [];
+      const models = Array.isArray(it.models)
+        ? it.models.map((m) => normalizeMediaFile(m, "model")).filter(Boolean).slice(0, 12)
+        : [];
       return {
+        id: String(it.id || newItemId()),
         name: String(it.name ?? ""),
         qty: Math.max(0, parseNum(it.qty)),
         cost: Math.max(0, parseNum(it.cost)),
@@ -4000,6 +4709,8 @@ service cloud.firestore {
         breakability: normalizeBreakability(
           it.breakability != null ? it.breakability : it.strength
         ),
+        photos,
+        models,
       };
     }
 
@@ -4160,7 +4871,10 @@ service cloud.firestore {
         Array.isArray(data.tickets) ? data.tickets : Array.isArray(data.serviceTickets) ? data.serviceTickets : []
       );
       if ("serviceTickets" in data) delete data.serviceTickets;
+      data.appeals = normalizeAppeals(Array.isArray(data.appeals) ? data.appeals : []);
+      data.chatFilterWords = normalizeChatFilterWords(data.chatFilterWords);
       data.items = normalizeItems(Array.isArray(data.items) ? data.items : []);
+      data.broadcast = normalizeBroadcast(data.broadcast);
       data.foundation = normalizeFoundation(data.foundation);
       data.variableOverhead = normalizeVariableOverhead(data.variableOverhead);
       data.dailySales = normalizeDailySales(data.dailySales);
@@ -4491,6 +5205,8 @@ service cloud.firestore {
             dmKey,
             system: !!m.system,
             embed: normalizeChatEmbed(m.embed),
+            redacted: !!m.redacted,
+            heavilyRedacted: !!m.heavilyRedacted,
           };
         })
         .filter(Boolean)
@@ -4588,6 +5304,15 @@ service cloud.firestore {
       return TICKET_STATUSES.includes(s) ? s : "open";
     }
 
+    function normalizeTicketPriority(raw) {
+      const s = String(raw || "normal").toLowerCase().trim();
+      return TICKET_PRIORITIES.includes(s) ? s : "normal";
+    }
+
+    function isTicketArchived(t) {
+      return normalizeTicketStatus(t?.status) === "archived";
+    }
+
     function normalizeTicket(raw) {
       if (!raw || typeof raw !== "object") return null;
       const description = String(raw.description || "").trim().slice(0, 4000);
@@ -4598,15 +5323,26 @@ service cloud.firestore {
         screenshotDataUrl =
           raw.screenshotDataUrl.length > MAX_TICKET_IMAGE_CHARS ? null : raw.screenshotDataUrl;
       }
+      let thumbDataUrl = null;
+      if (typeof raw.thumbDataUrl === "string" && raw.thumbDataUrl.startsWith("data:image/")) {
+        thumbDataUrl = raw.thumbDataUrl.length > 120000 ? null : raw.thumbDataUrl;
+      }
       return {
         id: String(raw.id || newTicketId()),
         title: String(raw.title || "").trim().slice(0, 120),
         description: description || "(no description)",
         status: normalizeTicketStatus(raw.status),
+        priority: normalizeTicketPriority(raw.priority),
         submitterName: String(raw.submitterName || raw.user || "Unknown").trim() || "Unknown",
         submitterUsername: String(raw.submitterUsername || raw.username || "").trim(),
         submitterRole: String(raw.submitterRole || raw.role || "viewer"),
+        claimedByName: raw.claimedByName ? String(raw.claimedByName).trim().slice(0, 80) : "",
+        claimedByUsername: raw.claimedByUsername
+          ? String(raw.claimedByUsername).trim().slice(0, 64)
+          : "",
+        claimedAt: raw.claimedAt ? String(raw.claimedAt) : null,
         screenshotDataUrl,
+        thumbDataUrl,
         screenshotPath: raw.screenshotPath ? String(raw.screenshotPath) : null,
         screenshotUrl: raw.screenshotUrl ? String(raw.screenshotUrl) : null,
         resolutionNote: String(raw.resolutionNote || "").trim().slice(0, 2000),
@@ -4627,9 +5363,15 @@ service cloud.firestore {
           if (prev && !t.screenshotDataUrl && prev.screenshotDataUrl) {
             t.screenshotDataUrl = prev.screenshotDataUrl;
           }
+          if (prev && !t.thumbDataUrl && prev.thumbDataUrl) {
+            t.thumbDataUrl = prev.thumbDataUrl;
+          }
           if (prev && !t.screenshotUrl && prev.screenshotUrl) {
             t.screenshotUrl = prev.screenshotUrl;
             t.screenshotPath = t.screenshotPath || prev.screenshotPath;
+          }
+          if (prev && !t.screenshotPath && prev.screenshotPath) {
+            t.screenshotPath = prev.screenshotPath;
           }
           byId.set(t.id, t);
         }
@@ -4645,12 +5387,17 @@ service cloud.firestore {
         title: t.title,
         description: String(t.description || "").slice(0, 280),
         status: t.status,
+        priority: t.priority || "normal",
         submitterName: t.submitterName,
         submitterUsername: t.submitterUsername,
         submitterRole: t.submitterRole,
-        hasScreenshot: !!(t.screenshotDataUrl || t.screenshotUrl || t.screenshotPath),
+        claimedByName: t.claimedByName || "",
+        claimedByUsername: t.claimedByUsername || "",
+        claimedAt: t.claimedAt || null,
+        hasScreenshot: !!(t.screenshotDataUrl || t.thumbDataUrl || t.screenshotUrl || t.screenshotPath),
         screenshotPath: t.screenshotPath || null,
         screenshotUrl: t.screenshotUrl || null,
+        thumbDataUrl: t.thumbDataUrl || null,
         resolutionNote: t.resolutionNote ? String(t.resolutionNote).slice(0, 280) : "",
         createdAt: t.createdAt,
         updatedAt: t.updatedAt,
@@ -4669,6 +5416,328 @@ service cloud.firestore {
       return stripUndefined(doc);
     }
 
+    function normalizeBroadcast(raw) {
+      if (!raw || typeof raw !== "object" || raw.active === false) {
+        if (raw && raw.active === false) {
+          return {
+            id: String(raw.id || ""),
+            text: "",
+            by: String(raw.by || ""),
+            byUsername: String(raw.byUsername || ""),
+            at: raw.at || null,
+            active: false,
+            expiresAt: raw.expiresAt || null,
+          };
+        }
+        return null;
+      }
+      const text = String(raw.text || "").trim().slice(0, 280);
+      if (!text) return null;
+      return {
+        id: String(raw.id || "b" + Date.now().toString(36)),
+        text,
+        by: String(raw.by || "Unknown").slice(0, 80),
+        byUsername: String(raw.byUsername || "").slice(0, 64),
+        at: raw.at || new Date().toISOString(),
+        active: true,
+        expiresAt: raw.expiresAt ? String(raw.expiresAt) : null,
+      };
+    }
+
+    function broadcastDismissKey() {
+      return BROADCAST_DISMISS_KEY + ":" + normalizeWorkspaceCode(workspaceId);
+    }
+
+    function getDismissedBroadcastId() {
+      try {
+        return localStorage.getItem(broadcastDismissKey()) || "";
+      } catch {
+        return "";
+      }
+    }
+
+    function setDismissedBroadcastId(id) {
+      try {
+        if (!id) localStorage.removeItem(broadcastDismissKey());
+        else localStorage.setItem(broadcastDismissKey(), String(id));
+      } catch (_) {}
+    }
+
+    function activeBroadcast() {
+      const b = normalizeBroadcast(workspaceState.broadcast);
+      workspaceState.broadcast = b;
+      if (!b || !b.active || !b.text) return null;
+      if (b.expiresAt) {
+        const exp = Date.parse(b.expiresAt);
+        if (Number.isFinite(exp) && Date.now() > exp) return null;
+      }
+      return b;
+    }
+
+    function expiryFromSelect(value) {
+      const now = Date.now();
+      if (value === "1h") return new Date(now + 3600000).toISOString();
+      if (value === "6h") return new Date(now + 6 * 3600000).toISOString();
+      if (value === "24h") return new Date(now + 24 * 3600000).toISOString();
+      if (value === "7d") return new Date(now + 7 * 24 * 3600000).toISOString();
+      return null;
+    }
+
+    let lastRenderedBroadcastId = null;
+
+    function renderBroadcastBanner({ animate = false } = {}) {
+      const el = document.getElementById("broadcastBanner");
+      if (!el) return;
+      const b = activeBroadcast();
+      const dismissed = getDismissedBroadcastId();
+      const canClear = currentUser?.role === "core" || currentUser?.role === "admin";
+      document.getElementById("broadcastClearBtn")?.classList.toggle("hidden", !canClear);
+      if (!b || (b.id && b.id === dismissed)) {
+        el.classList.add("hidden");
+        el.classList.remove("bcast-animate", "bcast-enter");
+        lastRenderedBroadcastId = b?.id || null;
+        return;
+      }
+      const textEl = document.getElementById("broadcastBannerText");
+      const metaEl = document.getElementById("broadcastBannerMeta");
+      if (textEl) textEl.textContent = b.text;
+      if (metaEl) {
+        const when = b.at ? new Date(b.at).toLocaleString() : "";
+        metaEl.textContent =
+          "From " +
+          (b.by || "Someone") +
+          (b.byUsername ? " (@" + b.byUsername + ")" : "") +
+          (when ? " · " + when : "") +
+          (b.expiresAt ? " · expires " + new Date(b.expiresAt).toLocaleString() : "");
+      }
+      const shouldAnimate = animate && b.id !== lastRenderedBroadcastId;
+      el.classList.remove("hidden");
+      if (shouldAnimate) {
+        el.classList.add("bcast-enter", "bcast-animate");
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => el.classList.remove("bcast-enter"));
+        });
+        setTimeout(() => el.classList.remove("bcast-animate"), 520);
+      }
+      lastRenderedBroadcastId = b.id;
+    }
+
+    function setBroadcastStatus(which, text, mode) {
+      const id = which === "team" ? "teamBroadcastStatus" : "dashBroadcastStatus";
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = text || "";
+      el.className = "broadcast-status" + (mode ? " " + mode : "");
+    }
+
+    function sendWorkspaceBroadcast(text, expirySelect, statusWhich) {
+      if (!currentUser || (currentUser.role !== "core" && currentUser.role !== "admin")) {
+        setBroadcastStatus(statusWhich, "Only Core or Admin can broadcast.", "err");
+        return;
+      }
+      const msg = String(text || "").trim().slice(0, 280);
+      if (!msg) {
+        setBroadcastStatus(statusWhich, "Enter a message.", "err");
+        return;
+      }
+      const now = new Date().toISOString();
+      const broadcast = normalizeBroadcast({
+        id: "b" + Date.now().toString(36) + Math.random().toString(16).slice(2, 6),
+        text: msg,
+        by: currentUser.name || currentUser.username,
+        byUsername: currentUser.username,
+        at: now,
+        active: true,
+        expiresAt: expiryFromSelect(expirySelect),
+      });
+      workspaceState.broadcast = broadcast;
+      setDismissedBroadcastId("");
+      pushActivity("Sent workspace broadcast");
+      persistWorkspace(true);
+      setBroadcastStatus(statusWhich, "Broadcast sent", "ok");
+      renderBroadcastBanner({ animate: true });
+    }
+
+    function clearWorkspaceBroadcast(statusWhich) {
+      if (!currentUser || (currentUser.role !== "core" && currentUser.role !== "admin")) {
+        setBroadcastStatus(statusWhich, "Only Core or Admin can clear.", "err");
+        return;
+      }
+      const prev = normalizeBroadcast(workspaceState.broadcast);
+      workspaceState.broadcast = {
+        id: prev?.id || "b-cleared",
+        text: "",
+        by: currentUser.name || currentUser.username,
+        byUsername: currentUser.username,
+        at: new Date().toISOString(),
+        active: false,
+        expiresAt: null,
+      };
+      setDismissedBroadcastId("");
+      pushActivity("Cleared workspace broadcast");
+      persistWorkspace(true);
+      setBroadcastStatus(statusWhich, "Broadcast cleared for everyone", "ok");
+      renderBroadcastBanner({ animate: false });
+    }
+
+    function initBroadcastUi() {
+      document.getElementById("broadcastDismissBtn")?.addEventListener("click", () => {
+        const b = activeBroadcast();
+        if (b?.id) setDismissedBroadcastId(b.id);
+        renderBroadcastBanner({ animate: false });
+      });
+      document.getElementById("broadcastClearBtn")?.addEventListener("click", () => {
+        clearWorkspaceBroadcast("dash");
+      });
+      document.getElementById("dashBroadcastSendBtn")?.addEventListener("click", () => {
+        sendWorkspaceBroadcast(
+          document.getElementById("dashBroadcastText")?.value,
+          document.getElementById("dashBroadcastExpiry")?.value,
+          "dash"
+        );
+        const ta = document.getElementById("dashBroadcastText");
+        if (ta) ta.value = "";
+      });
+      document.getElementById("dashBroadcastClearBtn")?.addEventListener("click", () => {
+        clearWorkspaceBroadcast("dash");
+      });
+      document.getElementById("teamBroadcastSendBtn")?.addEventListener("click", () => {
+        sendWorkspaceBroadcast(
+          document.getElementById("teamBroadcastText")?.value,
+          document.getElementById("teamBroadcastExpiry")?.value,
+          "team"
+        );
+        const ta = document.getElementById("teamBroadcastText");
+        if (ta) ta.value = "";
+      });
+      document.getElementById("teamBroadcastClearBtn")?.addEventListener("click", () => {
+        clearWorkspaceBroadcast("team");
+      });
+    }
+
+    function normalizeChatFilterWords(raw) {
+      const list = Array.isArray(raw) ? raw : String(raw || "").split(/[\n,]+/);
+      const out = [];
+      const seen = new Set();
+      list.forEach((w) => {
+        const s = String(w || "").trim().toLowerCase().replace(/[^a-z0-9'\-]/gi, "");
+        if (s.length < 2 || s.length > 40) return;
+        if (seen.has(s)) return;
+        seen.add(s);
+        out.push(s);
+      });
+      return out.slice(0, 400);
+    }
+
+    function getEffectiveBadWords() {
+      const extra = normalizeChatFilterWords(workspaceState?.chatFilterWords);
+      const set = new Set(DEFAULT_BAD_WORDS.map((w) => w.toLowerCase()));
+      extra.forEach((w) => set.add(w));
+      return Array.from(set);
+    }
+
+    function redactChatText(input) {
+      const words = getEffectiveBadWords();
+      if (!words.length) {
+        return { text: String(input || ""), redacted: false, heavilyRedacted: false, hits: 0 };
+      }
+      const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const pattern = new RegExp(
+        "\\b(" + words.map(escapeRe).join("|") + ")\\b",
+        "gi"
+      );
+      let hits = 0;
+      const text = String(input || "").replace(pattern, (match) => {
+        hits += 1;
+        if (match.length <= 1) return "*";
+        return match[0] + "*".repeat(Math.max(2, match.length - 1));
+      });
+      const ratio = String(input || "").length ? hits / Math.max(1, String(input || "").split(/\s+/).length) : 0;
+      return {
+        text,
+        redacted: hits > 0,
+        heavilyRedacted: hits >= 3 || ratio >= 0.35,
+        hits,
+      };
+    }
+
+    function newAppealId() {
+      return "a" + Date.now().toString(36) + Math.random().toString(16).slice(2, 8);
+    }
+
+    function normalizeAppealStatus(raw) {
+      const s = String(raw || "open").toLowerCase().replace(/\s+/g, "_");
+      if (s === "closed" || s === "denied_closed") return "archived";
+      return APPEAL_STATUSES.includes(s) ? s : "open";
+    }
+
+    function isAppealArchived(a) {
+      return normalizeAppealStatus(a?.status) === "archived";
+    }
+
+    function normalizeAppeal(raw) {
+      if (!raw || typeof raw !== "object") return null;
+      const description = String(raw.description || "").trim().slice(0, 4000);
+      if (!description && !raw.id) return null;
+      const createdAt = raw.createdAt || raw.at || new Date().toISOString();
+      return {
+        id: String(raw.id || newAppealId()),
+        reason: String(raw.reason || "other").trim().slice(0, 40),
+        relatedId: String(raw.relatedId || "").trim().slice(0, 80),
+        description: description || "(no description)",
+        status: normalizeAppealStatus(raw.status),
+        submitterName: String(raw.submitterName || raw.user || "Unknown").trim() || "Unknown",
+        submitterUsername: String(raw.submitterUsername || raw.username || "").trim(),
+        decisionNote: String(raw.decisionNote || "").trim().slice(0, 2000),
+        createdAt,
+        updatedAt: raw.updatedAt || createdAt,
+      };
+    }
+
+    function normalizeAppeals(list) {
+      if (!Array.isArray(list)) return [];
+      const byId = new Map();
+      list.forEach((raw) => {
+        const a = normalizeAppeal(raw);
+        if (!a) return;
+        const prev = byId.get(a.id);
+        if (!prev || String(a.updatedAt) >= String(prev.updatedAt)) byId.set(a.id, a);
+      });
+      return Array.from(byId.values())
+        .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
+        .slice(0, MAX_APPEALS);
+    }
+
+    function appealForFirestoreList(a) {
+      return stripUndefined({
+        id: a.id,
+        reason: a.reason,
+        relatedId: a.relatedId || "",
+        description: String(a.description || "").slice(0, 280),
+        status: a.status,
+        submitterName: a.submitterName,
+        submitterUsername: a.submitterUsername,
+        decisionNote: a.decisionNote ? String(a.decisionNote).slice(0, 280) : "",
+        createdAt: a.createdAt,
+        updatedAt: a.updatedAt,
+      });
+    }
+
+    function appealForFirestoreDoc(a) {
+      return stripUndefined({
+        ...appealForFirestoreList(a),
+        description: a.description,
+        decisionNote: a.decisionNote || "",
+      });
+    }
+
+    function canViewAppeal(a) {
+      if (!currentUser || !a) return false;
+      if (canManageAppeals()) return true;
+      const me = (currentUser.username || "").toLowerCase();
+      return !!(me && a.submitterUsername && String(a.submitterUsername).toLowerCase() === me);
+    }
+
     function canResolveTickets() {
       const role = currentUser?.role;
       return role === "core" || role === "admin";
@@ -4678,7 +5747,20 @@ service cloud.firestore {
       if (!currentUser || !t) return false;
       if (canResolveTickets()) return true;
       const me = (currentUser.username || "").toLowerCase();
-      return !!(me && t.submitterUsername && String(t.submitterUsername).toLowerCase() === me);
+      if (me && t.submitterUsername && String(t.submitterUsername).toLowerCase() === me) return true;
+      if (me && t.claimedByUsername && String(t.claimedByUsername).toLowerCase() === me) return true;
+      return false;
+    }
+
+    function canUpdateTicket(t) {
+      if (!currentUser || !t) return false;
+      if (canResolveTickets()) return true;
+      const me = (currentUser.username || "").toLowerCase();
+      return !!(me && t.claimedByUsername && String(t.claimedByUsername).toLowerCase() === me);
+    }
+
+    function canManageAppeals() {
+      return canResolveTickets();
     }
 
     function isWorkspaceReady(data) {
@@ -4789,6 +5871,8 @@ service cloud.firestore {
         activity: rawState.activity || [],
         chatMessages: normalizeChatMessages(rawState.chatMessages),
         tickets: normalizeTickets(rawState.tickets),
+        appeals: normalizeAppeals(rawState.appeals),
+        chatFilterWords: normalizeChatFilterWords(rawState.chatFilterWords),
         accounts: importedAccounts,
         roleDefs: normalizeRoleDefs(rawState.roleDefs),
         dailySales: normalizeDailySales(rawState.dailySales),
@@ -4869,8 +5953,11 @@ service cloud.firestore {
       workspaceState.roleDefs = normalizeRoleDefs(workspaceState.roleDefs);
       workspaceState.chatMessages = normalizeChatMessages(workspaceState.chatMessages);
       workspaceState.tickets = normalizeTickets(workspaceState.tickets);
+      workspaceState.appeals = normalizeAppeals(workspaceState.appeals);
+      workspaceState.chatFilterWords = normalizeChatFilterWords(workspaceState.chatFilterWords);
       workspaceState.batchPlanner = normalizeBatchPlanner(workspaceState.batchPlanner);
       workspaceState.dailySales = normalizeDailySales(workspaceState.dailySales);
+      workspaceState.broadcast = normalizeBroadcast(workspaceState.broadcast);
       if (!workspaceState.workspaceRecoveryDigest) workspaceState.workspaceRecoveryDigest = null;
       if (pushCloud && !applyingRemote) {
         workspaceState.updatedAt = new Date().toISOString();
@@ -4893,6 +5980,7 @@ service cloud.firestore {
         } else {
           setSyncStatus("Local · " + workspaceId, "live");
         }
+        scheduleAutoVersionCheckpoint();
       } else if (!firebaseEnabled) {
         setSyncStatus("Local · " + workspaceId, "live");
       }
@@ -5038,7 +6126,10 @@ service cloud.firestore {
       restoreChatPipIfNeeded();
       refreshChatNotifyUi();
       updateChatChannelTabsUi();
-      if (firebaseEnabled && firebaseSyncOk) subscribeTickets(workspaceId);
+      if (firebaseEnabled && firebaseSyncOk) {
+        subscribeTickets(workspaceId);
+        subscribeAppeals(workspaceId);
+      }
     }
 
     function showPage(page) {
@@ -5530,29 +6621,119 @@ service cloud.firestore {
       }
     }
 
-    function setChatPipEnabled(enabled, { persist = true } = {}) {
+    let chatPipAnimating = false;
+
+    function removeChatGlassShim() {
+      document.querySelectorAll(".chat-glass-shim").forEach((el) => el.remove());
+    }
+
+    function animateChatPipMorph({ fromRect, toRect, growing }) {
+      removeChatGlassShim();
+      const shim = document.createElement("div");
+      shim.className = "chat-glass-shim";
+      shim.style.left = fromRect.left + "px";
+      shim.style.top = fromRect.top + "px";
+      shim.style.width = fromRect.width + "px";
+      shim.style.height = fromRect.height + "px";
+      shim.style.opacity = "0.55";
+      shim.style.filter = "blur(10px)";
+      document.body.appendChild(shim);
+      requestAnimationFrame(() => {
+        shim.style.left = toRect.left + "px";
+        shim.style.top = toRect.top + "px";
+        shim.style.width = toRect.width + "px";
+        shim.style.height = toRect.height + "px";
+        shim.style.opacity = growing ? "0" : "0.35";
+        shim.style.filter = growing ? "blur(0px)" : "blur(14px)";
+        shim.style.transform = growing ? "scale(1)" : "scale(0.96)";
+      });
+      setTimeout(() => shim.remove(), 450);
+    }
+
+    function setChatPipEnabled(enabled, { persist = true, animate = true } = {}) {
       const pip = document.getElementById("chatPip");
       if (!pip) return;
       const meta = getRole();
       if (enabled && meta && meta.canChat === false) enabled = false;
       if (enabled && !currentUser) enabled = false;
+      if (chatPipAnimating) return;
 
-      if (enabled) {
+      const currentlyOn = isChatPipEnabled();
+      if (!!enabled === currentlyOn) {
+        if (enabled) {
+          applyChatPipGeometry(loadChatPipPrefs());
+          mountChatCard(true);
+          pip.classList.remove("hidden");
+          pip.setAttribute("aria-hidden", "false");
+          clampChatPipToViewport();
+          if (persist) saveChatPipPrefs({ enabled: true });
+        }
+        return;
+      }
+
+      const finishEnable = () => {
         applyChatPipGeometry(loadChatPipPrefs());
         mountChatCard(true);
-        pip.classList.remove("hidden");
+        pip.classList.remove("hidden", "pip-morph-enter", "pip-morph-exit");
         pip.setAttribute("aria-hidden", "false");
         clampChatPipToViewport();
         renderChat(true);
         if (persist) saveChatPipPrefs({ enabled: true });
-      } else {
+        chatPipAnimating = false;
+      };
+
+      const finishDisable = () => {
         mountChatCard(false);
         pip.classList.add("hidden");
+        pip.classList.remove("pip-glass-morph", "pip-morph-enter", "pip-morph-exit");
         pip.setAttribute("aria-hidden", "true");
         if (persist) saveChatPipPrefs({ enabled: false });
         if (document.getElementById("page-chat") && !document.getElementById("page-chat").classList.contains("hidden")) {
           renderChat(false);
         }
+        chatPipAnimating = false;
+        removeChatGlassShim();
+      };
+
+      if (!animate || !currentUser) {
+        if (enabled) finishEnable();
+        else finishDisable();
+        return;
+      }
+
+      chatPipAnimating = true;
+      const card = document.getElementById("chatCard");
+      const cardRect = card?.getBoundingClientRect();
+
+      if (enabled) {
+        applyChatPipGeometry(loadChatPipPrefs());
+        pip.classList.remove("hidden");
+        pip.classList.add("pip-glass-morph", "pip-morph-enter");
+        pip.setAttribute("aria-hidden", "false");
+        mountChatCard(true);
+        const pipRect = pip.getBoundingClientRect();
+        if (cardRect && cardRect.width > 0) {
+          animateChatPipMorph({ fromRect: cardRect, toRect: pipRect, growing: true });
+        }
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            pip.classList.remove("pip-morph-enter");
+          });
+        });
+        setTimeout(() => {
+          clampChatPipToViewport();
+          renderChat(true);
+          if (persist) saveChatPipPrefs({ enabled: true });
+          pip.classList.remove("pip-glass-morph");
+          chatPipAnimating = false;
+        }, 420);
+      } else {
+        const pipRect = pip.getBoundingClientRect();
+        const pageHost = document.getElementById("chatPageHost");
+        const hostRect = pageHost?.getBoundingClientRect() || pipRect;
+        pip.classList.add("pip-glass-morph", "pip-morph-exit");
+        animateChatPipMorph({ fromRect: pipRect, toRect: hostRect, growing: false });
+        setTimeout(() => finishDisable(), 400);
       }
     }
 
@@ -5560,17 +6741,20 @@ service cloud.firestore {
       const prefs = loadChatPipPrefs();
       const meta = getRole();
       if (prefs.enabled && currentUser && !(meta && meta.canChat === false)) {
-        setChatPipEnabled(true, { persist: false });
+        setChatPipEnabled(true, { persist: false, animate: false });
       } else {
-        setChatPipEnabled(false, { persist: false });
+        setChatPipEnabled(false, { persist: false, animate: false });
       }
     }
 
     function hideChatPipForAuth() {
       const pip = document.getElementById("chatPip");
       if (!pip) return;
+      chatPipAnimating = false;
+      removeChatGlassShim();
       mountChatCard(false);
       pip.classList.add("hidden");
+      pip.classList.remove("pip-glass-morph", "pip-morph-enter", "pip-morph-exit");
       pip.setAttribute("aria-hidden", "true");
     }
 
@@ -6253,17 +7437,24 @@ service cloud.firestore {
       });
     }
 
-    async function createServiceTicketRecord({ title, description, screenshotDataUrl }) {
+    async function createServiceTicketRecord({ title, description, screenshotDataUrl, priority }) {
       if (!currentUser) throw new Error("Sign in to submit a ticket.");
       const desc = String(description || "").trim().slice(0, 4000);
       if (!desc) throw new Error("Description is required.");
       const id = newTicketId();
       const now = new Date().toISOString();
       let shot = screenshotDataUrl || null;
+      let thumbDataUrl = null;
       let screenshotPath = null;
       let screenshotUrl = null;
       if (shot) {
         const blob = dataUrlToBlob(shot);
+        try {
+          if (blob) {
+            const thumb = await compressImageFile(blob, { maxWidth: 240, quality: 0.55 });
+            if (thumb?.dataUrl) thumbDataUrl = thumb.dataUrl;
+          }
+        } catch (_) {}
         const uploaded = blob ? await uploadTicketScreenshot(id, blob) : null;
         if (uploaded) {
           screenshotPath = uploaded.path;
@@ -6278,10 +7469,15 @@ service cloud.firestore {
         title: String(title || "").trim().slice(0, 120),
         description: desc,
         status: "open",
+        priority: normalizeTicketPriority(priority),
         submitterName: currentUser.name || currentUser.username,
         submitterUsername: currentUser.username,
         submitterRole: currentUser.role,
+        claimedByName: "",
+        claimedByUsername: "",
+        claimedAt: null,
         screenshotDataUrl: shot,
+        thumbDataUrl,
         screenshotPath,
         screenshotUrl,
         resolutionNote: "",
@@ -6403,9 +7599,15 @@ service cloud.firestore {
                   )}" title="Report to Service portal">Report</button>
                 </div>`
               : "";
+          const filteredNote =
+            !isSystem && m.heavilyRedacted
+              ? `<div class="chat-filtered-note">Language filtered</div>`
+              : !isSystem && m.redacted
+                ? `<div class="chat-filtered-note">Some language filtered</div>`
+                : "";
           return `<div class="chat-msg${mine ? " mine" : ""}${isSystem ? " system" : ""}${
             m.ephemeral ? " ephemeral" : ""
-          }" data-msg-id="${escapeHtml(m.id || "")}">
+          }${m.redacted ? " redacted" : ""}" data-msg-id="${escapeHtml(m.id || "")}">
             <div class="chat-avatar" aria-hidden="true">${escapeHtml(avatarLabel)}</div>
             <div class="chat-msg-body">
               <div class="chat-meta">
@@ -6416,6 +7618,7 @@ service cloud.firestore {
                 <span class="time">${escapeHtml(when)}</span>
               </div>
               ${bodyHtml}
+              ${filteredNote}
               ${actions}
             </div>
           </div>`;
@@ -6460,17 +7663,25 @@ service cloud.firestore {
       }
       const channel = chatChannelMode === "dm" ? "dm" : "team";
       const dmKey = channel === "dm" ? activeDmKey() : "";
+      let embedOut = normalizeChatEmbed(embed);
+      const filtered = redactChatText(cleaned);
+      if (embedOut && embedOut.title) {
+        const tr = redactChatText(embedOut.title);
+        embedOut = { ...embedOut, title: tr.text };
+      }
       const msg = {
         id: "c" + Date.now().toString(36) + Math.random().toString(16).slice(2, 8),
         at: new Date().toISOString(),
         user: currentUser.name || currentUser.username,
         username: currentUser.username,
         role: currentUser.role,
-        text: cleaned,
+        text: filtered.text,
         channel,
         dmKey,
         system: false,
-        embed: normalizeChatEmbed(embed),
+        embed: embedOut,
+        redacted: filtered.redacted,
+        heavilyRedacted: filtered.heavilyRedacted,
       };
       if (!Array.isArray(workspaceState.chatMessages)) workspaceState.chatMessages = [];
       workspaceState.chatMessages = normalizeChatMessages([...workspaceState.chatMessages, msg]);
@@ -6586,9 +7797,26 @@ service cloud.firestore {
     // ——— Service portal ———
     let serviceDraftScreenshot = null;
     let selectedTicketId = null;
+    let ticketViewMode = "active"; // active | archive
     let serviceKnownTicketIds = new Set();
     let serviceNotifySeeded = false;
     let serviceUnreadCount = 0;
+
+    function setTicketViewMode(mode, { keepSelection = false } = {}) {
+      ticketViewMode = mode === "archive" ? "archive" : "active";
+      document.getElementById("ticketViewActive")?.classList.toggle("active", ticketViewMode === "active");
+      document.getElementById("ticketViewArchive")?.classList.toggle("active", ticketViewMode === "archive");
+      const title = document.getElementById("serviceListTitle");
+      if (title) title.textContent = ticketViewMode === "archive" ? "Tickets archive" : "Active tickets";
+      const filter = document.getElementById("serviceFilterStatus");
+      if (filter) {
+        // Archive view is status=archived only; status filter applies to Active only
+        filter.disabled = ticketViewMode === "archive";
+        if (ticketViewMode === "archive") filter.value = "all";
+      }
+      if (!keepSelection) selectedTicketId = null;
+      renderServicePage();
+    }
 
     function ticketStatusLabel(status) {
       const map = {
@@ -6600,11 +7828,99 @@ service cloud.firestore {
       return map[normalizeTicketStatus(status)] || "Open";
     }
 
-    function ticketScreenshotSrc(t) {
+    function ticketPriorityLabel(priority) {
+      const map = { low: "Low", normal: "Normal", high: "High", urgent: "Urgent" };
+      return map[normalizeTicketPriority(priority)] || "Normal";
+    }
+
+    function ticketScreenshotSrc(t, { thumb = false } = {}) {
       if (!t) return "";
-      if (t.screenshotUrl) return t.screenshotUrl;
+      if (thumb && t.thumbDataUrl) return t.thumbDataUrl;
       if (t.screenshotDataUrl) return t.screenshotDataUrl;
+      if (thumb && t.screenshotDataUrl) return t.screenshotDataUrl;
+      if (t.screenshotUrl) return t.screenshotUrl;
+      if (t.thumbDataUrl) return t.thumbDataUrl;
       return "";
+    }
+
+    const ticketUrlCache = new Map();
+
+    async function resolveStorageDownloadUrl(path) {
+      if (!path) return "";
+      if (ticketUrlCache.has(path)) return ticketUrlCache.get(path);
+      if (!firebaseEnabled || typeof firebase === "undefined" || !firebase.storage) return "";
+      try {
+        await ensureFirebaseAuth();
+        const url = await firebase.storage().ref(path).getDownloadURL();
+        ticketUrlCache.set(path, url);
+        return url;
+      } catch (err) {
+        console.warn("Storage URL resolve failed", path, err);
+        return "";
+      }
+    }
+
+    async function ensureTicketScreenshotUrl(t) {
+      if (!t) return "";
+      const immediate = ticketScreenshotSrc(t);
+      if (immediate) return immediate;
+      if (t.screenshotPath) {
+        const url = await resolveStorageDownloadUrl(t.screenshotPath);
+        if (url) {
+          t.screenshotUrl = url;
+          const list = workspaceState.tickets || [];
+          const idx = list.findIndex((x) => x.id === t.id);
+          if (idx >= 0) {
+            list[idx] = { ...list[idx], screenshotUrl: url };
+            workspaceState.tickets = list;
+          }
+          return url;
+        }
+      }
+      return "";
+    }
+
+    function bindTicketImageEl(imgEl, t, { thumb = false } = {}) {
+      if (!imgEl || !t) return;
+      const failHide = !thumb;
+      const apply = (src) => {
+        if (!src) {
+          imgEl.removeAttribute("src");
+          if (failHide) imgEl.classList.add("hidden");
+          return;
+        }
+        imgEl.onload = null;
+        imgEl.onerror = async () => {
+          if (t.screenshotDataUrl && imgEl.getAttribute("src") !== t.screenshotDataUrl) {
+            imgEl.src = t.screenshotDataUrl;
+            return;
+          }
+          if (t.thumbDataUrl && imgEl.getAttribute("src") !== t.thumbDataUrl) {
+            imgEl.src = t.thumbDataUrl;
+            return;
+          }
+          if (t.screenshotPath) {
+            const url = await resolveStorageDownloadUrl(t.screenshotPath);
+            if (url && imgEl.getAttribute("src") !== url) {
+              t.screenshotUrl = url;
+              imgEl.src = url;
+              return;
+            }
+          }
+          if (failHide) imgEl.classList.add("hidden");
+        };
+        imgEl.src = src;
+        if (failHide) imgEl.classList.remove("hidden");
+      };
+      const src = ticketScreenshotSrc(t, { thumb });
+      if (src) {
+        apply(src);
+        return;
+      }
+      if (failHide) imgEl.classList.add("hidden");
+      ensureTicketScreenshotUrl(t).then((url) => {
+        if (url) apply(url);
+      });
     }
 
     function setServiceFormStatus(text, mode) {
@@ -6809,11 +8125,25 @@ service cloud.firestore {
       }
       try {
         await ensureFirebaseAuth();
-        const path = "tickets/" + normalizeWorkspaceCode(workspaceId) + "/" + ticketId + ".jpg";
-        const ref = firebase.storage().ref(path);
-        await ref.put(blob, { contentType: "image/jpeg" });
-        const url = await ref.getDownloadURL();
-        return { path, url };
+        const code = normalizeWorkspaceCode(workspaceId);
+        const paths = [
+          "workspaces/" + code + "/tickets/" + ticketId + "/shot.jpg",
+          "tickets/" + code + "/" + ticketId + ".jpg",
+        ];
+        let lastErr = null;
+        for (const path of paths) {
+          try {
+            const ref = firebase.storage().ref(path);
+            await ref.put(blob, { contentType: "image/jpeg" });
+            const url = await ref.getDownloadURL();
+            ticketUrlCache.set(path, url);
+            return { path, url };
+          } catch (err) {
+            lastErr = err;
+          }
+        }
+        console.warn("Storage upload failed — using data URL", lastErr);
+        return null;
       } catch (err) {
         console.warn("Storage upload failed — using data URL", err);
         return null;
@@ -6858,17 +8188,28 @@ service cloud.firestore {
     }
 
     function visibleTicketsForUser() {
-      const statusFilter = document.getElementById("serviceFilterStatus")?.value || "all";
       const mineFilter = document.getElementById("serviceFilterMine")?.value || "visible";
       let list = normalizeTickets(workspaceState.tickets || []).filter(canViewTicket);
+      if (ticketViewMode === "archive") {
+        list = list.filter((t) => isTicketArchived(t));
+      } else {
+        list = list.filter((t) => !isTicketArchived(t));
+        const statusFilter = document.getElementById("serviceFilterStatus")?.value || "all";
+        if (statusFilter !== "all") {
+          list = list.filter((t) => t.status === statusFilter);
+        }
+      }
+      const me = (currentUser?.username || "").toLowerCase();
       if (mineFilter === "mine") {
-        const me = (currentUser?.username || "").toLowerCase();
         list = list.filter(
           (t) => t.submitterUsername && String(t.submitterUsername).toLowerCase() === me
         );
-      }
-      if (statusFilter !== "all") {
-        list = list.filter((t) => t.status === statusFilter);
+      } else if (mineFilter === "claimed") {
+        list = list.filter(
+          (t) => t.claimedByUsername && String(t.claimedByUsername).toLowerCase() === me
+        );
+      } else if (mineFilter === "unclaimed") {
+        list = list.filter((t) => !t.claimedByUsername && t.status === "open");
       }
       return list;
     }
@@ -6880,34 +8221,59 @@ service cloud.firestore {
       const list = visibleTicketsForUser();
       if (hint) {
         hint.textContent = canResolveTickets()
-          ? "Showing all tickets (Core/Admin)"
-          : "Showing your tickets";
+          ? ticketViewMode === "archive"
+            ? "Archived tickets (Core/Admin)"
+            : "Active tickets (Core/Admin)"
+          : ticketViewMode === "archive"
+            ? "Your archived tickets"
+            : "Your active tickets";
       }
       if (!list.length) {
-        listEl.innerHTML = `<div class="service-detail-empty">No tickets yet.</div>`;
+        listEl.innerHTML = `<div class="service-detail-empty">${
+          ticketViewMode === "archive" ? "No archived tickets." : "No active tickets."
+        }</div>`;
         return;
       }
       listEl.innerHTML = list
         .map((t) => {
-          const src = ticketScreenshotSrc(t);
-          const thumb = src
-            ? `<img class="service-ticket-thumb" src="${escapeHtml(src)}" alt="" />`
-            : `<div class="service-ticket-thumb placeholder">No img</div>`;
           const title = t.title || t.description.slice(0, 60);
           const when = t.createdAt ? new Date(t.createdAt).toLocaleString() : "";
+          const claim =
+            t.claimedByName || t.claimedByUsername
+              ? `<span class="ticket-claim-pill claimed">Claimed by ${escapeHtml(t.claimedByName || t.claimedByUsername)}</span>`
+              : `<span class="ticket-claim-pill">Unclaimed</span>`;
           return `<button type="button" class="service-ticket${selectedTicketId === t.id ? " active" : ""}" data-ticket-id="${escapeHtml(t.id)}">
-            ${thumb}
+            <img class="service-ticket-thumb placeholder" data-ticket-thumb="${escapeHtml(t.id)}" alt="" />
             <div class="service-ticket-body">
               <div class="service-ticket-title">${escapeHtml(title)}</div>
               <div class="service-ticket-snippet">${escapeHtml(t.description)}</div>
               <div class="service-ticket-meta">${escapeHtml(t.submitterName)} · ${escapeHtml(when)}</div>
             </div>
-            <span class="ticket-status ${escapeHtml(t.status)}">${escapeHtml(ticketStatusLabel(t.status))}</span>
+            <div class="ticket-badges">
+              <span class="ticket-priority ${escapeHtml(t.priority || "normal")}">${escapeHtml(ticketPriorityLabel(t.priority))}</span>
+              <span class="ticket-status ${escapeHtml(t.status)}">${escapeHtml(ticketStatusLabel(t.status))}</span>
+              ${claim}
+            </div>
           </button>`;
         })
         .join("");
       listEl.querySelectorAll("[data-ticket-id]").forEach((btn) => {
-        btn.addEventListener("click", () => openServiceTicket(btn.getAttribute("data-ticket-id")));
+        const id = btn.getAttribute("data-ticket-id");
+        const t = list.find((x) => x.id === id);
+        const img = btn.querySelector("[data-ticket-thumb]");
+        if (t && img) {
+          const hasAny =
+            !!(t.screenshotDataUrl || t.thumbDataUrl || t.screenshotUrl || t.screenshotPath);
+          if (hasAny) {
+            img.classList.remove("placeholder");
+            img.alt = "";
+            bindTicketImageEl(img, t, { thumb: true });
+          } else {
+            img.classList.add("placeholder");
+            img.alt = "No img";
+          }
+        }
+        btn.addEventListener("click", () => openServiceTicket(id));
       });
     }
 
@@ -6923,46 +8289,89 @@ service cloud.firestore {
         renderServiceTicketList();
         return;
       }
+      // If opening archived while on active (or reverse), switch view without clearing selection
+      if (isTicketArchived(t) && ticketViewMode !== "archive") {
+        setTicketViewMode("archive", { keepSelection: true });
+        return;
+      }
+      if (!isTicketArchived(t) && ticketViewMode === "archive") {
+        setTicketViewMode("active", { keepSelection: true });
+        return;
+      }
       empty?.classList.add("hidden");
       detail?.classList.remove("hidden");
       const titleEl = document.getElementById("serviceDetailTitle");
       const statusEl = document.getElementById("serviceDetailStatus");
+      const priorityEl = document.getElementById("serviceDetailPriority");
       const descEl = document.getElementById("serviceDetailDesc");
       const metaEl = document.getElementById("serviceDetailMeta");
       const shotEl = document.getElementById("serviceDetailShot");
       const resolvePanel = document.getElementById("serviceResolvePanel");
       const statusSelect = document.getElementById("serviceStatusSelect");
+      const prioritySelect = document.getElementById("servicePrioritySelect");
       const noteEl = document.getElementById("serviceResolutionNote");
+      const claimLabel = document.getElementById("serviceClaimLabel");
+      const claimBtn = document.getElementById("serviceClaimBtn");
+      const unclaimBtn = document.getElementById("serviceUnclaimBtn");
+      const assignEl = document.getElementById("serviceClaimAssign");
       if (titleEl) titleEl.textContent = t.title || "Untitled ticket";
       if (statusEl) {
         statusEl.textContent = ticketStatusLabel(t.status);
         statusEl.className = "ticket-status " + t.status;
       }
-      if (descEl) descEl.textContent = t.description;
-      const src = ticketScreenshotSrc(t);
-      if (shotEl) {
-        if (src) {
-          shotEl.src = src;
-          shotEl.classList.remove("hidden");
-        } else {
-          shotEl.removeAttribute("src");
-          shotEl.classList.add("hidden");
-        }
+      if (priorityEl) {
+        priorityEl.textContent = ticketPriorityLabel(t.priority);
+        priorityEl.className = "ticket-priority " + (t.priority || "normal");
       }
+      if (descEl) descEl.textContent = t.description;
+      if (shotEl) bindTicketImageEl(shotEl, t, { thumb: false });
       if (metaEl) {
         metaEl.innerHTML =
           `<div class="stat"><label>Submitter</label><div class="value" style="font-size:0.95rem">${escapeHtml(t.submitterName)}</div></div>` +
           `<div class="stat"><label>Username</label><div class="value" style="font-size:0.95rem">@${escapeHtml(t.submitterUsername || "—")}</div></div>` +
           `<div class="stat"><label>Role</label><div class="value" style="font-size:0.95rem">${escapeHtml(t.submitterRole)}</div></div>` +
+          `<div class="stat"><label>Priority</label><div class="value" style="font-size:0.95rem">${escapeHtml(ticketPriorityLabel(t.priority))}</div></div>` +
           `<div class="stat"><label>Created</label><div class="value" style="font-size:0.85rem">${escapeHtml(t.createdAt ? new Date(t.createdAt).toLocaleString() : "—")}</div></div>` +
           `<div class="stat"><label>Updated</label><div class="value" style="font-size:0.85rem">${escapeHtml(t.updatedAt ? new Date(t.updatedAt).toLocaleString() : "—")}</div></div>`;
       }
-      if (resolvePanel) {
-        resolvePanel.classList.toggle("hidden", !canResolveTickets());
+      const me = (currentUser?.username || "").toLowerCase();
+      const isClaimed = !!(t.claimedByUsername || t.claimedByName);
+      const iAmClaimer = me && String(t.claimedByUsername || "").toLowerCase() === me;
+      if (claimLabel) {
+        claimLabel.textContent = isClaimed
+          ? "Claimed by " + (t.claimedByName || t.claimedByUsername)
+          : "Unclaimed";
+        claimLabel.className = "ticket-claim-pill" + (isClaimed ? " claimed" : "");
       }
-      if (statusSelect) statusSelect.value = t.status;
-      if (noteEl) noteEl.value = t.resolutionNote || "";
-      if (t.resolutionNote && !canResolveTickets()) {
+      if (claimBtn) {
+        const canClaim = currentUser && !isClaimed && (t.status === "open" || t.status === "in_progress");
+        claimBtn.classList.toggle("hidden", !canClaim);
+      }
+      if (unclaimBtn) {
+        unclaimBtn.classList.toggle("hidden", !(isClaimed && (iAmClaimer || canResolveTickets())));
+      }
+      if (resolvePanel) {
+        resolvePanel.classList.toggle("hidden", !canUpdateTicket(t));
+      }
+      if (assignEl) {
+        assignEl.classList.toggle("hidden", !canResolveTickets());
+        const assignWrap = assignEl.closest(".field");
+        if (assignWrap) assignWrap.classList.toggle("hidden", !canResolveTickets());
+        assignEl.value = "";
+      }
+      if (statusSelect) {
+        statusSelect.value = t.status;
+        statusSelect.disabled = !canUpdateTicket(t);
+      }
+      if (prioritySelect) {
+        prioritySelect.value = t.priority || "normal";
+        prioritySelect.disabled = !canUpdateTicket(t);
+      }
+      if (noteEl) {
+        noteEl.value = t.resolutionNote || "";
+        noteEl.disabled = !canUpdateTicket(t);
+      }
+      if (t.resolutionNote && !canUpdateTicket(t)) {
         const existing = document.getElementById("serviceReporterResolution");
         if (!existing && descEl) {
           const note = document.createElement("div");
@@ -6981,13 +8390,11 @@ service cloud.firestore {
       renderServiceTicketList();
     }
 
+
     function renderServicePage() {
       workspaceState.tickets = normalizeTickets(workspaceState.tickets || []);
+      workspaceState.appeals = normalizeAppeals(workspaceState.appeals || []);
       refreshServiceSubmitterInfo();
-      const filterMine = document.getElementById("serviceFilterMine");
-      if (filterMine && canResolveTickets()) {
-        // keep options
-      }
       renderServiceTicketList();
       if (selectedTicketId) openServiceTicket(selectedTicketId);
       else {
@@ -6995,6 +8402,8 @@ service cloud.firestore {
         document.getElementById("serviceDetailEmpty")?.classList.remove("hidden");
       }
       syncServiceNotificationsFromState();
+      syncAppealsNotificationsFromState();
+      if (serviceMainTab === "appeals") renderAppealsPage();
     }
 
     async function submitServiceTicket(e) {
@@ -7005,6 +8414,7 @@ service cloud.firestore {
       }
       const title = String(document.getElementById("serviceTicketTitle")?.value || "").trim().slice(0, 120);
       const description = String(document.getElementById("serviceTicketDesc")?.value || "").trim().slice(0, 4000);
+      const priority = normalizeTicketPriority(document.getElementById("serviceTicketPriority")?.value);
       if (!description) {
         setServiceFormStatus("Description is required.", "err");
         return;
@@ -7016,10 +8426,13 @@ service cloud.firestore {
         const ticket = await createServiceTicketRecord({
           title,
           description,
+          priority,
           screenshotDataUrl: serviceDraftScreenshot || null,
         });
         document.getElementById("serviceTicketTitle").value = "";
         document.getElementById("serviceTicketDesc").value = "";
+        const priEl = document.getElementById("serviceTicketPriority");
+        if (priEl) priEl.value = "normal";
         setServiceDraftScreenshot(null);
         const fileInput = document.getElementById("serviceShotFile");
         if (fileInput) fileInput.value = "";
@@ -7035,37 +8448,107 @@ service cloud.firestore {
       }
     }
 
-    async function saveServiceTicketUpdate() {
-      if (!canResolveTickets()) {
-        setServiceDetailStatus("Only Core or Admin can update tickets.", "err");
+    async function saveTicketPatch(ticketId, patch, activityMsg) {
+      const t = normalizeTickets(workspaceState.tickets || []).find((x) => x.id === ticketId);
+      if (!t) throw new Error("Ticket not found.");
+      const now = new Date().toISOString();
+      const updated = normalizeTicket({ ...t, ...patch, updatedAt: now });
+      workspaceState.tickets = normalizeTickets(
+        (workspaceState.tickets || []).map((x) => (x.id === updated.id ? updated : x))
+      );
+      workspaceState.updatedAt = now;
+      workspaceState.updatedBy = currentUser?.name || currentUser?.username;
+      if (activityMsg) pushActivity(activityMsg);
+      persistWorkspace(true);
+      await pushTicketToFirestore(updated);
+      return updated;
+    }
+
+    async function claimServiceTicket() {
+      if (!currentUser || !selectedTicketId) return;
+      try {
+        const updated = await saveTicketPatch(
+          selectedTicketId,
+          {
+            claimedByName: currentUser.name || currentUser.username,
+            claimedByUsername: currentUser.username,
+            claimedAt: new Date().toISOString(),
+            status: "in_progress",
+          },
+          "Claimed ticket " + selectedTicketId
+        );
+        setServiceDetailStatus("Ticket claimed", "ok");
+        openServiceTicket(updated.id);
+      } catch (err) {
+        setServiceDetailStatus(err?.message || "Could not claim", "err");
+      }
+    }
+
+    async function unclaimServiceTicket() {
+      if (!currentUser || !selectedTicketId) return;
+      const t = normalizeTickets(workspaceState.tickets || []).find((x) => x.id === selectedTicketId);
+      if (!t) return;
+      const me = (currentUser.username || "").toLowerCase();
+      const iAmClaimer = String(t.claimedByUsername || "").toLowerCase() === me;
+      if (!iAmClaimer && !canResolveTickets()) {
+        setServiceDetailStatus("Only the claimer or Core/Admin can unclaim.", "err");
         return;
       }
+      try {
+        const updated = await saveTicketPatch(
+          selectedTicketId,
+          { claimedByName: "", claimedByUsername: "", claimedAt: null },
+          "Unclaimed ticket " + selectedTicketId
+        );
+        setServiceDetailStatus("Ticket unclaimed", "ok");
+        openServiceTicket(updated.id);
+      } catch (err) {
+        setServiceDetailStatus(err?.message || "Could not unclaim", "err");
+      }
+    }
+
+    async function saveServiceTicketUpdate(forceArchive) {
       const t = normalizeTickets(workspaceState.tickets || []).find((x) => x.id === selectedTicketId);
       if (!t) {
         setServiceDetailStatus("Ticket not found.", "err");
         return;
       }
-      const status = normalizeTicketStatus(document.getElementById("serviceStatusSelect")?.value);
+      if (!canUpdateTicket(t)) {
+        setServiceDetailStatus("Only claimer or Core/Admin can update this ticket.", "err");
+        return;
+      }
+      let status = normalizeTicketStatus(document.getElementById("serviceStatusSelect")?.value);
+      if (forceArchive) status = "archived";
+      const priority = normalizeTicketPriority(document.getElementById("servicePrioritySelect")?.value);
       const resolutionNote = String(document.getElementById("serviceResolutionNote")?.value || "")
         .trim()
         .slice(0, 2000);
-      const now = new Date().toISOString();
-      const updated = normalizeTicket({
-        ...t,
-        status,
-        resolutionNote,
-        updatedAt: now,
-      });
-      workspaceState.tickets = normalizeTickets(
-        (workspaceState.tickets || []).map((x) => (x.id === updated.id ? updated : x))
-      );
-      workspaceState.updatedAt = now;
-      workspaceState.updatedBy = currentUser.name || currentUser.username;
-      pushActivity("Updated service ticket " + updated.id + " → " + status);
-      persistWorkspace(true);
-      await pushTicketToFirestore(updated);
-      setServiceDetailStatus("Ticket updated", "ok");
-      openServiceTicket(updated.id);
+      const assignUser = String(document.getElementById("serviceClaimAssign")?.value || "")
+        .trim()
+        .slice(0, 64);
+      const patch = { status, priority, resolutionNote };
+      if (assignUser && canResolveTickets()) {
+        const acct = findAccount(assignUser);
+        patch.claimedByUsername = acct ? acct.username : assignUser;
+        patch.claimedByName = acct ? acct.name || acct.username : assignUser;
+        patch.claimedAt = new Date().toISOString();
+      }
+      try {
+        const updated = await saveTicketPatch(
+          t.id,
+          patch,
+          "Updated service ticket " + t.id + " → " + status
+        );
+        setServiceDetailStatus(
+          status === "archived" ? "Moved to tickets archive" : "Ticket updated",
+          "ok"
+        );
+        if (status === "archived") setTicketViewMode("archive");
+        else setTicketViewMode("active");
+        openServiceTicket(updated.id);
+      } catch (err) {
+        setServiceDetailStatus(err?.message || "Update failed", "err");
+      }
     }
 
     function initServicePortalUi() {
@@ -7082,8 +8565,15 @@ service cloud.firestore {
         setServiceFormStatus("");
       });
       document.getElementById("serviceSaveStatusBtn")?.addEventListener("click", () => {
-        saveServiceTicketUpdate();
+        saveServiceTicketUpdate(false);
       });
+      document.getElementById("serviceArchiveBtn")?.addEventListener("click", () => {
+        saveServiceTicketUpdate(true);
+      });
+      document.getElementById("ticketViewActive")?.addEventListener("click", () => setTicketViewMode("active"));
+      document.getElementById("ticketViewArchive")?.addEventListener("click", () => setTicketViewMode("archive"));
+      document.getElementById("serviceClaimBtn")?.addEventListener("click", () => claimServiceTicket());
+      document.getElementById("serviceUnclaimBtn")?.addEventListener("click", () => unclaimServiceTicket());
       document.getElementById("serviceFilterStatus")?.addEventListener("change", () => {
         renderServiceTicketList();
       });
@@ -7110,8 +8600,675 @@ service cloud.firestore {
       desc?.addEventListener("paste", onPaste);
       document.getElementById("page-service")?.addEventListener("paste", onPaste);
       document.addEventListener("visibilitychange", () => {
-        if (!document.hidden && isAttendingService()) clearServiceUnread();
+        if (!document.hidden && isAttendingService()) {
+          clearServiceUnread();
+          if (serviceMainTab === "appeals") clearAppealsUnread();
+        }
       });
+      document.querySelectorAll("[data-service-tab]").forEach((btn) => {
+        btn.addEventListener("click", () => setServiceMainTab(btn.getAttribute("data-service-tab")));
+      });
+      document.getElementById("appealViewActive")?.addEventListener("click", () => setAppealViewMode("active"));
+      document.getElementById("appealViewArchive")?.addEventListener("click", () => setAppealViewMode("archive"));
+      document.getElementById("appealFilterStatus")?.addEventListener("change", () => renderAppealsList());
+      document.getElementById("appealForm")?.addEventListener("submit", submitAppeal);
+      document.getElementById("appealSaveBtn")?.addEventListener("click", () => saveAppealUpdate(false));
+      document.getElementById("appealArchiveBtn")?.addEventListener("click", () => saveAppealUpdate(true));
+      document.getElementById("saveChatFilterBtn")?.addEventListener("click", () => {
+        if (!canResolveTickets()) return;
+        const raw = document.getElementById("chatFilterWordsInput")?.value || "";
+        workspaceState.chatFilterWords = normalizeChatFilterWords(raw);
+        persistWorkspace(true);
+        const st = document.getElementById("chatFilterStatus");
+        if (st) {
+          st.textContent = "Filter list saved (" + workspaceState.chatFilterWords.length + " extra words)";
+          st.className = "service-status ok";
+        }
+      });
+      document.getElementById("saveVersionCheckpointBtn")?.addEventListener("click", () => {
+        if (currentUser?.role !== "core") return;
+        const label = document.getElementById("versionLabelInput")?.value || "";
+        saveWorkspaceVersion({ label, manual: true }).then(() => {
+          const inp = document.getElementById("versionLabelInput");
+          if (inp) inp.value = "";
+        });
+      });
+    }
+
+
+    // ——— Appeals + service tabs ———
+    let selectedAppealId = null;
+    let appealViewMode = "active"; // active | archive
+    let appealsNotifySeeded = false;
+    let appealsKnownIds = new Set();
+    let appealsUnreadCount = 0;
+    let serviceMainTab = "tickets";
+
+    function appealStatusLabel(status) {
+      const map = {
+        open: "Open",
+        under_review: "Under review",
+        accepted: "Accepted",
+        denied: "Denied",
+        archived: "Archived",
+      };
+      return map[normalizeAppealStatus(status)] || "Open";
+    }
+
+    function appealReasonLabel(reason) {
+      const map = {
+        chat_report: "Chat report",
+        ticket_resolution: "Ticket resolution",
+        moderation: "Moderation",
+        redaction: "Language filter",
+        account: "Account",
+        other: "Other",
+      };
+      return map[String(reason || "other")] || "Other";
+    }
+
+    function setServiceMainTab(tab) {
+      serviceMainTab = tab === "appeals" ? "appeals" : "tickets";
+      document.getElementById("serviceTabTickets")?.classList.toggle("active", serviceMainTab === "tickets");
+      document.getElementById("serviceTabAppeals")?.classList.toggle("active", serviceMainTab === "appeals");
+      document.getElementById("serviceTicketsPane")?.classList.toggle("hidden", serviceMainTab !== "tickets");
+      document.getElementById("serviceAppealsPane")?.classList.toggle("hidden", serviceMainTab !== "appeals");
+      if (serviceMainTab === "appeals") {
+        renderAppealsPage();
+        clearAppealsUnread();
+      } else {
+        renderServicePage();
+      }
+    }
+
+    function setAppealViewMode(mode, { keepSelection = false } = {}) {
+      appealViewMode = mode === "archive" ? "archive" : "active";
+      document.getElementById("appealViewActive")?.classList.toggle("active", appealViewMode === "active");
+      document.getElementById("appealViewArchive")?.classList.toggle("active", appealViewMode === "archive");
+      const title = document.getElementById("appealListTitle");
+      if (title) title.textContent = appealViewMode === "archive" ? "Appeals archive" : "Active appeals";
+      const filter = document.getElementById("appealFilterStatus");
+      if (filter) {
+        // Archive view is status=archived only; status filter applies to Active only
+        filter.disabled = appealViewMode === "archive";
+        if (appealViewMode === "archive") filter.value = "all";
+      }
+      if (!keepSelection) selectedAppealId = null;
+      renderAppealsPage();
+    }
+
+    function visibleAppealsForUser() {
+      let list = normalizeAppeals(workspaceState.appeals || []).filter(canViewAppeal);
+      if (appealViewMode === "archive") {
+        list = list.filter((a) => isAppealArchived(a));
+      } else {
+        list = list.filter((a) => !isAppealArchived(a));
+        const statusFilter = document.getElementById("appealFilterStatus")?.value || "all";
+        if (statusFilter !== "all") {
+          list = list.filter((a) => a.status === statusFilter);
+        }
+      }
+      return list;
+    }
+
+    function setAppealsUnread(n) {
+      appealsUnreadCount = Math.max(0, n | 0);
+      const badge = document.getElementById("navAppealsBadge");
+      const serviceBadge = document.getElementById("navServiceBadge");
+      if (badge) {
+        if (appealsUnreadCount > 0 && canManageAppeals()) {
+          badge.textContent = appealsUnreadCount > 99 ? "99+" : String(appealsUnreadCount);
+          badge.classList.remove("hidden");
+          badge.setAttribute("aria-hidden", "false");
+        } else {
+          badge.textContent = "";
+          badge.classList.add("hidden");
+          badge.setAttribute("aria-hidden", "true");
+        }
+      }
+      // Combine open appeals into service nav badge when on tickets tab sense
+      if (serviceBadge && canManageAppeals()) {
+        const ticketUnread = serviceUnreadCount || 0;
+        const total = ticketUnread + appealsUnreadCount;
+        if (total > 0) {
+          serviceBadge.textContent = total > 99 ? "99+" : String(total);
+          serviceBadge.classList.remove("hidden");
+          serviceBadge.setAttribute("aria-hidden", "false");
+        }
+      }
+    }
+
+    function clearAppealsUnread() {
+      setAppealsUnread(0);
+      const seenKey = APPEALS_SEEN_KEY + ":" + (workspaceId || "MAIN");
+      try {
+        const ids = normalizeAppeals(workspaceState.appeals || [])
+          .filter((a) => a.status === "open")
+          .map((a) => a.id);
+        localStorage.setItem(seenKey, JSON.stringify(ids.slice(-200)));
+      } catch (_) {}
+      appealsKnownIds = new Set(
+        normalizeAppeals(workspaceState.appeals || []).map((a) => a.id).filter(Boolean)
+      );
+      appealsNotifySeeded = true;
+    }
+
+    function syncAppealsNotificationsFromState() {
+      if (!currentUser || !canManageAppeals()) {
+        setAppealsUnread(0);
+        return;
+      }
+      const appeals = normalizeAppeals(workspaceState.appeals || []);
+      workspaceState.appeals = appeals;
+      if (!appealsNotifySeeded) {
+        appeals.forEach((a) => { if (a?.id) appealsKnownIds.add(a.id); });
+        appealsNotifySeeded = true;
+        const openCount = appeals.filter((a) => a.status === "open").length;
+        setAppealsUnread(openCount);
+        return;
+      }
+      let added = 0;
+      for (const a of appeals) {
+        if (!a?.id || appealsKnownIds.has(a.id)) continue;
+        appealsKnownIds.add(a.id);
+        if (a.status === "open") added += 1;
+      }
+      if (serviceMainTab === "appeals" && isAttendingService()) {
+        clearAppealsUnread();
+        return;
+      }
+      if (added) setAppealsUnread(appealsUnreadCount + added);
+    }
+
+    function renderAppealsList() {
+      const listEl = document.getElementById("appealList");
+      const hint = document.getElementById("appealListHint");
+      if (!listEl) return;
+      const list = visibleAppealsForUser();
+      if (hint) {
+        hint.textContent = canManageAppeals()
+          ? appealViewMode === "archive"
+            ? "Archived appeals (Core/Admin)"
+            : "Active appeals (Core/Admin)"
+          : appealViewMode === "archive"
+            ? "Your archived appeals"
+            : "Your active appeals";
+      }
+      if (!list.length) {
+        listEl.innerHTML =
+          `<div class="service-detail-empty">${
+            appealViewMode === "archive" ? "No archived appeals." : "No active appeals."
+          }</div>`;
+        return;
+      }
+      listEl.innerHTML = list
+        .map((a) => {
+          const when = a.createdAt ? new Date(a.createdAt).toLocaleString() : "";
+          return `<button type="button" class="appeal-card${selectedAppealId === a.id ? " active" : ""}" data-appeal-id="${escapeHtml(a.id)}">
+            <div class="card-header" style="margin:0">
+              <strong>${escapeHtml(appealReasonLabel(a.reason))}</strong>
+              <span class="appeal-status ${escapeHtml(a.status)}">${escapeHtml(appealStatusLabel(a.status))}</span>
+            </div>
+            <div class="service-ticket-snippet" style="margin-top:0.35rem">${escapeHtml(a.description)}</div>
+            <div class="service-ticket-meta">${escapeHtml(a.submitterName)} · ${escapeHtml(when)}</div>
+          </button>`;
+        })
+        .join("");
+      listEl.querySelectorAll("[data-appeal-id]").forEach((btn) => {
+        btn.addEventListener("click", () => openAppeal(btn.getAttribute("data-appeal-id")));
+      });
+    }
+
+    function openAppeal(id) {
+      selectedAppealId = id;
+      const a = normalizeAppeals(workspaceState.appeals || []).find((x) => x.id === id);
+      const detail = document.getElementById("appealDetail");
+      const empty = document.getElementById("appealDetailEmpty");
+      if (!a || !canViewAppeal(a)) {
+        selectedAppealId = null;
+        detail?.classList.add("hidden");
+        empty?.classList.remove("hidden");
+        renderAppealsList();
+        return;
+      }
+      // If opening archived while on active (or reverse), switch view without clearing selection
+      if (isAppealArchived(a) && appealViewMode !== "archive") {
+        setAppealViewMode("archive", { keepSelection: true });
+        return;
+      }
+      if (!isAppealArchived(a) && appealViewMode === "archive") {
+        setAppealViewMode("active", { keepSelection: true });
+        return;
+      }
+
+      empty?.classList.add("hidden");
+      detail?.classList.remove("hidden");
+      const titleEl = document.getElementById("appealDetailTitle");
+      const statusEl = document.getElementById("appealDetailStatus");
+      const descEl = document.getElementById("appealDetailDesc");
+      const metaEl = document.getElementById("appealDetailMeta");
+      const manage = document.getElementById("appealManagePanel");
+      const noteEl = document.getElementById("appealDecisionNote");
+      const statusSelect = document.getElementById("appealStatusSelect");
+      const reporterNote = document.getElementById("appealReporterDecision");
+      if (titleEl) titleEl.textContent = appealReasonLabel(a.reason);
+      if (statusEl) {
+        statusEl.textContent = appealStatusLabel(a.status);
+        statusEl.className = "appeal-status " + a.status;
+      }
+      if (descEl) descEl.textContent = a.description;
+      if (metaEl) {
+        metaEl.innerHTML =
+          `<div class="stat"><label>Submitter</label><div class="value" style="font-size:0.95rem">${escapeHtml(a.submitterName)}</div></div>` +
+          `<div class="stat"><label>Username</label><div class="value" style="font-size:0.95rem">@${escapeHtml(a.submitterUsername || "—")}</div></div>` +
+          `<div class="stat"><label>Related id</label><div class="value" style="font-size:0.85rem">${escapeHtml(a.relatedId || "—")}</div></div>` +
+          `<div class="stat"><label>Created</label><div class="value" style="font-size:0.85rem">${escapeHtml(a.createdAt ? new Date(a.createdAt).toLocaleString() : "—")}</div></div>`;
+      }
+      if (manage) manage.classList.toggle("hidden", !canManageAppeals());
+      if (noteEl) noteEl.value = a.decisionNote || "";
+      if (statusSelect) statusSelect.value = a.status;
+      if (reporterNote) {
+        if (a.decisionNote && !canManageAppeals()) {
+          reporterNote.innerHTML = `<strong>Decision:</strong> ${escapeHtml(a.decisionNote)}`;
+        } else {
+          reporterNote.textContent = "";
+        }
+      }
+      const msg = document.getElementById("appealDetailStatusMsg");
+      if (msg) { msg.textContent = ""; msg.className = "service-status"; }
+      renderAppealsList();
+    }
+
+    function renderAppealsPage() {
+      workspaceState.appeals = normalizeAppeals(workspaceState.appeals || []);
+      renderAppealsList();
+      if (selectedAppealId) openAppeal(selectedAppealId);
+      else {
+        document.getElementById("appealDetail")?.classList.add("hidden");
+        document.getElementById("appealDetailEmpty")?.classList.remove("hidden");
+      }
+      syncAppealsNotificationsFromState();
+    }
+
+    async function submitAppeal(e) {
+      if (e) e.preventDefault();
+      if (!currentUser) {
+        setAppealFormStatus("Sign in to submit an appeal.", "err");
+        return;
+      }
+      const reason = String(document.getElementById("appealReason")?.value || "other");
+      const relatedId = String(document.getElementById("appealRelatedId")?.value || "").trim().slice(0, 80);
+      const description = String(document.getElementById("appealDesc")?.value || "").trim().slice(0, 4000);
+      if (!description) {
+        setAppealFormStatus("Description is required.", "err");
+        return;
+      }
+      const now = new Date().toISOString();
+      const appeal = normalizeAppeal({
+        id: newAppealId(),
+        reason,
+        relatedId,
+        description,
+        status: "open",
+        submitterName: currentUser.name || currentUser.username,
+        submitterUsername: currentUser.username,
+        decisionNote: "",
+        createdAt: now,
+        updatedAt: now,
+      });
+      workspaceState.appeals = normalizeAppeals([appeal, ...(workspaceState.appeals || [])]);
+      workspaceState.updatedAt = now;
+      workspaceState.updatedBy = currentUser.name || currentUser.username;
+      pushActivity("Opened appeal: " + appealReasonLabel(reason));
+      persistWorkspace(true);
+      await pushAppealToFirestore(appeal);
+      document.getElementById("appealDesc").value = "";
+      document.getElementById("appealRelatedId").value = "";
+      setAppealFormStatus("Appeal submitted", "ok");
+      setAppealViewMode("active");
+      selectedAppealId = appeal.id;
+      setServiceMainTab("appeals");
+      openAppeal(appeal.id);
+    }
+
+    function setAppealFormStatus(textMsg, mode) {
+      const el = document.getElementById("appealFormStatus");
+      if (!el) return;
+      el.textContent = textMsg || "";
+      el.className = "service-status" + (mode ? " " + mode : "");
+    }
+
+    async function saveAppealUpdate(forceArchive) {
+      if (!canManageAppeals()) {
+        setAppealDetailStatus("Only Core or Admin can manage appeals.", "err");
+        return;
+      }
+      const a = normalizeAppeals(workspaceState.appeals || []).find((x) => x.id === selectedAppealId);
+      if (!a) {
+        setAppealDetailStatus("Appeal not found.", "err");
+        return;
+      }
+      let status = normalizeAppealStatus(document.getElementById("appealStatusSelect")?.value);
+      if (forceArchive) status = "archived";
+      const decisionNote = String(document.getElementById("appealDecisionNote")?.value || "")
+        .trim()
+        .slice(0, 2000);
+      const now = new Date().toISOString();
+      const updated = normalizeAppeal({ ...a, status, decisionNote, updatedAt: now });
+      workspaceState.appeals = normalizeAppeals(
+        (workspaceState.appeals || []).map((x) => (x.id === updated.id ? updated : x))
+      );
+      workspaceState.updatedAt = now;
+      workspaceState.updatedBy = currentUser.name || currentUser.username;
+      pushActivity("Updated appeal " + updated.id + " → " + status);
+      persistWorkspace(true);
+      await pushAppealToFirestore(updated);
+      setAppealDetailStatus(status === "archived" ? "Moved to appeals archive" : "Appeal updated", "ok");
+      if (status === "archived") setAppealViewMode("archive");
+      else setAppealViewMode("active");
+      openAppeal(updated.id);
+    }
+
+    function setAppealDetailStatus(textMsg, mode) {
+      const el = document.getElementById("appealDetailStatusMsg");
+      if (!el) return;
+      el.textContent = textMsg || "";
+      el.className = "service-status" + (mode ? " " + mode : "");
+    }
+
+    // ——— Version history (Core-only) ———
+    let versionAutoTimer = null;
+    let lastAutoVersionAt = 0;
+    let versionCache = [];
+
+    function setVersionStatus(msg, mode) {
+      const el = document.getElementById("versionHistoryStatus");
+      if (!el) return;
+      el.textContent = msg || "";
+      el.className = "service-status" + (mode ? " " + mode : "");
+    }
+
+    function buildVersionPayload({ includeAccounts = false } = {}) {
+      const clean = ensureAccounts({ ...emptyState(), ...workspaceState });
+      const payload = {
+        items: normalizeItems(clean.items),
+        fixedCosts: clean.fixedCosts,
+        variableOverhead: normalizeVariableOverhead(clean.variableOverhead),
+        targetUnits: clean.targetUnits,
+        parties: clean.parties,
+        foundation: normalizeFoundation(clean.foundation),
+        activity: (clean.activity || []).slice(0, 30),
+        chatMessages: normalizeChatMessages(clean.chatMessages).slice(-MAX_CHAT_MESSAGES),
+        tickets: normalizeTickets(clean.tickets).map((t) => ({
+          ...ticketForFirestoreList(t),
+          description: t.description,
+          resolutionNote: t.resolutionNote || "",
+          screenshotDataUrl: null,
+          thumbDataUrl: t.thumbDataUrl || null,
+        })),
+        appeals: normalizeAppeals(clean.appeals).map(appealForFirestoreList),
+        chatFilterWords: normalizeChatFilterWords(clean.chatFilterWords),
+        broadcast: normalizeBroadcast(clean.broadcast),
+        dailySales: normalizeDailySales(clean.dailySales),
+        batchPlanner: normalizeBatchPlanner(clean.batchPlanner),
+        roleDefs: normalizeRoleDefs(clean.roleDefs),
+        loginTitle: clean.loginTitle,
+        workspaceName: clean.workspaceName,
+        hashVersion: clean.hashVersion || HASH_PIPELINE_VERSION,
+        setupDone: !!clean.setupDone,
+      };
+      if (includeAccounts) {
+        payload.accounts = (clean.accounts || []).map(normalizeAccount).filter(Boolean);
+        payload.workspaceRecoveryDigest = clean.workspaceRecoveryDigest || null;
+      }
+      return stripUndefined(payload);
+    }
+
+    function localVersionsKey() {
+      return VERSION_LOCAL_KEY + (workspaceId || "MAIN");
+    }
+
+    function loadLocalVersions() {
+      try {
+        const raw = localStorage.getItem(localVersionsKey());
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveLocalVersions(list) {
+      const trimmed = (list || []).slice(0, MAX_LOCAL_VERSIONS);
+      try {
+        localStorage.setItem(localVersionsKey(), JSON.stringify(trimmed));
+      } catch (err) {
+        // Size pressure — keep fewer
+        try {
+          localStorage.setItem(localVersionsKey(), JSON.stringify(trimmed.slice(0, 2)));
+        } catch (_) {
+          console.warn("Could not persist local versions", err);
+        }
+      }
+    }
+
+    async function saveWorkspaceVersion({ label = "", manual = false } = {}) {
+      if (!currentUser) return null;
+      if (manual && currentUser.role !== "core") {
+        setVersionStatus("Only Core can save checkpoints.", "err");
+        return null;
+      }
+      const now = new Date().toISOString();
+      const id = "v" + Date.now().toString(36) + Math.random().toString(16).slice(2, 6);
+      // Embed account digests in the snapshot so Core can opt-in at restore time.
+      // Restore still skips accounts unless “Include accounts when restoring” is checked.
+      const payload = buildVersionPayload({ includeAccounts: true });
+      const meta = {
+        id,
+        at: now,
+        label: String(label || (manual ? "Manual checkpoint" : "Auto checkpoint")).trim().slice(0, 80),
+        by: currentUser.name || currentUser.username,
+        byUsername: currentUser.username,
+        manual: !!manual,
+        includesAccounts: true,
+        itemCount: (payload.items || []).length,
+        ticketCount: (payload.tickets || []).length,
+      };
+      const record = { ...meta, payload };
+      // Local fallback first
+      const local = [record, ...loadLocalVersions().filter((v) => v.id !== id)];
+      saveLocalVersions(local);
+      versionCache = await mergeVersionLists(local, versionCache);
+      // Cloud
+      if (firebaseEnabled && firestoreDb && firebaseAuthOk) {
+        try {
+          await ensureFirebaseAuth();
+          const col = versionsCollectionRef(workspaceId);
+          if (col) {
+            await col.doc(id).set(stripUndefined({ ...meta, payload }), { merge: true });
+            // prune old cloud versions
+            const snap = await col.orderBy("at", "desc").limit(MAX_VERSIONS + 8).get();
+            const docs = [];
+            snap.forEach((d) => docs.push(d));
+            for (let i = MAX_VERSIONS; i < docs.length; i++) {
+              try { await docs[i].ref.delete(); } catch (_) {}
+            }
+          }
+        } catch (err) {
+          console.warn("Cloud version save failed", err);
+          if (manual) setVersionStatus("Saved locally (cloud failed): " + (err.message || err), "err");
+        }
+      }
+      if (manual) {
+        setVersionStatus("Checkpoint saved · " + meta.label, "ok");
+        pushActivity("Saved workspace checkpoint: " + meta.label);
+      }
+      await refreshVersionHistoryList();
+      return meta;
+    }
+
+    function scheduleAutoVersionCheckpoint() {
+      if (applyingRemote || !currentUser) return;
+      clearTimeout(versionAutoTimer);
+      versionAutoTimer = setTimeout(() => {
+        versionAutoTimer = null;
+        const now = Date.now();
+        if (now - lastAutoVersionAt < VERSION_AUTO_MIN_MS) return;
+        lastAutoVersionAt = now;
+        saveWorkspaceVersion({ label: "Auto save", manual: false }).catch(() => {});
+      }, 2500);
+    }
+
+    async function mergeVersionLists(local, remote) {
+      const byId = new Map();
+      [...(remote || []), ...(local || [])].forEach((v) => {
+        if (!v || !v.id) return;
+        const prev = byId.get(v.id);
+        if (!prev || String(v.at) >= String(prev.at)) byId.set(v.id, v);
+      });
+      return Array.from(byId.values())
+        .sort((a, b) => String(b.at).localeCompare(String(a.at)))
+        .slice(0, MAX_VERSIONS);
+    }
+
+    async function fetchCloudVersions() {
+      if (!firebaseEnabled || !firestoreDb || !firebaseAuthOk) return [];
+      try {
+        await ensureFirebaseAuth();
+        const col = versionsCollectionRef(workspaceId);
+        if (!col) return [];
+        const snap = await col.orderBy("at", "desc").limit(MAX_VERSIONS).get();
+        const out = [];
+        snap.forEach((doc) => {
+          const data = doc.data() || {};
+          out.push({ ...data, id: data.id || doc.id });
+        });
+        return out;
+      } catch (err) {
+        console.warn("Fetch versions failed", err);
+        return [];
+      }
+    }
+
+    async function refreshVersionHistoryList() {
+      const listEl = document.getElementById("versionHistoryList");
+      if (!listEl) return;
+      if (currentUser?.role !== "core") {
+        listEl.innerHTML = "";
+        return;
+      }
+      const local = loadLocalVersions();
+      const remote = await fetchCloudVersions();
+      versionCache = await mergeVersionLists(local, remote);
+      if (!versionCache.length) {
+        listEl.innerHTML = `<div class="service-detail-empty">No checkpoints yet. Save one after important changes.</div>`;
+        return;
+      }
+      listEl.innerHTML = versionCache
+        .map((v) => {
+          const when = v.at ? new Date(v.at).toLocaleString() : "";
+          const tag = v.manual ? "Manual" : "Auto";
+          return `<div class="appeal-card" style="cursor:default">
+            <div class="card-header" style="margin:0">
+              <strong>${escapeHtml(v.label || "Checkpoint")}</strong>
+              <span class="role-pill role-viewer">${escapeHtml(tag)}</span>
+            </div>
+            <div class="service-ticket-meta" style="margin-top:0.35rem">
+              ${escapeHtml(when)} · ${escapeHtml(v.by || v.byUsername || "—")}
+              · ${(v.itemCount != null ? v.itemCount : "?")} items
+            </div>
+            <div style="margin-top:0.55rem;display:flex;gap:0.4rem;flex-wrap:wrap">
+              <button type="button" class="btn-primary" data-restore-version="${escapeHtml(v.id)}">Restore this version</button>
+            </div>
+          </div>`;
+        })
+        .join("");
+      listEl.querySelectorAll("[data-restore-version]").forEach((btn) => {
+        btn.addEventListener("click", () => restoreWorkspaceVersion(btn.getAttribute("data-restore-version")));
+      });
+    }
+
+    async function restoreWorkspaceVersion(versionId) {
+      if (currentUser?.role !== "core") {
+        setVersionStatus("Only Core can restore versions.", "err");
+        return;
+      }
+      const includeAccounts = !!document.getElementById("versionIncludeAccounts")?.checked;
+      const confirmText = prompt(
+        'Type RESTORE or your workspace code (' + workspaceId + ') to confirm rollback.'
+      );
+      if (!confirmText) return;
+      const ok =
+        String(confirmText).trim().toUpperCase() === "RESTORE" ||
+        String(confirmText).trim().toUpperCase() === String(workspaceId).toUpperCase();
+      if (!ok) {
+        setVersionStatus("Restore cancelled — confirmation did not match.", "err");
+        return;
+      }
+      let record = versionCache.find((v) => v.id === versionId);
+      if (!record || !record.payload) {
+        // try cloud fetch
+        const remote = await fetchCloudVersions();
+        record = remote.find((v) => v.id === versionId) || loadLocalVersions().find((v) => v.id === versionId);
+      }
+      if (!record || !record.payload) {
+        setVersionStatus("Version payload missing.", "err");
+        return;
+      }
+      // Safety checkpoint of current state first
+      try {
+        await saveWorkspaceVersion({ label: "Before restore", manual: true });
+      } catch (_) {}
+
+      applyingRemote = true;
+      try {
+        const p = record.payload;
+        workspaceState.items = normalizeItems(p.items || []);
+        workspaceState.fixedCosts = p.fixedCosts ?? workspaceState.fixedCosts;
+        workspaceState.variableOverhead = normalizeVariableOverhead(p.variableOverhead);
+        workspaceState.targetUnits = p.targetUnits ?? "";
+        if (Array.isArray(p.parties) && p.parties.length) workspaceState.parties = p.parties;
+        workspaceState.foundation = normalizeFoundation(p.foundation);
+        workspaceState.activity = Array.isArray(p.activity) ? p.activity : workspaceState.activity;
+        workspaceState.chatMessages = normalizeChatMessages(p.chatMessages || []);
+        workspaceState.tickets = normalizeTickets(p.tickets || []);
+        workspaceState.appeals = normalizeAppeals(p.appeals || []);
+        workspaceState.chatFilterWords = normalizeChatFilterWords(p.chatFilterWords);
+        workspaceState.broadcast = normalizeBroadcast(p.broadcast);
+        workspaceState.dailySales = normalizeDailySales(p.dailySales || []);
+        workspaceState.batchPlanner = normalizeBatchPlanner(p.batchPlanner);
+        if (p.roleDefs) workspaceState.roleDefs = normalizeRoleDefs(p.roleDefs);
+        if (p.loginTitle) workspaceState.loginTitle = p.loginTitle;
+        if (p.workspaceName) workspaceState.workspaceName = p.workspaceName;
+        if (includeAccounts && Array.isArray(p.accounts) && p.accounts.length) {
+          workspaceState.accounts = p.accounts.map(normalizeAccount).filter(Boolean);
+          if (p.workspaceRecoveryDigest !== undefined) {
+            workspaceState.workspaceRecoveryDigest = p.workspaceRecoveryDigest || null;
+          }
+        }
+        workspaceState = ensureAccounts(workspaceState);
+        workspaceState.updatedAt = new Date().toISOString();
+        workspaceState.updatedBy = currentUser.name || currentUser.username;
+        pushActivity(
+          "Restored version from " +
+            (record.at ? new Date(record.at).toLocaleString() : versionId) +
+            (record.label ? " (“" + record.label + "”)" : "")
+        );
+      } finally {
+        applyingRemote = false;
+      }
+      persistWorkspace(true);
+      renderAllFromState();
+      setSyncStatus(
+        "Restored version from " + (record.at ? new Date(record.at).toLocaleString() : versionId),
+        "live"
+      );
+      setVersionStatus(
+        "Restored version from " + (record.at ? new Date(record.at).toLocaleString() : versionId),
+        "ok"
+      );
+      if (firebaseEnabled) scheduleFirestorePush(true);
+      await refreshVersionHistoryList();
     }
 
     function applyPermissions() {
@@ -7146,7 +9303,26 @@ service cloud.firestore {
       document.getElementById("loginTitleCard").classList.toggle("hidden", !meta.canEditLoginTitle);
       document.getElementById("editLoginTitle").disabled = !meta.canEditLoginTitle;
       document.getElementById("saveLoginTitle").disabled = !meta.canEditLoginTitle;
+      const canBroadcast = currentUser?.role === "core" || currentUser?.role === "admin";
+      document.getElementById("dashBroadcastCard")?.classList.toggle("hidden", !canBroadcast);
+      document.getElementById("teamBroadcastCard")?.classList.toggle("hidden", !canBroadcast);
+      document.getElementById("broadcastClearBtn")?.classList.toggle("hidden", !canBroadcast);
       document.getElementById("firebaseCard").classList.toggle("hidden", !meta.canManageSync && currentUser?.role !== "core");
+      const filterCard = document.getElementById("chatFilterCard");
+      if (filterCard) {
+        filterCard.classList.toggle("hidden", !canResolveTickets());
+        if (canResolveTickets()) {
+          const ta = document.getElementById("chatFilterWordsInput");
+          if (ta && document.activeElement !== ta) {
+            ta.value = (workspaceState.chatFilterWords || []).join("\n");
+          }
+        }
+      }
+      const verCard = document.getElementById("versionHistoryCard");
+      if (verCard) {
+        verCard.classList.toggle("hidden", currentUser?.role !== "core");
+        if (currentUser?.role === "core") refreshVersionHistoryList();
+      }
       document.getElementById("rolesCard").classList.toggle("hidden", !(meta.canManageRoles || currentUser?.role === "core"));
       document.getElementById("saveRolesBtn").classList.toggle("hidden", !meta.canManageRoles);
       document.getElementById("addRoleBtn").classList.toggle("hidden", !meta.canManageRoles);
@@ -7175,8 +9351,13 @@ service cloud.firestore {
       const tr = document.createElement("tr");
       tr.dataset.id = String(++rowId);
       const item = normalizeItem({ name: "", qty: 1, cost: 0, sell: 0, sold: 0, ...data });
+      tr.dataset.itemId = item.id;
       tr.dataset.sold = String(item.sold);
+      tr._photos = item.photos || [];
+      tr._models = item.models || [];
       const canEdit = getRole()?.canEdit !== false;
+      const photoN = (item.photos || []).length;
+      const modelN = (item.models || []).length;
       tr.innerHTML = `
         <td><input type="text" class="item-name" placeholder="Item name" value="${escapeHtml(item.name || "")}" ${canEdit ? "" : "disabled"} /></td>
         <td><input type="number" class="qty" min="0" step="1" value="${item.qty}" ${canEdit ? "" : "disabled"} /></td>
@@ -7186,6 +9367,10 @@ service cloud.firestore {
         <td class="num readonly line-cost">$0.00</td>
         <td class="num readonly line-revenue">$0.00</td>
         <td class="num readonly line-profit">$0.00</td>
+        <td class="inv-media-cell">
+          <button type="button" class="btn-ghost inv-media-toggle">Media</button>
+          <div class="inv-media-counts">${photoN} photo${photoN === 1 ? "" : "s"} · ${modelN} model${modelN === 1 ? "" : "s"}</div>
+        </td>
         <td><button type="button" class="btn-ghost btn-danger remove-row ${canEdit ? "" : "hidden"}" ${canEdit ? "" : "disabled"}>✕</button></td>
       `;
       const onInventoryChange = () => {
@@ -7196,14 +9381,355 @@ service cloud.firestore {
         input.addEventListener("input", onInventoryChange);
       });
       tr.querySelector(".breakability")?.addEventListener("change", onInventoryChange);
+      tr.querySelector(".inv-media-toggle")?.addEventListener("click", () => toggleItemMediaPanel(tr));
       tr.querySelector(".remove-row").addEventListener("click", () => {
         if (!getRole()?.canEdit) return;
+        const panel = tr.nextElementSibling;
+        if (panel && panel.classList.contains("inv-media-panel-row")) panel.remove();
         tr.remove();
         if (!inventoryBody.children.length) addRow();
         recalculate();
         scheduleSave("Removed an inventory item");
       });
       return tr;
+    }
+
+    function mediaSrc(file) {
+      if (!file) return "";
+      return file.dataUrl || file.url || "";
+    }
+
+    function syncItemMediaCounts(tr) {
+      const counts = tr.querySelector(".inv-media-counts");
+      if (!counts) return;
+      const photoN = (tr._photos || []).length;
+      const modelN = (tr._models || []).length;
+      counts.textContent =
+        photoN + " photo" + (photoN === 1 ? "" : "s") + " · " + modelN + " model" + (modelN === 1 ? "" : "s");
+    }
+
+    function getItemFromRow(tr) {
+      return normalizeItem({
+        id: tr.dataset.itemId,
+        name: tr.querySelector(".item-name")?.value,
+        qty: parseNum(tr.querySelector(".qty")?.value),
+        cost: parseNum(tr.querySelector(".cost")?.value),
+        sell: parseNum(tr.querySelector(".sell")?.value),
+        sold: parseNum(tr.dataset.sold),
+        breakability: tr.querySelector(".breakability")?.value,
+        photos: tr._photos || [],
+        models: tr._models || [],
+      });
+    }
+
+    function persistItemMediaFromDom() {
+      workspaceState.items = collectItemsFromDom();
+      workspaceState.updatedAt = new Date().toISOString();
+      if (currentUser) workspaceState.updatedBy = currentUser.name || currentUser.username;
+      persistWorkspace(true);
+    }
+
+    async function uploadItemMediaFile(itemId, kind, file) {
+      if (!firebaseEnabled || !file || typeof firebase === "undefined" || !firebase.storage) {
+        return null;
+      }
+      try {
+        await ensureFirebaseAuth();
+        const code = normalizeWorkspaceCode(workspaceId);
+        const safeName = String(file.name || "file")
+          .replace(/[^A-Za-z0-9._-]+/g, "_")
+          .slice(0, 80);
+        const id = (kind === "photo" ? "p" : "m") + Date.now().toString(36) + Math.random().toString(16).slice(2, 6);
+        const folder = kind === "photo" ? "photos" : "models";
+        const path =
+          "workspaces/" + code + "/items/" + itemId + "/" + folder + "/" + id + "_" + safeName;
+        const ref = firebase.storage().ref(path);
+        const contentType =
+          file.type ||
+          (kind === "photo" ? "image/jpeg" : "model/gltf-binary");
+        await ref.put(file, { contentType });
+        const url = await ref.getDownloadURL();
+        ticketUrlCache.set(path, url);
+        return { path, url, id };
+      } catch (err) {
+        console.warn("Item media upload failed", err);
+        return null;
+      }
+    }
+
+    async function addPhotoToItemRow(tr, file) {
+      if (!currentUser || !file) return;
+      const itemId = tr.dataset.itemId || newItemId();
+      tr.dataset.itemId = itemId;
+      let dataUrl = null;
+      let size = file.size || 0;
+      try {
+        const compressed = await compressImageFile(file, { maxWidth: 1200, quality: 0.72 });
+        dataUrl = compressed.dataUrl;
+        size = compressed.blob?.size || size;
+      } catch (err) {
+        alert(err?.message || "Could not process photo");
+        return;
+      }
+      const uploaded = await uploadItemMediaFile(itemId, "photo", file);
+      if (!uploaded && (tr._photos || []).length >= MAX_ITEM_PHOTOS_LOCAL) {
+        alert("Local photo limit reached (" + MAX_ITEM_PHOTOS_LOCAL + "). Enable Firebase Storage for more.");
+        return;
+      }
+      if (!uploaded && dataUrl && dataUrl.length > MAX_ITEM_PHOTO_CHARS) {
+        alert("Photo too large for local storage. Enable Firebase Storage or use a smaller image.");
+        return;
+      }
+      const entry = normalizeMediaFile(
+        {
+          id: uploaded?.id,
+          name: file.name || "photo.jpg",
+          dataUrl: uploaded ? (dataUrl && dataUrl.length < 80000 ? dataUrl : null) : dataUrl,
+          url: uploaded?.url || null,
+          path: uploaded?.path || null,
+          size,
+          uploadedBy: currentUser.name || currentUser.username,
+          uploadedByUsername: currentUser.username,
+          at: new Date().toISOString(),
+        },
+        "photo"
+      );
+      tr._photos = [...(tr._photos || []), entry];
+      syncItemMediaCounts(tr);
+      persistItemMediaFromDom();
+      refreshItemMediaPanel(tr);
+      pushActivity("Added photo to " + (tr.querySelector(".item-name")?.value || "item"));
+    }
+
+    async function addModelToItemRow(tr, file) {
+      if (!currentUser || !file) return;
+      const name = String(file.name || "").toLowerCase();
+      if (!name.endsWith(".glb") && !name.endsWith(".gltf")) {
+        alert("Please upload a .glb or .gltf file.");
+        return;
+      }
+      const itemId = tr.dataset.itemId || newItemId();
+      tr.dataset.itemId = itemId;
+      const uploaded = await uploadItemMediaFile(itemId, "model", file);
+      if (!uploaded) {
+        if (file.size > MAX_LOCAL_MODEL_WARN_BYTES) {
+          alert(
+            "3D models need Firebase Storage (file is " +
+              Math.round(file.size / 1024 / 1024) +
+              " MB). Enable cloud sync + Storage, or use a smaller GLB."
+          );
+          return;
+        }
+        alert("Could not upload model. Enable Firebase Storage to share 3D files across devices.");
+        return;
+      }
+      const entry = normalizeMediaFile(
+        {
+          id: uploaded.id,
+          name: file.name || "model.glb",
+          url: uploaded.url,
+          path: uploaded.path,
+          size: file.size || 0,
+          uploadedBy: currentUser.name || currentUser.username,
+          uploadedByUsername: currentUser.username,
+          at: new Date().toISOString(),
+        },
+        "model"
+      );
+      tr._models = [...(tr._models || []), entry];
+      syncItemMediaCounts(tr);
+      persistItemMediaFromDom();
+      refreshItemMediaPanel(tr);
+      pushActivity("Added 3D model to " + (tr.querySelector(".item-name")?.value || "item"));
+    }
+
+    function removeMediaFromRow(tr, kind, mediaId) {
+      if (kind === "photo") {
+        tr._photos = (tr._photos || []).filter((p) => p.id !== mediaId);
+      } else {
+        tr._models = (tr._models || []).filter((m) => m.id !== mediaId);
+      }
+      syncItemMediaCounts(tr);
+      persistItemMediaFromDom();
+      refreshItemMediaPanel(tr);
+    }
+
+    function refreshItemMediaPanel(tr) {
+      const panelRow = tr.nextElementSibling;
+      if (!panelRow || !panelRow.classList.contains("inv-media-panel-row")) return;
+      const canContribute = !!currentUser;
+      const canEdit = getRole()?.canEdit !== false || canContribute;
+      const photos = tr._photos || [];
+      const models = tr._models || [];
+      const photoHtml = photos.length
+        ? photos
+            .map((p) => {
+              const src = mediaSrc(p);
+              return `<div class="inv-media-thumb" data-photo-id="${escapeHtml(p.id)}">
+                ${src ? `<img alt="" data-src-pending="1" />` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:0.65rem;color:var(--muted)">…</div>`}
+                <div class="inv-media-meta">${escapeHtml(p.uploadedBy || "")}</div>
+                ${canEdit ? `<button type="button" class="inv-media-del" data-del-photo="${escapeHtml(p.id)}" title="Remove">×</button>` : ""}
+              </div>`;
+            })
+            .join("")
+        : `<span class="note">No photos yet</span>`;
+      const modelHtml = models.length
+        ? models
+            .map(
+              (m) => `<div class="inv-model-card" data-model-id="${escapeHtml(m.id)}">
+                <div>
+                  <strong>${escapeHtml(m.name)}</strong>
+                  <div class="note" style="margin:0">by ${escapeHtml(m.uploadedBy || "—")}</div>
+                </div>
+                <div class="inv-model-actions">
+                  <button type="button" class="btn-ghost" data-view-model="${escapeHtml(m.id)}">View</button>
+                  ${m.url ? `<a class="btn-ghost" href="${escapeHtml(m.url)}" target="_blank" rel="noopener">Download</a>` : ""}
+                  ${canEdit ? `<button type="button" class="btn-ghost btn-danger" data-del-model="${escapeHtml(m.id)}">✕</button>` : ""}
+                </div>
+              </div>`
+            )
+            .join("")
+        : `<span class="note">No 3D models yet</span>`;
+      panelRow.querySelector("td").innerHTML = `
+        <div class="inv-media-panel">
+          <div class="inv-media-slot">
+            <h4>Photos</h4>
+            <div class="inv-media-gallery" data-photo-gallery>${photoHtml}</div>
+            <label class="btn-ghost" style="cursor:pointer;display:inline-flex">
+              Add photo
+              <input type="file" accept="image/*" hidden data-photo-input ${canContribute ? "" : "disabled"} />
+            </label>
+          </div>
+          <div class="inv-media-slot">
+            <h4>3D models (GLB/GLTF)</h4>
+            <div data-model-list>${modelHtml}</div>
+            <label class="btn-ghost" style="cursor:pointer;display:inline-flex;margin-top:0.35rem">
+              Add model
+              <input type="file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json" hidden data-model-input ${canContribute ? "" : "disabled"} />
+            </label>
+            <p class="note" style="margin-top:0.35rem">Uploads go to Firebase Storage when sync is on. Large models need cloud Storage.</p>
+          </div>
+        </div>`;
+      photos.forEach((p) => {
+        const thumb = panelRow.querySelector('[data-photo-id="' + String(p.id).replace(/"/g, "") + '"] img');
+        if (!thumb) return;
+        const src = mediaSrc(p);
+        if (src) {
+          thumb.src = src;
+          thumb.addEventListener("click", () => window.open(src, "_blank"));
+        } else if (p.path) {
+          resolveStorageDownloadUrl(p.path).then((url) => {
+            if (url) {
+              p.url = url;
+              thumb.src = url;
+              thumb.addEventListener("click", () => window.open(url, "_blank"));
+            }
+          });
+        }
+      });
+      panelRow.querySelector("[data-photo-input]")?.addEventListener("change", (ev) => {
+        const f = ev.target.files && ev.target.files[0];
+        if (f) addPhotoToItemRow(tr, f);
+        ev.target.value = "";
+      });
+      panelRow.querySelector("[data-model-input]")?.addEventListener("change", (ev) => {
+        const f = ev.target.files && ev.target.files[0];
+        if (f) addModelToItemRow(tr, f);
+        ev.target.value = "";
+      });
+      panelRow.querySelectorAll("[data-del-photo]").forEach((btn) => {
+        btn.addEventListener("click", () => removeMediaFromRow(tr, "photo", btn.getAttribute("data-del-photo")));
+      });
+      panelRow.querySelectorAll("[data-del-model]").forEach((btn) => {
+        btn.addEventListener("click", () => removeMediaFromRow(tr, "model", btn.getAttribute("data-del-model")));
+      });
+      panelRow.querySelectorAll("[data-view-model]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const m = (tr._models || []).find((x) => x.id === btn.getAttribute("data-view-model"));
+          if (m) openGlbViewer(m);
+        });
+      });
+    }
+
+    function toggleItemMediaPanel(tr) {
+      const next = tr.nextElementSibling;
+      if (next && next.classList.contains("inv-media-panel-row")) {
+        next.remove();
+        return;
+      }
+      const panelRow = document.createElement("tr");
+      panelRow.className = "inv-media-panel-row";
+      panelRow.innerHTML = `<td colspan="10"></td>`;
+      tr.after(panelRow);
+      refreshItemMediaPanel(tr);
+    }
+
+    let modelViewerPromise = null;
+    function loadModelViewer() {
+      if (customElements.get("model-viewer")) return Promise.resolve();
+      if (modelViewerPromise) return modelViewerPromise;
+      modelViewerPromise = new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.type = "module";
+        s.src = "https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js";
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error("model-viewer failed to load"));
+        document.head.appendChild(s);
+        // Custom elements may upgrade async after module eval
+        let n = 0;
+        const wait = () => {
+          if (customElements.get("model-viewer")) return resolve();
+          if (++n > 40) return reject(new Error("model-viewer timeout"));
+          setTimeout(wait, 50);
+        };
+        s.addEventListener("load", wait);
+      });
+      return modelViewerPromise;
+    }
+
+    async function openGlbViewer(model) {
+      const url = model.url || (model.path ? await resolveStorageDownloadUrl(model.path) : "");
+      if (!url) {
+        alert("Model URL unavailable.");
+        return;
+      }
+      document.getElementById("glbViewerOverlay")?.remove();
+      const overlay = document.createElement("div");
+      overlay.className = "glb-viewer-overlay";
+      overlay.id = "glbViewerOverlay";
+      overlay.innerHTML = `
+        <div class="glb-viewer-panel">
+          <header>
+            <strong>${escapeHtml(model.name || "3D model")}</strong>
+            <a class="btn-ghost" href="${escapeHtml(url)}" target="_blank" rel="noopener">Download</a>
+            <button type="button" class="btn-ghost" id="glbViewerClose">Close</button>
+          </header>
+          <div class="glb-viewer-canvas-host" id="glbViewerHost"><p class="note" style="padding:1rem">Loading viewer…</p></div>
+        </div>`;
+      document.body.appendChild(overlay);
+      const close = () => overlay.remove();
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) close();
+      });
+      overlay.querySelector("#glbViewerClose")?.addEventListener("click", close);
+      const host = overlay.querySelector("#glbViewerHost");
+      try {
+        await loadModelViewer();
+        host.innerHTML = "";
+        const mv = document.createElement("model-viewer");
+        mv.setAttribute("src", url);
+        mv.setAttribute("camera-controls", "");
+        mv.setAttribute("auto-rotate", "");
+        mv.setAttribute("shadow-intensity", "0.6");
+        mv.style.width = "100%";
+        mv.style.height = "100%";
+        mv.style.background = "#0a0e14";
+        host.appendChild(mv);
+      } catch (err) {
+        host.innerHTML =
+          `<p class="note" style="padding:1rem">Viewer unavailable. <a href="${escapeHtml(url)}" target="_blank" rel="noopener">Download GLB</a></p>`;
+        console.warn(err);
+      }
     }
 
     function addRow(data) {
@@ -7213,7 +9739,9 @@ service cloud.firestore {
     }
 
     function getRows() {
-      return [...inventoryBody.querySelectorAll("tr")].map((tr) => {
+      return [...inventoryBody.querySelectorAll("tr")]
+        .filter((tr) => !tr.classList.contains("inv-media-panel-row"))
+        .map((tr) => {
         const name = tr.querySelector(".item-name").value.trim() || "Unnamed item";
         const qty = parseNum(tr.querySelector(".qty").value);
         const cost = parseNum(tr.querySelector(".cost").value);
@@ -7248,16 +9776,9 @@ service cloud.firestore {
     }
 
     function collectItemsFromDom() {
-      return [...inventoryBody.querySelectorAll("tr")].map((tr) =>
-        normalizeItem({
-          name: tr.querySelector(".item-name").value,
-          qty: parseNum(tr.querySelector(".qty").value),
-          cost: parseNum(tr.querySelector(".cost").value),
-          sell: parseNum(tr.querySelector(".sell").value),
-          sold: parseNum(tr.dataset.sold),
-          breakability: tr.querySelector(".breakability")?.value,
-        })
-      );
+      return [...inventoryBody.querySelectorAll("tr")]
+        .filter((tr) => !tr.classList.contains("inv-media-panel-row"))
+        .map((tr) => getItemFromRow(tr));
     }
 
     function renderItemBreakdown(rows, totalCost) {
@@ -7474,12 +9995,18 @@ service cloud.firestore {
       persistSellUndoStack();
     }
 
+    function inventoryItemRows() {
+      return [...inventoryBody.querySelectorAll("tr")].filter(
+        (tr) => !tr.classList.contains("inv-media-panel-row")
+      );
+    }
+
     function updateSellActionButtons() {
       const canSell = !!getRole()?.canEdit;
       const undoBtn = document.getElementById("undoSaleBtn");
       const resetBtn = document.getElementById("resetSalesBtn");
       const viewerNote = document.getElementById("sellViewerNote");
-      const totalSold = [...inventoryBody.querySelectorAll("tr")].reduce(
+      const totalSold = inventoryItemRows().reduce(
         (s, tr) => s + Math.max(0, parseNum(tr.dataset.sold)),
         0
       );
@@ -7507,7 +10034,7 @@ service cloud.firestore {
     }
 
     function findInventoryRowForUndo(entry) {
-      const trs = [...inventoryBody.querySelectorAll("tr")];
+      const trs = inventoryItemRows();
       if (!trs.length) return null;
       if (entry?.rowDomId != null) {
         const byId = trs.find((tr) => tr.dataset.id === String(entry.rowDomId));
@@ -7614,7 +10141,7 @@ service cloud.firestore {
               </tr>`;
             })
             .join("")
-        : `<tr><td colspan="8" class="note">No inventory items yet. Add items on the Inventory page.</td></tr>`;
+        : `<tr><td colspan="10" class="note">No inventory items yet. Add items on the Inventory page.</td></tr>`;
 
       body.querySelectorAll(".sell-now-qty").forEach((input) => {
         input.addEventListener("input", () => {
@@ -7746,7 +10273,7 @@ service cloud.firestore {
         setSellError("You do not have permission to record sales.");
         return;
       }
-      const trs = [...inventoryBody.querySelectorAll("tr")];
+      const trs = inventoryItemRows();
       const tr = trs[rowIdx];
       if (!tr) {
         setSellError("Item not found.");
@@ -7838,7 +10365,7 @@ service cloud.firestore {
         setSellError("You do not have permission to reset sales.");
         return;
       }
-      const rows = [...inventoryBody.querySelectorAll("tr")];
+      const rows = inventoryItemRows();
       let totalSold = 0;
       let affected = 0;
       rows.forEach((tr) => {
@@ -8809,6 +11336,11 @@ service cloud.firestore {
       fillWorkspaceRecoveryForm();
       renderPermMatrix();
       refreshFirebaseUi();
+      const filterTa = document.getElementById("chatFilterWordsInput");
+      if (filterTa && canResolveTickets() && document.activeElement !== filterTa) {
+        filterTa.value = (workspaceState.chatFilterWords || []).join("\n");
+      }
+      if (currentUser?.role === "core") refreshVersionHistoryList();
 
       const canManage = !!meta?.canManageUsers;
       document.getElementById("teamList").innerHTML =
@@ -8987,9 +11519,11 @@ service cloud.firestore {
       workspaceState = ensureAccounts(workspaceState);
       workspaceState.chatMessages = normalizeChatMessages(workspaceState.chatMessages);
       workspaceState.tickets = normalizeTickets(workspaceState.tickets);
+      workspaceState.broadcast = normalizeBroadcast(workspaceState.broadcast);
       renderPartyEditor();
       applyPermissions();
       recalculate();
+      renderBroadcastBanner({ animate: false });
       const snap = document.getElementById("snapshotOut");
       if (snap) snap.value = JSON.stringify(buildInvitePackage(), null, 2);
       if (
@@ -10218,6 +12752,7 @@ service cloud.firestore {
     initChatPipUi();
     initChatNotifyUi();
     initServicePortalUi();
+    initBroadcastUi();
 
     // Cross-tab sync via localStorage (complements BroadcastChannel)
     window.addEventListener("storage", (ev) => {
