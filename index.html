@@ -338,9 +338,20 @@
       border-color: var(--accent);
       box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
     }
-    input:disabled, textarea:disabled { opacity: 0.7; cursor: not-allowed; }
+    input:disabled, textarea:disabled, select:disabled { opacity: 0.7; cursor: not-allowed; }
     input[type="number"] { text-align: right; }
     .item-name { min-width: 130px; }
+    .breakability {
+      min-width: 8.5rem;
+      font-size: 0.9rem;
+    }
+    .breakability-tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-left: 0.35rem;
+      white-space: nowrap;
+    }
     .readonly { color: var(--muted); font-variant-numeric: tabular-nums; }
 
     .field-row {
@@ -577,20 +588,6 @@
       min-height: 2.4rem;
     }
     .batch-check input { width: auto; accent-color: var(--accent); }
-    .batch-margin-flag {
-      display: inline-block;
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: var(--danger);
-      margin-left: 0.25rem;
-    }
-    .batch-suggest-note {
-      display: block;
-      font-size: 0.72rem;
-      color: var(--muted);
-      margin-top: 0.15rem;
-      line-height: 1.35;
-    }
     .batch-error {
       color: var(--danger);
       font-size: 0.85rem;
@@ -1611,7 +1608,6 @@
         <button type="button" class="nav-btn" data-page="inventory">Inventory</button>
         <button type="button" class="nav-btn" data-page="sell">Sales</button>
         <button type="button" class="nav-btn" data-page="batch">Next batch</button>
-        <button type="button" class="nav-btn" data-page="charts">Sales chart</button>
         <button type="button" class="nav-btn" data-page="breakeven">Break-even</button>
         <button type="button" class="nav-btn" data-page="equity" id="navEquity">Equity</button>
         <button type="button" class="nav-btn" data-page="chat" id="navChat"><span class="nav-chat-label">Chat <span class="chat-unread-badge hidden" id="navChatBadge" aria-hidden="true"></span></span></button>
@@ -1667,7 +1663,6 @@
             <button type="button" class="btn-primary" data-goto="inventory">Open inventory</button>
             <button type="button" class="btn-ghost" data-goto="sell">Record sales</button>
             <button type="button" class="btn-ghost" data-goto="batch">Next batch</button>
-            <button type="button" class="btn-ghost" data-goto="charts">Sales chart</button>
             <button type="button" class="btn-ghost" data-goto="equity" id="dashGotoEquity">Equity split</button>
             <button type="button" class="btn-ghost" data-goto="team">Team &amp; sync</button>
           </div>
@@ -1694,6 +1689,7 @@
                   <th class="num">Qty</th>
                   <th class="num">Cost / unit</th>
                   <th class="num">Sell / unit</th>
+                  <th>Breakability</th>
                   <th class="num">Inv. value</th>
                   <th class="num">Revenue</th>
                   <th class="num">Profit</th>
@@ -1717,7 +1713,7 @@
 
       <section class="page hidden" id="page-sell">
         <h1 class="page-title">Sales</h1>
-        <p class="page-sub">Record units sold. Stock drops by the amount sold; totals sync with inventory and the workspace.</p>
+        <p class="page-sub">Record units sold — each sale also logs today’s units for Next batch and the revenue chart. Stock drops by the amount sold.</p>
         <div class="kpi-grid">
           <div class="stat"><label>Gross sales revenue</label><div class="value" id="sellGrossRev">$0.00</div></div>
           <div class="stat"><label>Units sold</label><div class="value" id="sellUnitsSold">0</div></div>
@@ -1757,6 +1753,7 @@
               <thead>
                 <tr>
                   <th>Item</th>
+                  <th>Breakability</th>
                   <th class="num">Stock</th>
                   <th class="num">Sold total</th>
                   <th class="num">Sell / unit</th>
@@ -1775,6 +1772,28 @@
             <div class="stat"><label>Allocated fixed costs</label><div class="value" id="sellAllocFixed">$0.00</div></div>
           </div>
         </div>
+        <div class="card" id="sellChartCard">
+          <div class="card-header">
+            <h2 id="salesChartTitle">Revenue</h2>
+          </div>
+          <div class="chart-range-bar" id="salesChartRanges" role="tablist" aria-label="Chart time range">
+            <button type="button" class="chart-range-btn" data-range="day">Day</button>
+            <button type="button" class="chart-range-btn active" data-range="month">Month</button>
+            <button type="button" class="chart-range-btn" data-range="ytd">YTD</button>
+            <button type="button" class="chart-range-btn" data-range="year">Year</button>
+            <button type="button" class="chart-range-btn" data-range="all">All</button>
+          </div>
+          <p class="batch-formula" id="salesChartHint">Month: one bar per day in the current month.</p>
+          <div class="chart-kpis">
+            <div class="stat"><label>Revenue in range</label><div class="value" id="salesChartRev">$0.00</div></div>
+            <div class="stat"><label>Units in range</label><div class="value" id="salesChartUnits">0</div></div>
+            <div class="stat"><label>Days with sales</label><div class="value" id="salesChartDays">0</div></div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="salesChartCanvas" aria-label="Sales revenue bar chart"></canvas>
+          </div>
+          <p class="chart-empty hidden" id="salesChartEmpty">No daily sales in this range yet. Record a sale above (or log a day on Next batch).</p>
+        </div>
         <div class="card" id="sellEquityCard">
           <h2>Equity from sales</h2>
           <p class="sell-method-note" id="sellMethodNote">
@@ -1790,12 +1809,11 @@
 
       <section class="page hidden" id="page-batch">
         <h1 class="page-title">Next batch</h1>
-        <p class="page-sub">Log daily sales (units, sell price, cost) to plan the next production batch from demand and margin.</p>
+        <p class="page-sub">Plan the next production batch from demand with a safety buffer. Daily units also update automatically when you use Add sold on Sales.</p>
         <p class="batch-formula" id="batchFormulaNote">
-          Next batch ≈ <code>avg daily sold × days of cover</code>, optionally
+          Next batch ≈ <code>avg daily sold × days of cover × (1 + safety margin/100)</code>, optionally
           <code>max(0, that − stock on hand)</code>. Avg daily uses all logged
-          sales days for each product (÷ distinct dates). Margin % =
-          <code>(sell − cost) / sell × 100</code>.
+          sales days for each product (÷ distinct dates). Safety margin = extra % buffer above expected demand.
         </p>
         <div class="card">
           <h2>Planner settings</h2>
@@ -1806,9 +1824,9 @@
               <div class="field-hint">How many days of stock you want after this batch (default 7).</div>
             </div>
             <div class="field">
-              <label for="batchTargetMargin">Target margin %</label>
-              <input type="number" id="batchTargetMargin" min="0" max="99" step="0.1" value="30" />
-              <div class="field-hint">Flag products below this margin. Suggested sell = cost ÷ (1 − target/100).</div>
+              <label for="batchSafetyMargin">Safety margin (%)</label>
+              <input type="number" id="batchSafetyMargin" min="0" max="200" step="0.1" value="30" />
+              <div class="field-hint">Extra % buffer above expected demand for the next batch.</div>
             </div>
             <div class="field">
               <label>&nbsp;</label>
@@ -1863,6 +1881,7 @@
               <thead>
                 <tr>
                   <th>Product</th>
+                  <th>Breakability</th>
                   <th class="num">Days logged</th>
                   <th class="num">Avg daily</th>
                   <th class="num">Target stock</th>
@@ -1899,34 +1918,6 @@
               <tbody id="batchLogBody"></tbody>
             </table>
           </div>
-        </div>
-      </section>
-
-      <section class="page hidden" id="page-charts">
-        <h1 class="page-title">Sales chart</h1>
-        <p class="page-sub">Revenue from daily sales logged on Next batch. Bars show sell revenue ($); hover for units.</p>
-        <div class="card">
-          <div class="card-header">
-            <h2 id="salesChartTitle">Revenue</h2>
-            <button type="button" class="btn-ghost" data-goto="batch">Log daily sales</button>
-          </div>
-          <div class="chart-range-bar" id="salesChartRanges" role="tablist" aria-label="Chart time range">
-            <button type="button" class="chart-range-btn" data-range="day">Day</button>
-            <button type="button" class="chart-range-btn active" data-range="month">Month</button>
-            <button type="button" class="chart-range-btn" data-range="ytd">YTD</button>
-            <button type="button" class="chart-range-btn" data-range="year">Year</button>
-            <button type="button" class="chart-range-btn" data-range="all">All</button>
-          </div>
-          <p class="batch-formula" id="salesChartHint">Month: one bar per day in the current month.</p>
-          <div class="chart-kpis">
-            <div class="stat"><label>Revenue in range</label><div class="value" id="salesChartRev">$0.00</div></div>
-            <div class="stat"><label>Units in range</label><div class="value" id="salesChartUnits">0</div></div>
-            <div class="stat"><label>Days with sales</label><div class="value" id="salesChartDays">0</div></div>
-          </div>
-          <div class="chart-wrap">
-            <canvas id="salesChartCanvas" aria-label="Sales revenue bar chart"></canvas>
-          </div>
-          <p class="chart-empty hidden" id="salesChartEmpty">No daily sales in this range yet. Log dated sales on Next batch.</p>
         </div>
       </section>
 
@@ -2564,7 +2555,7 @@ service cloud.firestore {
     };
     const DEFAULT_BATCH_PLANNER = {
       daysOfCover: 7,
-      targetMarginPct: 30,
+      safetyMarginPct: 30,
       deductStock: true,
     };
     /** Soft cap: if a product has more sale rows than this, only the newest N are used for averages. */
@@ -2611,13 +2602,17 @@ service cloud.firestore {
     function normalizeBatchPlanner(raw) {
       const b = raw && typeof raw === "object" ? raw : {};
       const daysOfCover = Math.round(parseNum(b.daysOfCover));
-      let targetMarginPct = parseNum(
-        b.targetMarginPct != null ? b.targetMarginPct : DEFAULT_BATCH_PLANNER.targetMarginPct
-      );
-      if (!Number.isFinite(targetMarginPct)) targetMarginPct = DEFAULT_BATCH_PLANNER.targetMarginPct;
+      const rawSafety =
+        b.safetyMarginPct != null
+          ? b.safetyMarginPct
+          : b.targetMarginPct != null
+            ? b.targetMarginPct
+            : DEFAULT_BATCH_PLANNER.safetyMarginPct;
+      let safetyMarginPct = parseNum(rawSafety);
+      if (!Number.isFinite(safetyMarginPct)) safetyMarginPct = DEFAULT_BATCH_PLANNER.safetyMarginPct;
       return {
         daysOfCover: Math.max(1, Math.min(365, daysOfCover > 0 ? daysOfCover : DEFAULT_BATCH_PLANNER.daysOfCover)),
-        targetMarginPct: Math.max(0, Math.min(99, targetMarginPct)),
+        safetyMarginPct: Math.max(0, Math.min(200, safetyMarginPct)),
         deductStock: b.deductStock !== false,
       };
     }
@@ -2627,13 +2622,6 @@ service cloud.firestore {
       const c = parseNum(cost);
       if (!(s > 0)) return null;
       return ((s - c) / s) * 100;
-    }
-
-    function suggestedSellForMargin(cost, targetMarginPct) {
-      const c = Math.max(0, parseNum(cost));
-      const t = parseNum(targetMarginPct);
-      if (!(t >= 0) || t >= 100) return null;
-      return c / (1 - t / 100);
     }
 
     function formatMarginPct(pct) {
@@ -3654,6 +3642,62 @@ service cloud.firestore {
       };
     }
 
+    const BREAKABILITY_LEVELS = [
+      { id: "fragile", label: "Fragile", score: 1 },
+      { id: "medium", label: "Medium", score: 2 },
+      { id: "sturdy", label: "Sturdy", score: 3 },
+      { id: "heavyDuty", label: "Heavy-duty", score: 4 },
+    ];
+    const DEFAULT_BREAKABILITY = "medium";
+
+    function normalizeBreakability(raw) {
+      let v = raw;
+      if (v && typeof v === "object") {
+        v = v.id ?? v.value ?? v.score ?? v.label ?? "";
+      }
+      const s = String(v ?? "").trim();
+      if (BREAKABILITY_LEVELS.some((l) => l.id === s)) return s;
+      const n = Math.round(parseNum(s));
+      const byScore = BREAKABILITY_LEVELS.find((l) => l.score === n);
+      if (byScore) return byScore.id;
+      const lower = s.toLowerCase().replace(/[\s_-]+/g, "");
+      const byLabel = BREAKABILITY_LEVELS.find(
+        (l) =>
+          l.label.toLowerCase().replace(/[\s_-]+/g, "") === lower ||
+          l.id.toLowerCase() === lower
+      );
+      if (byLabel) return byLabel.id;
+      if (lower.includes("fragil")) return "fragile";
+      if (lower.includes("heavy")) return "heavyDuty";
+      if (lower.includes("sturd")) return "sturdy";
+      if (lower.includes("medium") || lower.includes("normal")) return "medium";
+      return DEFAULT_BREAKABILITY;
+    }
+
+    function breakabilityMeta(raw) {
+      const id = normalizeBreakability(raw);
+      return BREAKABILITY_LEVELS.find((l) => l.id === id) || BREAKABILITY_LEVELS[1];
+    }
+
+    function formatBreakability(raw) {
+      const m = breakabilityMeta(raw);
+      return m.label + " (" + m.score + ")";
+    }
+
+    function breakabilitySelectHtml(selected, canEdit) {
+      const cur = normalizeBreakability(selected);
+      return (
+        `<select class="breakability" ${canEdit ? "" : "disabled"} aria-label="Breakability">` +
+        BREAKABILITY_LEVELS.map(
+          (l) =>
+            `<option value="${l.id}" ${l.id === cur ? "selected" : ""}>${escapeHtml(
+              l.label
+            )} (${l.score})</option>`
+        ).join("") +
+        `</select>`
+      );
+    }
+
     function normalizeItem(raw) {
       const it = raw && typeof raw === "object" ? raw : {};
       return {
@@ -3662,6 +3706,9 @@ service cloud.firestore {
         cost: Math.max(0, parseNum(it.cost)),
         sell: Math.max(0, parseNum(it.sell)),
         sold: Math.max(0, parseNum(it.sold)),
+        breakability: normalizeBreakability(
+          it.breakability != null ? it.breakability : it.strength
+        ),
       };
     }
 
@@ -4683,6 +4730,7 @@ service cloud.firestore {
 
     function showPage(page) {
       const meta = getRole();
+      if (page === "charts") page = "sell";
       if (page === "equity" && !meta?.canSeeEquity) page = "dashboard";
       if (page === "chat" && meta && meta.canChat === false) page = "dashboard";
       document.querySelectorAll(".page").forEach((el) => el.classList.add("hidden"));
@@ -4707,7 +4755,7 @@ service cloud.firestore {
       if (page === "batch") {
         renderBatchPage();
       }
-      if (page === "charts") {
+      if (page === "sell") {
         renderSalesChart();
       }
     }
@@ -5582,7 +5630,7 @@ service cloud.firestore {
       return [
         "Next batch",
         "• Days of cover: " + planner.daysOfCover,
-        "• Target margin: " + planner.targetMarginPct + "%",
+        "• Safety margin: " + planner.safetyMarginPct + "%",
         "• Deduct stock: " + (planner.deductStock ? "yes" : "no"),
         "• Daily sales entries: " + daily.length,
         recentLines.length ? "Recent:\n" + recentLines.join("\n") : "• No daily sales yet",
@@ -6596,6 +6644,7 @@ service cloud.firestore {
       if (varOhRatePctEl) varOhRatePctEl.disabled = !meta.canEditBreakEven;
       if (varOhPerUnitEl) varOhPerUnitEl.disabled = !meta.canEditBreakEven;
       inventoryBody.querySelectorAll("input").forEach((i) => (i.disabled = !meta.canEdit));
+      inventoryBody.querySelectorAll("select.breakability").forEach((s) => (s.disabled = !meta.canEdit));
       inventoryBody.querySelectorAll(".remove-row").forEach((btn) => {
         btn.disabled = !meta.canEdit;
         btn.classList.toggle("hidden", !meta.canEdit);
@@ -6647,17 +6696,20 @@ service cloud.firestore {
         <td><input type="number" class="qty" min="0" step="1" value="${item.qty}" ${canEdit ? "" : "disabled"} /></td>
         <td><input type="number" class="cost" min="0" step="0.01" value="${item.cost}" ${canEdit ? "" : "disabled"} /></td>
         <td><input type="number" class="sell" min="0" step="0.01" value="${item.sell}" ${canEdit ? "" : "disabled"} /></td>
+        <td>${breakabilitySelectHtml(item.breakability, canEdit)}</td>
         <td class="num readonly line-cost">$0.00</td>
         <td class="num readonly line-revenue">$0.00</td>
         <td class="num readonly line-profit">$0.00</td>
         <td><button type="button" class="btn-ghost btn-danger remove-row ${canEdit ? "" : "hidden"}" ${canEdit ? "" : "disabled"}>✕</button></td>
       `;
+      const onInventoryChange = () => {
+        recalculate();
+        scheduleSave("Updated inventory");
+      };
       tr.querySelectorAll("input").forEach((input) => {
-        input.addEventListener("input", () => {
-          recalculate();
-          scheduleSave("Updated inventory");
-        });
+        input.addEventListener("input", onInventoryChange);
       });
+      tr.querySelector(".breakability")?.addEventListener("change", onInventoryChange);
       tr.querySelector(".remove-row").addEventListener("click", () => {
         if (!getRole()?.canEdit) return;
         tr.remove();
@@ -6681,6 +6733,7 @@ service cloud.firestore {
         const cost = parseNum(tr.querySelector(".cost").value);
         const sell = parseNum(tr.querySelector(".sell").value);
         const sold = Math.max(0, parseNum(tr.dataset.sold));
+        const breakability = normalizeBreakability(tr.querySelector(".breakability")?.value);
         const lineCost = qty * cost;
         const lineRevenue = qty * sell;
         const lineProfit = lineRevenue - lineCost;
@@ -6697,6 +6750,7 @@ service cloud.firestore {
           cost,
           sell,
           sold,
+          breakability,
           lineCost,
           lineRevenue,
           lineProfit,
@@ -6715,6 +6769,7 @@ service cloud.firestore {
           cost: parseNum(tr.querySelector(".cost").value),
           sell: parseNum(tr.querySelector(".sell").value),
           sold: parseNum(tr.dataset.sold),
+          breakability: tr.querySelector(".breakability")?.value,
         })
       );
     }
@@ -6730,6 +6785,7 @@ service cloud.firestore {
               <dt>Units</dt><dd>${row.qty.toLocaleString()}</dd>
               <dt>Cost / unit</dt><dd>${fmt(row.cost)}</dd>
               <dt>Sell / unit</dt><dd>${fmt(row.sell)}</dd>
+              <dt>Breakability</dt><dd>${escapeHtml(formatBreakability(row.breakability))}</dd>
               <dt>Inventory value</dt><dd>${fmt(row.lineCost)}</dd>
               <dt>Revenue</dt><dd>${fmt(row.lineRevenue)}</dd>
               <dt>Profit</dt><dd style="color:${color}">${fmt(row.lineProfit)}</dd>
@@ -7048,6 +7104,7 @@ service cloud.firestore {
               const maxAttr = stock > 0 ? `max="${stock}"` : "";
               return `<tr data-row-idx="${idx}">
                 <td>${escapeHtml(r.name)}</td>
+                <td>${escapeHtml(formatBreakability(r.breakability))}</td>
                 <td class="num">${stock.toLocaleString()}</td>
                 <td class="num">${r.sold.toLocaleString()}</td>
                 <td class="num">${fmt(r.sell)}</td>
@@ -7071,7 +7128,7 @@ service cloud.firestore {
               </tr>`;
             })
             .join("")
-        : `<tr><td colspan="7" class="note">No inventory items yet. Add items on the Inventory page.</td></tr>`;
+        : `<tr><td colspan="8" class="note">No inventory items yet. Add items on the Inventory page.</td></tr>`;
 
       body.querySelectorAll(".sell-now-qty").forEach((input) => {
         input.addEventListener("input", () => {
@@ -7135,6 +7192,69 @@ service cloud.firestore {
       updateSellActionButtons();
     }
 
+    function upsertDailySaleUnits({ itemName, date, qty, sell, cost }) {
+      const name = String(itemName || "").trim() || "Unnamed item";
+      const day = String(date || todayISODate()).slice(0, 10);
+      const addQty = Math.floor(parseNum(qty));
+      if (!(addQty > 0) || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+      const unitSell = Math.max(0, parseNum(sell));
+      const unitCost = Math.max(0, parseNum(cost));
+      const key = itemKey(name);
+      const list = normalizeDailySales(workspaceState.dailySales);
+      const idx = list.findIndex((s) => s.date === day && itemKey(s.itemName) === key);
+      if (idx >= 0) {
+        const prev = list[idx];
+        const prevQty = Math.max(0, prev.qty);
+        const nextQty = prevQty + addQty;
+        const nextSell =
+          nextQty > 0 ? (prevQty * prev.sell + addQty * unitSell) / nextQty : unitSell;
+        const nextCost =
+          nextQty > 0 ? (prevQty * prev.cost + addQty * unitCost) / nextQty : unitCost;
+        list[idx] = normalizeDailySale({
+          ...prev,
+          qty: nextQty,
+          sell: nextSell,
+          cost: nextCost,
+          at: new Date().toISOString(),
+          by: currentUser?.name || prev.by || "",
+        });
+      } else {
+        list.unshift(
+          normalizeDailySale({
+            id: newDailySaleId(),
+            date: day,
+            itemName: name,
+            qty: addQty,
+            sell: unitSell,
+            cost: unitCost,
+            at: new Date().toISOString(),
+            by: currentUser?.name || "",
+          })
+        );
+      }
+      workspaceState.dailySales = normalizeDailySales(list);
+      return list;
+    }
+
+    function decrementDailySaleUnits({ itemName, date, qty }) {
+      const name = String(itemName || "").trim() || "Unnamed item";
+      const day = String(date || todayISODate()).slice(0, 10);
+      const removeQty = Math.floor(parseNum(qty));
+      if (!(removeQty > 0) || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
+      const key = itemKey(name);
+      const list = normalizeDailySales(workspaceState.dailySales);
+      const idx = list.findIndex((s) => s.date === day && itemKey(s.itemName) === key);
+      if (idx < 0) return;
+      const prev = list[idx];
+      const nextQty = Math.max(0, prev.qty - removeQty);
+      if (nextQty <= 0) {
+        list.splice(idx, 1);
+      } else {
+        list[idx] = normalizeDailySale({ ...prev, qty: nextQty });
+      }
+      workspaceState.dailySales = normalizeDailySales(list);
+    }
+
     function recordSale(rowIdx, amount) {
       if (!getRole()?.canEdit) {
         setSellError("You do not have permission to record sales.");
@@ -7159,9 +7279,11 @@ service cloud.firestore {
         setSellError(`Cannot sell ${n} of ${name} — only ${qty} in stock.`);
         return;
       }
+      const saleDate = todayISODate();
       const prevSold = Math.max(0, parseNum(tr.dataset.sold));
       tr.querySelector(".qty").value = String(qty - n);
       tr.dataset.sold = String(prevSold + n);
+      upsertDailySaleUnits({ itemName: name, date: saleDate, qty: n, sell, cost });
       pushSellUndo({
         rowDomId: tr.dataset.id,
         rowIdx,
@@ -7169,6 +7291,7 @@ service cloud.firestore {
         qty: n,
         sell,
         cost,
+        date: saleDate,
         at: new Date().toISOString(),
       });
       setSellError("");
@@ -7211,6 +7334,11 @@ service cloud.firestore {
       const restore = Math.min(n, prevSold);
       tr.querySelector(".qty").value = String(qty + restore);
       tr.dataset.sold = String(Math.max(0, prevSold - restore));
+      decrementDailySaleUnits({
+        itemName: entry.name || tr.querySelector(".item-name").value.trim(),
+        date: entry.date || (entry.at ? String(entry.at).slice(0, 10) : todayISODate()),
+        qty: restore,
+      });
       sellUndoStack.pop();
       persistSellUndoStack();
       const name = tr.querySelector(".item-name").value.trim() || entry.name || "item";
@@ -7284,14 +7412,14 @@ service cloud.firestore {
 
     function readBatchPlannerFromEditor() {
       const daysEl = document.getElementById("batchDaysOfCover");
-      const marginEl = document.getElementById("batchTargetMargin");
+      const marginEl = document.getElementById("batchSafetyMargin");
       const deductEl = document.getElementById("batchDeductStock");
       if (!daysEl || !marginEl || !deductEl) {
         return normalizeBatchPlanner(workspaceState.batchPlanner);
       }
       return normalizeBatchPlanner({
         daysOfCover: parseNum(daysEl.value),
-        targetMarginPct: parseNum(marginEl.value),
+        safetyMarginPct: parseNum(marginEl.value),
         deductStock: !!deductEl.checked,
       });
     }
@@ -7300,10 +7428,10 @@ service cloud.firestore {
       const planner = normalizeBatchPlanner(workspaceState.batchPlanner);
       workspaceState.batchPlanner = planner;
       const daysEl = document.getElementById("batchDaysOfCover");
-      const marginEl = document.getElementById("batchTargetMargin");
+      const marginEl = document.getElementById("batchSafetyMargin");
       const deductEl = document.getElementById("batchDeductStock");
       if (daysEl && document.activeElement !== daysEl) daysEl.value = planner.daysOfCover;
-      if (marginEl && document.activeElement !== marginEl) marginEl.value = planner.targetMarginPct;
+      if (marginEl && document.activeElement !== marginEl) marginEl.value = planner.safetyMarginPct;
       if (deductEl) deductEl.checked = planner.deductStock;
     }
 
@@ -7319,10 +7447,17 @@ service cloud.firestore {
       getRows().forEach((r) => {
         const key = itemKey(r.name);
         if (!key) return;
-        const prev = map.get(key) || { name: r.name, qty: 0, cost: r.cost, sell: r.sell };
+        const prev = map.get(key) || {
+          name: r.name,
+          qty: 0,
+          cost: r.cost,
+          sell: r.sell,
+          breakability: r.breakability,
+        };
         prev.qty += r.qty;
         prev.cost = r.cost;
         prev.sell = r.sell;
+        prev.breakability = r.breakability;
         map.set(key, prev);
       });
       return map;
@@ -7375,33 +7510,29 @@ service cloud.firestore {
 
         const distinctDays = Math.max(1, dates.size);
         const avgDaily = totalQty / distinctDays;
-        const targetStock = avgDaily * planner.daysOfCover;
+        const baseTarget = avgDaily * planner.daysOfCover;
+        const withSafety = baseTarget * (1 + planner.safetyMarginPct / 100);
         const inv = stockMap.get(g.key);
         const onHand = inv ? inv.qty : 0;
         const nextBatch = planner.deductStock
-          ? Math.max(0, Math.ceil(targetStock - onHand))
-          : Math.max(0, Math.ceil(targetStock));
+          ? Math.max(0, Math.ceil(withSafety) - onHand)
+          : Math.max(0, Math.ceil(withSafety));
         const avgSell = totalQty > 0 ? totalRev / totalQty : 0;
         const avgCost = totalQty > 0 ? totalCost / totalQty : 0;
         const marginPerUnit = avgSell - avgCost;
         const marginPct = marginPctFromPrices(avgSell, avgCost);
-        const belowTarget =
-          marginPct == null || marginPct < planner.targetMarginPct;
-        const suggestedSell = belowTarget
-          ? suggestedSellForMargin(avgCost, planner.targetMarginPct)
-          : null;
         const avgDailyProfit = avgDaily * marginPerUnit;
         return {
           name: inv?.name || g.name,
+          breakability: inv?.breakability || DEFAULT_BREAKABILITY,
           daysLogged: dates.size,
           avgDaily,
-          targetStock,
+          baseTarget,
+          targetStock: withSafety,
           onHand,
           nextBatch,
           marginPerUnit,
           marginPct,
-          belowTarget,
-          suggestedSell,
           avgDailyProfit,
           linked: !!inv,
           capped,
@@ -7459,7 +7590,7 @@ service cloud.firestore {
       const canEdit = !!meta?.canEdit;
       const ids = [
         "batchDaysOfCover",
-        "batchTargetMargin",
+        "batchSafetyMargin",
         "batchDeductStock",
         "batchItemSelect",
         "batchCustomName",
@@ -7493,13 +7624,12 @@ service cloud.firestore {
           ? ` (newest ${BATCH_SALES_ENTRY_CAP} sale rows per product if capped)`
           : "";
         formula.innerHTML =
-          `Next batch ≈ <code>avg daily sold × ${planner.daysOfCover} days of cover</code>` +
+          `Next batch ≈ <code>avg daily × ${planner.daysOfCover} days × (1 + ${planner.safetyMarginPct}% safety)</code>` +
           (planner.deductStock
-            ? `, then <code>max(0, target − stock on hand)</code>`
-            : ` (stock not subtracted)`) +
-          `. Avg daily from all logged days for each product (÷ distinct dates)${cappedNote}. ` +
-          `Target margin <code>${planner.targetMarginPct}%</code> = <code>(sell − cost) / sell × 100</code>. ` +
-          `Below target → suggested sell <code>cost / (1 − target/100)</code>.`;
+            ? `, then <code>max(0, ceil(target) − stock on hand)</code>`
+            : ` (stock not subtracted; use <code>ceil(target)</code>)`) +
+          `. Safety margin = extra % buffer above expected demand. Avg daily from logged days (÷ distinct dates)${cappedNote}. ` +
+          `Margin % from sales is informational: <code>(sell − cost) / sell × 100</code>.`;
       }
 
       const suggestBody = document.getElementById("batchSuggestBody");
@@ -7510,28 +7640,22 @@ service cloud.firestore {
                 const marginColor =
                   r.marginPct == null
                     ? ""
-                    : r.belowTarget
+                    : r.marginPct < 0
                       ? "var(--danger)"
                       : r.marginPct > 0
                         ? "var(--success)"
                         : "";
-                const flag = r.belowTarget
-                  ? `<span class="batch-margin-flag">below ${planner.targetMarginPct}%</span>`
-                  : "";
-                const suggestNote =
-                  r.belowTarget && r.suggestedSell != null
-                    ? `<span class="batch-suggest-note">Sell ≈ ${fmt(r.suggestedSell)} to hit ${planner.targetMarginPct}%</span>`
-                    : "";
                 return `<tr>
                   <td>${escapeHtml(r.name)}${
                     r.linked ? "" : ' <span class="note">(not in inventory)</span>'
-                  }${suggestNote}</td>
+                  }</td>
+                  <td>${r.linked ? escapeHtml(formatBreakability(r.breakability)) : "—"}</td>
                   <td class="num">${r.daysLogged}</td>
                   <td class="num">${r.avgDaily.toFixed(2)}</td>
                   <td class="num">${Math.ceil(r.targetStock).toLocaleString()}</td>
                   <td class="num">${r.onHand.toLocaleString()}</td>
                   <td class="num" style="font-weight:700;color:var(--accent)">${r.nextBatch.toLocaleString()}</td>
-                  <td class="num" style="color:${marginColor}">${formatMarginPct(r.marginPct)}${flag}</td>
+                  <td class="num" style="color:${marginColor}">${formatMarginPct(r.marginPct)}</td>
                   <td class="num" style="color:${
                     r.marginPerUnit < 0
                       ? "var(--danger)"
@@ -7549,7 +7673,7 @@ service cloud.firestore {
                 </tr>`;
               })
               .join("")
-          : `<tr><td colspan="9" class="note">No daily sales logged yet. Log a day above to see batch suggestions.</td></tr>`;
+          : `<tr><td colspan="10" class="note">No daily sales logged yet. Record a sale on Sales, or log a day above.</td></tr>`;
       }
 
       const canEdit = !!getRole()?.canEdit;
@@ -7565,8 +7689,6 @@ service cloud.firestore {
                 const margin = s.sell - s.cost;
                 const pct = marginPctFromPrices(s.sell, s.cost);
                 const dayProfit = s.qty * margin;
-                const planner = normalizeBatchPlanner(workspaceState.batchPlanner);
-                const below = pct == null || pct < planner.targetMarginPct;
                 return `<tr data-sale-id="${escapeHtml(s.id)}">
                   <td>${escapeHtml(s.date)}</td>
                   <td>${escapeHtml(s.itemName)}</td>
@@ -7574,7 +7696,7 @@ service cloud.firestore {
                   <td class="num">${fmt(s.sell)}</td>
                   <td class="num">${fmt(s.cost)}</td>
                   <td class="num" style="color:${
-                    below ? "var(--danger)" : pct > 0 ? "var(--success)" : ""
+                    pct == null ? "" : pct < 0 ? "var(--danger)" : pct > 0 ? "var(--success)" : ""
                   }">${formatMarginPct(pct)}</td>
                   <td class="num" style="color:${
                     margin < 0 ? "var(--danger)" : margin > 0 ? "var(--success)" : ""
@@ -7637,20 +7759,7 @@ service cloud.firestore {
       }
       const sell = Math.max(0, parseNum(document.getElementById("batchSaleSell")?.value));
       const cost = Math.max(0, parseNum(document.getElementById("batchSaleCost")?.value));
-      const entry = normalizeDailySale({
-        id: newDailySaleId(),
-        date,
-        itemName,
-        qty,
-        sell,
-        cost,
-        at: new Date().toISOString(),
-        by: currentUser?.name || "",
-      });
-      workspaceState.dailySales = normalizeDailySales([
-        entry,
-        ...(workspaceState.dailySales || []),
-      ]);
+      upsertDailySaleUnits({ itemName, date, qty, sell, cost });
       workspaceState.batchPlanner = readBatchPlannerFromEditor();
       setBatchError("");
       const qtyEl = document.getElementById("batchSaleQty");
@@ -8410,8 +8519,8 @@ service cloud.firestore {
         renderBatchPage();
       }
       if (
-        document.getElementById("page-charts") &&
-        !document.getElementById("page-charts").classList.contains("hidden")
+        document.getElementById("page-sell") &&
+        !document.getElementById("page-sell").classList.contains("hidden")
       ) {
         renderSalesChart();
       }
@@ -8469,12 +8578,7 @@ service cloud.firestore {
       renderDashboard(rows, { totalCost, totalRevenue, totalUnits, netProfit });
       renderSellPage();
       renderBatchPage();
-      if (
-        document.getElementById("page-charts") &&
-        !document.getElementById("page-charts").classList.contains("hidden")
-      ) {
-        renderSalesChart();
-      }
+      renderSalesChart();
     }
 
     // ——— Events ———
@@ -9456,7 +9560,7 @@ service cloud.firestore {
     document.getElementById("batchItemSelect")?.addEventListener("change", () => {
       syncBatchPriceFromSelection();
     });
-    ["batchDaysOfCover", "batchTargetMargin"].forEach((id) => {
+    ["batchDaysOfCover", "batchSafetyMargin"].forEach((id) => {
       document.getElementById(id)?.addEventListener("change", () => saveBatchPlannerSettings());
       document.getElementById(id)?.addEventListener("input", () => {
         if (!getRole()?.canEdit) return;
