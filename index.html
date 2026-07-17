@@ -1205,35 +1205,14 @@
       color: var(--text);
     }
     .chat-msg-actions {
-      position: absolute;
-      top: 0.15rem;
-      right: 0.55rem;
       display: flex;
       gap: 0.25rem;
-      opacity: 0;
-      pointer-events: none;
-      background: rgba(22, 28, 40, 0.92);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      margin-top: 0.35rem;
+      width: fit-content;
+      background: rgba(22, 28, 40, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 8px;
       padding: 0.15rem;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      transition: opacity 0.12s ease;
-    }
-    .chat-msg:hover .chat-msg-actions,
-    .chat-msg:focus-within .chat-msg-actions {
-      opacity: 1;
-      pointer-events: auto;
-    }
-    @media (hover: none) {
-      .chat-msg-actions {
-        position: static;
-        opacity: 1;
-        pointer-events: auto;
-        margin-top: 0.35rem;
-        width: fit-content;
-      }
     }
     .chat-msg-actions .btn-ghost {
       padding: 0.2rem 0.45rem;
@@ -1634,6 +1613,16 @@
       padding: 1.5rem 0.5rem;
       text-align: center;
     }
+    .img-load-error {
+      font-size: 0.72rem;
+      color: var(--danger);
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      border-radius: 6px;
+      padding: 0.3rem 0.5rem;
+      margin-top: 0.3rem;
+      max-width: 100%;
+    }
     .service-detail-shot {
       width: 100%;
       max-height: 360px;
@@ -1696,11 +1685,88 @@
     }
     .inv-media-panel {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 1rem;
     }
     @media (max-width: 900px) {
       .inv-media-panel { grid-template-columns: 1fr; }
+    }
+    /* Color variants */
+    .color-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.2rem;
+      margin-top: 0.2rem;
+      max-width: 160px;
+    }
+    .color-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.62rem;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      border-radius: 999px;
+      padding: 0.05rem 0.4rem;
+      white-space: nowrap;
+    }
+    .color-chip i, .variant-swatch, .variant-preset i {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      flex: none;
+    }
+    .variant-row {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 0.35rem;
+    }
+    .variant-swatch { width: 14px; height: 14px; }
+    .variant-color-input { flex: 1; min-width: 90px; }
+    .variant-qty-input { width: 70px; }
+    .variant-sold-note { margin: 0; font-size: 0.65rem; white-space: nowrap; }
+    .variant-row .variant-del {
+      position: static;
+      border: none;
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border-radius: 6px;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      flex: none;
+    }
+    .variant-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin-top: 0.45rem;
+    }
+    .variant-preset {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.68rem;
+      color: var(--text);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.15rem 0.5rem;
+      cursor: pointer;
+    }
+    .variant-preset:hover { border-color: var(--accent); }
+    .sell-color-select { min-width: 110px; }
+    .sell-variant-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.2rem;
+      margin-top: 0.15rem;
     }
     .inv-media-slot h4 {
       font-size: 0.85rem;
@@ -1766,6 +1832,18 @@
       font-size: 0.8rem;
     }
     .inv-model-card .inv-model-actions { margin-left: auto; display: flex; gap: 0.3rem; }
+    .inv-model-ext {
+      display: inline-block;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.05rem 0.3rem;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--muted);
+      margin-right: 0.25rem;
+    }
     .glb-viewer-overlay {
       position: fixed;
       inset: 0;
@@ -1907,6 +1985,42 @@
       gap: 0.75rem;
       transform-origin: top center;
     }
+    .broadcast-banner.bcast-color-red {
+      border-color: rgba(248, 113, 113, 0.45);
+      background:
+        linear-gradient(135deg, rgba(248,113,113,0.22), rgba(255,255,255,0.02) 45%, rgba(127,29,29,0.18)),
+        rgba(42, 18, 22, 0.72);
+      box-shadow:
+        0 1px 0 rgba(254,202,202,0.12) inset,
+        0 10px 32px rgba(127,29,29,0.35);
+    }
+    .broadcast-banner.bcast-color-amber {
+      border-color: rgba(251, 191, 36, 0.45);
+      background:
+        linear-gradient(135deg, rgba(251,191,36,0.22), rgba(255,255,255,0.02) 45%, rgba(120,53,15,0.16)),
+        rgba(42, 32, 14, 0.72);
+      box-shadow:
+        0 1px 0 rgba(253,230,138,0.12) inset,
+        0 10px 32px rgba(120,53,15,0.32);
+    }
+    .broadcast-banner.bcast-color-green {
+      border-color: rgba(74, 222, 128, 0.4);
+      background:
+        linear-gradient(135deg, rgba(74,222,128,0.2), rgba(255,255,255,0.02) 45%, rgba(20,83,45,0.16)),
+        rgba(16, 36, 26, 0.72);
+      box-shadow:
+        0 1px 0 rgba(187,247,208,0.1) inset,
+        0 10px 32px rgba(20,83,45,0.32);
+    }
+    .broadcast-banner.bcast-color-blue {
+      border-color: rgba(96, 165, 250, 0.5);
+      background:
+        linear-gradient(135deg, rgba(96,165,250,0.24), rgba(255,255,255,0.02) 45%, rgba(30,64,175,0.18)),
+        rgba(16, 28, 48, 0.72);
+      box-shadow:
+        0 1px 0 rgba(191,219,254,0.12) inset,
+        0 10px 32px rgba(30,64,175,0.35);
+    }
     .broadcast-banner.hidden { display: none !important; }
     .broadcast-banner.bcast-enter {
       opacity: 0;
@@ -1938,7 +2052,7 @@
       gap: 0.35rem;
       flex-shrink: 0;
     }
-    .broadcast-compose .field-row { align-items: end; }
+    .broadcast-compose .field-row { align-items: end; flex-wrap: wrap; gap: 0.55rem; }
     .broadcast-status { font-size: 0.8rem; margin-top: 0.45rem; min-height: 1.1em; }
     .broadcast-status.ok { color: var(--success); }
     .broadcast-status.err { color: var(--danger); }
@@ -2223,7 +2337,7 @@
         <button type="button" class="nav-btn" data-page="breakeven">Break-even</button>
         <button type="button" class="nav-btn" data-page="equity" id="navEquity">Equity</button>
         <button type="button" class="nav-btn" data-page="chat" id="navChat"><span class="nav-chat-label">Chat <span class="chat-unread-badge hidden" id="navChatBadge" aria-hidden="true"></span></span></button>
-        <button type="button" class="nav-btn" data-page="service" id="navService"><span class="nav-service-label">Service <span class="chat-unread-badge hidden" id="navServiceBadge" aria-hidden="true"></span></span></button>
+        <button type="button" class="nav-btn" data-page="service" id="navService"><span class="nav-service-label"><span id="navServiceText">Service</span> <span class="chat-unread-badge hidden" id="navServiceBadge" aria-hidden="true"></span></span></button>
         <button type="button" class="nav-btn" data-page="team">Team &amp; sync</button>
       </nav>
       <div class="user-panel">
@@ -2301,6 +2415,16 @@
             <textarea id="dashBroadcastText" maxlength="280" rows="2" placeholder="e.g. Inventory freeze tonight at 8pm 🧊"></textarea>
           </div>
           <div class="field-row" style="margin-top:0.55rem">
+            <div class="field" style="flex:0 0 140px;margin:0">
+              <label for="dashBroadcastColor">Color</label>
+              <select id="dashBroadcastColor">
+                <option value="default">Default glass</option>
+                <option value="red">Red</option>
+                <option value="amber">Amber / orange</option>
+                <option value="green">Green</option>
+                <option value="blue">Blue</option>
+              </select>
+            </div>
             <div class="field" style="flex:0 0 160px;margin:0">
               <label for="dashBroadcastExpiry">Expires (optional)</label>
               <select id="dashBroadcastExpiry">
@@ -2819,7 +2943,7 @@
               <div class="service-detail-meta" id="serviceDetailMeta"></div>
               <div class="service-claim-bar" id="serviceClaimBar">
                 <span class="ticket-claim-pill" id="serviceClaimLabel">Unclaimed</span>
-                <button type="button" class="btn-primary" id="serviceClaimBtn">Claim</button>
+                <button type="button" class="btn-primary" id="serviceClaimBtn" title="Claim as the signed-in user">Claim</button>
                 <button type="button" class="btn-ghost hidden" id="serviceUnclaimBtn">Unclaim</button>
               </div>
               <div id="serviceResolvePanel" class="hidden">
@@ -2832,9 +2956,9 @@
                     <option value="urgent">Urgent</option>
                   </select>
                 </div>
-                <div class="field">
-                  <label for="serviceClaimAssign">Reassign claim (Core/Admin)</label>
-                  <input type="text" id="serviceClaimAssign" maxlength="64" placeholder="Username to assign, or blank to keep" />
+                <div class="field hidden" id="serviceClaimAssignField">
+                  <label for="serviceClaimAssign">Reassign (optional, Core/Admin)</label>
+                  <input type="text" id="serviceClaimAssign" maxlength="64" placeholder="Username to reassign — leave blank to keep claimer" />
                 </div>
                 <div class="field">
                   <label for="serviceResolutionNote">Resolution note (optional)</label>
@@ -3022,7 +3146,7 @@
           <div class="login-error" id="firebaseConfigStatus" style="min-height:0;margin-top:0.5rem"></div>
           <details style="margin-top:0.85rem">
             <summary style="cursor:pointer;color:var(--muted);font-size:0.85rem">Firestore rules notes (demo)</summary>
-            <p class="note" style="margin-top:0.5rem"><strong>Warning:</strong> open rules are for personal demos only.</p>
+            <p class="note" style="margin-top:0.5rem"><strong>Warning:</strong> open rules are for personal demos only. After editing <code>firestore.rules</code> / <code>storage.rules</code>, republish in Firebase Console. Ticket screenshots use Storage paths <code>workspaces/{CODE}/tickets/{ticketId}/shot.jpg</code> (preferred) or legacy <code>tickets/{CODE}/{ticketId}.jpg</code>.</p>
             <pre class="rules-sample">rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -3049,6 +3173,11 @@ service cloud.firestore {
           </details>
         </div>
 
+        <div class="card hidden" id="syncSimpleCard">
+          <h2>Cloud sync</h2>
+          <p class="note" style="margin-top:0" id="syncSimpleLine">Cloud sync: checking…</p>
+        </div>
+
         <div class="card" id="loginTitleCard">
           <h2>Login screen name</h2>
           <div class="field-row" style="margin-top:0.75rem;align-items:end">
@@ -3069,6 +3198,16 @@ service cloud.firestore {
             <textarea id="teamBroadcastText" maxlength="280" rows="2" placeholder="Workspace-wide notice…"></textarea>
           </div>
           <div class="field-row" style="margin-top:0.55rem">
+            <div class="field" style="flex:0 0 140px;margin:0">
+              <label for="teamBroadcastColor">Color</label>
+              <select id="teamBroadcastColor">
+                <option value="default">Default glass</option>
+                <option value="red">Red</option>
+                <option value="amber">Amber / orange</option>
+                <option value="green">Green</option>
+                <option value="blue">Blue</option>
+              </select>
+            </div>
             <div class="field" style="flex:0 0 160px;margin:0">
               <label for="teamBroadcastExpiry">Expires (optional)</label>
               <select id="teamBroadcastExpiry">
@@ -3302,8 +3441,10 @@ service cloud.firestore {
     const DEFAULT_LOGIN_TITLE = "Inventory Split";
     const MAX_CHAT_MESSAGES = 300;
     const MAX_SERVICE_TICKETS = 40;
-    /** Rough cap for dataURL length stored in local / Firestore ticket docs (~700KB). */
+    /** Soft cap for compressed draft / local preview dataURLs (~700KB). */
     const MAX_TICKET_IMAGE_CHARS = 700000;
+    /** Hard cap when embedding a screenshot on a Firestore ticket doc (stay well under 1MB). */
+    const MAX_TICKET_EMBED_CHARS = 180000;
     const TICKET_IMAGE_MAX_WIDTH = 800;
     const TICKET_IMAGE_QUALITY = 0.7;
     const TICKET_STATUSES = ["open", "in_progress", "resolved", "archived"];
@@ -3319,9 +3460,14 @@ service cloud.firestore {
     ];
     const SERVICE_SEEN_KEY = "inventory-split-service-seen";
     const BROADCAST_DISMISS_KEY = "inventory-split-broadcast-dismissed";
+    const BROADCAST_COLORS = ["default", "red", "amber", "green", "blue"];
     const MAX_ITEM_PHOTOS_LOCAL = 6;
     const MAX_ITEM_PHOTO_CHARS = 180000;
     const MAX_LOCAL_MODEL_WARN_BYTES = 2 * 1024 * 1024;
+    /** Models this size (base64 chars ≈ bytes × 1.37) may be kept locally when Storage is off. */
+    const MAX_ITEM_MODEL_CHARS = 420000;
+    /** 3D formats accepted for item models. All of these render in the built-in viewer. */
+    const MODEL_EXTENSIONS = ["glb", "gltf", "stl", "3mf", "obj"];
     const MAX_VERSIONS = 15;
     const MAX_LOCAL_VERSIONS = 5;
     const VERSION_LOCAL_KEY = "inventory-split-versions:";
@@ -3348,7 +3494,8 @@ service cloud.firestore {
       { key: "canManageRoles", label: "Manage roles" },
       { key: "canChat", label: "Chat" },
       { key: "canEditLoginTitle", label: "Edit login title" },
-      { key: "canManageSync", label: "Manage Firestore" },
+      // "Manage Firestore" was removed from the grantable matrix: the Firebase
+      // config manager is Core-only now (see applyPermissions / firebaseCard).
     ];
 
     function allPerms(val) {
@@ -3725,11 +3872,26 @@ service cloud.firestore {
       return !!(c && c.apiKey && c.projectId);
     }
 
+    /** Only Core sees Firebase config / rules / raw error details in the UI. */
+    function canSeeSyncInternals() {
+      return currentUser?.role === "core";
+    }
+
+    /** Plain on/off line shown to non-Core roles instead of the Firebase config card. */
+    function updateSimpleSyncLine() {
+      const line = document.getElementById("syncSimpleLine");
+      if (!line) return;
+      if (firebaseEnabled && firebaseSyncOk) line.textContent = "Cloud sync: on";
+      else if (firebaseEnabled) line.textContent = "Cloud sync: issue — contact your Core user";
+      else line.textContent = "Cloud sync: off";
+    }
+
     function setFirebasePill(text, cls) {
       const pill = document.getElementById("firebaseStatusPill");
       if (!pill) return;
       pill.textContent = text;
       pill.className = "firebase-status-pill" + (cls ? " " + cls : "");
+      updateSimpleSyncLine();
     }
 
     function setSyncRetryVisible(show) {
@@ -3796,6 +3958,10 @@ service cloud.firestore {
 
     function syncStatusFromFirebaseError(prefix, err) {
       lastFirebaseError = err || null;
+      if (!canSeeSyncInternals()) {
+        setSyncStatus("Sync issue — contact your Core user", "err");
+        return;
+      }
       const detail = formatFirebaseError(err);
       const hint = firestoreErrorHint(err);
       setSyncStatus(prefix + " — " + detail + (hint ? " · " + hint : ""), "err");
@@ -3912,7 +4078,10 @@ service cloud.firestore {
       }
       if (typeof firebase === "undefined" || !firebase.apps) {
         setFirebasePill("SDK missing", "err");
-        setSyncStatus("Firebase SDK failed to load", "err");
+        setSyncStatus(
+          canSeeSyncInternals() ? "Firebase SDK failed to load" : "Sync issue — contact your Core user",
+          "err"
+        );
         return false;
       }
       try {
@@ -3920,6 +4089,14 @@ service cloud.firestore {
         else firebaseApp = firebase.app();
         firestoreDb = firebase.firestore();
         firebaseEnabled = true;
+        // Fail fast on Storage uploads instead of the SDK's default ~2 min retry loop
+        // (a missing/uncreated bucket otherwise makes ticket submission hang for minutes).
+        try {
+          if (firebase.storage) {
+            firebase.storage().setMaxUploadRetryTime(12000);
+            firebase.storage().setMaxOperationRetryTime(12000);
+          }
+        } catch (_) {}
         setFirebasePill("Connecting…", "warn");
         setSyncStatus("Cloud sync: signing in…", "warn");
         try {
@@ -4172,7 +4349,6 @@ service cloud.firestore {
       detachTicketsListener();
       ticketsUnsub = col.orderBy("createdAt", "desc").limit(MAX_SERVICE_TICKETS).onSnapshot(
         (snap) => {
-          if (applyingRemote) return;
           const remoteTickets = [];
           snap.forEach((doc) => {
             const data = doc.data() || {};
@@ -4200,7 +4376,9 @@ service cloud.firestore {
             return;
           }
           workspaceState.tickets = merged;
-          localStorage.setItem(dataKey(), JSON.stringify(workspaceState));
+          try {
+            localStorage.setItem(dataKey(), JSON.stringify(workspaceState));
+          } catch (_) {}
           syncServiceNotificationsFromState();
           if (
             document.getElementById("page-service") &&
@@ -4216,15 +4394,12 @@ service cloud.firestore {
     }
 
     async function pushTicketToFirestore(ticket) {
-      if (!firebaseEnabled || !firestoreDb || !ticket?.id) return;
+      if (!firebaseEnabled || !firestoreDb || !ticket?.id) return false;
       const col = ticketsCollectionRef(workspaceId);
-      if (!col) return;
-      try {
-        await ensureFirebaseAuth();
-        await col.doc(ticket.id).set(ticketForFirestoreDoc(ticket), { merge: true });
-      } catch (err) {
-        console.warn("Ticket cloud write failed", err);
-      }
+      if (!col) return false;
+      await ensureFirebaseAuth();
+      await col.doc(ticket.id).set(ticketForFirestoreDoc(ticket), { merge: true });
+      return true;
     }
 
     function subscribeAppeals(code) {
@@ -4234,7 +4409,6 @@ service cloud.firestore {
       detachAppealsListener();
       appealsUnsub = col.orderBy("createdAt", "desc").limit(MAX_APPEALS).onSnapshot(
         (snap) => {
-          if (applyingRemote) return;
           const remote = [];
           snap.forEach((doc) => {
             const data = doc.data() || {};
@@ -4243,7 +4417,9 @@ service cloud.firestore {
           const prev = normalizeAppeals(workspaceState.appeals || []);
           const merged = normalizeAppeals([...prev, ...remote.filter(Boolean)]);
           workspaceState.appeals = merged;
-          try { localStorage.setItem(dataKey(), JSON.stringify(workspaceState)); } catch (_) {}
+          try {
+            localStorage.setItem(dataKey(), JSON.stringify(workspaceState));
+          } catch (_) {}
           syncAppealsNotificationsFromState();
           if (
             document.getElementById("page-service") &&
@@ -4257,15 +4433,12 @@ service cloud.firestore {
     }
 
     async function pushAppealToFirestore(appeal) {
-      if (!firebaseEnabled || !firestoreDb || !appeal?.id) return;
+      if (!firebaseEnabled || !firestoreDb || !appeal?.id) return false;
       const col = appealsCollectionRef(workspaceId);
-      if (!col) return;
-      try {
-        await ensureFirebaseAuth();
-        await col.doc(appeal.id).set(appealForFirestoreDoc(appeal), { merge: true });
-      } catch (err) {
-        console.warn("Appeal cloud write failed", err);
-      }
+      if (!col) return false;
+      await ensureFirebaseAuth();
+      await col.doc(appeal.id).set(appealForFirestoreDoc(appeal), { merge: true });
+      return true;
     }
 
     function versionsCollectionRef(code) {
@@ -4333,7 +4506,9 @@ service cloud.firestore {
       firestoreRetryAttempt += 1;
       if (firestoreRetryAttempt > 8) {
         setSyncStatus(
-          "Firestore listener stopped after retries — check Anonymous Auth + published rules, then Retry",
+          canSeeSyncInternals()
+            ? "Firestore listener stopped after retries — check Anonymous Auth + published rules, then Retry"
+            : "Cloud sync stopped — press Retry or contact your Core user",
           "err",
           { retry: true }
         );
@@ -4369,7 +4544,9 @@ service cloud.firestore {
         lastFirebaseError = timeoutErr;
         detachFirestoreListener();
         setSyncStatus(
-          "Cloud sync timed out (deadline-exceeded) — no first snapshot. Check network / rules, then Retry.",
+          canSeeSyncInternals()
+            ? "Cloud sync timed out (deadline-exceeded) — no first snapshot. Check network / rules, then Retry."
+            : "Cloud sync timed out — check your connection and press Retry",
           "err",
           { retry: true }
         );
@@ -4446,12 +4623,21 @@ service cloud.firestore {
 
           applyingRemote = true;
           try {
+            const prevTickets = normalizeTickets(workspaceState.tickets || []);
+            const prevAppeals = normalizeAppeals(workspaceState.appeals || []);
             workspaceState = ensureAccounts({ ...emptyState(), ...remote });
             workspaceState.roleDefs = normalizeRoleDefs(workspaceState.roleDefs);
             workspaceState.chatMessages = normalizeChatMessages(workspaceState.chatMessages);
+            // Keep fuller local ticket/appeal docs; lean index from workspace doc merges in.
             workspaceState.tickets = normalizeTickets([
-              ...(workspaceState.tickets || []),
+              ...prevTickets,
               ...(Array.isArray(remote.tickets) ? remote.tickets : []),
+              ...(workspaceState.tickets || []),
+            ]);
+            workspaceState.appeals = normalizeAppeals([
+              ...prevAppeals,
+              ...(Array.isArray(remote.appeals) ? remote.appeals : []),
+              ...(workspaceState.appeals || []),
             ]);
             workspaceState.foundation = normalizeFoundation(workspaceState.foundation);
             workspaceState.variableOverhead = normalizeVariableOverhead(workspaceState.variableOverhead);
@@ -4463,7 +4649,9 @@ service cloud.firestore {
             }
             lastRemoteUpdatedAt = workspaceState.updatedAt || null;
             lastPushedFingerprint = workspacePushFingerprint(stateForFirestore(workspaceState));
-            localStorage.setItem(dataKey(id), JSON.stringify(workspaceState));
+            try {
+              localStorage.setItem(dataKey(id), JSON.stringify(workspaceState));
+            } catch (_) {}
             if (workspaceState.loginTitle) {
               saveSetupMeta({
                 loginTitle: workspaceState.loginTitle,
@@ -4510,7 +4698,13 @@ service cloud.firestore {
 
     function retryCloudSync() {
       if (!firebaseEnabled || !firestoreDb) {
-        setSyncStatus("Cloud sync unavailable — enable Firebase in Team & sync", "err", { retry: true });
+        setSyncStatus(
+          canSeeSyncInternals()
+            ? "Cloud sync unavailable — enable Firebase in Team & sync"
+            : "Cloud sync unavailable — contact your Core user",
+          "err",
+          { retry: true }
+        );
         return;
       }
       if (!currentUser) {
@@ -4523,10 +4717,14 @@ service cloud.firestore {
 
     function refreshFirebaseUi() {
       const ta = document.getElementById("firebaseConfigJson");
-      const stored = loadFirebaseConfigStored();
-      const prefs = readFirebaseLocalPrefs();
-      const embedded = embeddedFirebaseConfig();
-      if (ta && !ta.dataset.touched) {
+      if (ta && !canSeeSyncInternals()) {
+        // Never render config JSON for non-Core roles (card is hidden, but keep the DOM clean too).
+        ta.value = "";
+        delete ta.dataset.touched;
+      } else if (ta && !ta.dataset.touched) {
+        const stored = loadFirebaseConfigStored();
+        const prefs = readFirebaseLocalPrefs();
+        const embedded = embeddedFirebaseConfig();
         const cfg = stored?.config || prefs?.config || embedded || {
           apiKey: "",
           authDomain: "",
@@ -4543,13 +4741,15 @@ service cloud.firestore {
         hint.textContent = firebaseSyncOk
           ? "Live sync is on — workspace code can load the cloud workspace."
           : firebaseAuthOk
-            ? "Signed in to Firebase, but Firestore read/write is blocked — publish firestore.rules."
+            ? "Cloud sync is having trouble right now — paste an invite below, or ask your Core user."
             : "With live sync on, code alone loads the workspace from the cloud.";
       }
       const status = document.getElementById("firebaseConfigStatus");
       if (status && firebaseEnabled && !firebaseSyncOk && lastFirebaseError && !status.dataset.userMsg) {
         status.style.color = "var(--danger)";
-        status.textContent = describeFirebaseFix(lastFirebaseError);
+        status.textContent = canSeeSyncInternals()
+          ? describeFirebaseFix(lastFirebaseError)
+          : "Sync issue — contact your Core user.";
       }
     }
 
@@ -4687,8 +4887,46 @@ service cloud.firestore {
         } else {
           out.dataUrl = null;
         }
+      } else {
+        // Small models may live locally as dataURLs when Firebase Storage is unavailable.
+        if (typeof raw.dataUrl === "string" && raw.dataUrl.startsWith("data:")) {
+          out.dataUrl = raw.dataUrl.length > MAX_ITEM_MODEL_CHARS ? null : raw.dataUrl;
+        } else {
+          out.dataUrl = null;
+        }
       }
       return out;
+    }
+
+    function normalizeColorVariant(raw) {
+      if (!raw || typeof raw !== "object") return null;
+      const color = String(raw.color || raw.name || "").trim().slice(0, 40);
+      if (!color) return null;
+      return {
+        color,
+        qty: Math.max(0, Math.floor(parseNum(raw.qty))),
+        sold: Math.max(0, Math.floor(parseNum(raw.sold))),
+      };
+    }
+
+    function normalizeColorVariants(list) {
+      if (!Array.isArray(list)) return [];
+      const seen = new Set();
+      const out = [];
+      for (const raw of list) {
+        const v = normalizeColorVariant(raw);
+        if (!v) continue;
+        const key = v.color.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(v);
+        if (out.length >= 24) break;
+      }
+      return out;
+    }
+
+    function variantsTotalQty(variants) {
+      return (variants || []).reduce((s, v) => s + Math.max(0, Math.floor(parseNum(v.qty))), 0);
     }
 
     function normalizeItem(raw) {
@@ -4699,10 +4937,12 @@ service cloud.firestore {
       const models = Array.isArray(it.models)
         ? it.models.map((m) => normalizeMediaFile(m, "model")).filter(Boolean).slice(0, 12)
         : [];
+      const variants = normalizeColorVariants(it.variants);
       return {
         id: String(it.id || newItemId()),
         name: String(it.name ?? ""),
-        qty: Math.max(0, parseNum(it.qty)),
+        // With color variants, item qty is always the sum of variant quantities.
+        qty: variants.length ? variantsTotalQty(variants) : Math.max(0, parseNum(it.qty)),
         cost: Math.max(0, parseNum(it.cost)),
         sell: Math.max(0, parseNum(it.sell)),
         sold: Math.max(0, parseNum(it.sold)),
@@ -4711,6 +4951,7 @@ service cloud.firestore {
         ),
         photos,
         models,
+        variants,
       };
     }
 
@@ -4831,7 +5072,8 @@ service cloud.firestore {
         // Signed-in users can chat unless their role explicitly disables it
         canChat: isCore || p.canChat !== false,
         canEditLoginTitle: isCore || !!p.canEditLoginTitle,
-        canManageSync: isCore || !!p.canManageSync,
+        // Firebase config manager is Core-only regardless of stored role perms.
+        canManageSync: isCore,
         banner: isCore ? null : def.banner,
       };
     }
@@ -5410,10 +5652,21 @@ service cloud.firestore {
         description: t.description,
         resolutionNote: t.resolutionNote || "",
       };
-      if (t.screenshotDataUrl && t.screenshotDataUrl.length <= MAX_TICKET_IMAGE_CHARS) {
+      // Prefer Storage URL/path; only embed a small compressed dataURL as last resort.
+      if (
+        !t.screenshotUrl &&
+        !t.screenshotPath &&
+        t.screenshotDataUrl &&
+        t.screenshotDataUrl.length <= MAX_TICKET_EMBED_CHARS
+      ) {
         doc.screenshotDataUrl = t.screenshotDataUrl;
       }
       return stripUndefined(doc);
+    }
+
+    function normalizeBroadcastColor(raw) {
+      const c = String(raw || "default").toLowerCase().trim();
+      return BROADCAST_COLORS.includes(c) ? c : "default";
     }
 
     function normalizeBroadcast(raw) {
@@ -5427,6 +5680,7 @@ service cloud.firestore {
             at: raw.at || null,
             active: false,
             expiresAt: raw.expiresAt || null,
+            color: normalizeBroadcastColor(raw.color),
           };
         }
         return null;
@@ -5441,6 +5695,7 @@ service cloud.firestore {
         at: raw.at || new Date().toISOString(),
         active: true,
         expiresAt: raw.expiresAt ? String(raw.expiresAt) : null,
+        color: normalizeBroadcastColor(raw.color),
       };
     }
 
@@ -5492,12 +5747,17 @@ service cloud.firestore {
       const dismissed = getDismissedBroadcastId();
       const canClear = currentUser?.role === "core" || currentUser?.role === "admin";
       document.getElementById("broadcastClearBtn")?.classList.toggle("hidden", !canClear);
+      BROADCAST_COLORS.forEach((c) => {
+        if (c !== "default") el.classList.remove("bcast-color-" + c);
+      });
       if (!b || (b.id && b.id === dismissed)) {
         el.classList.add("hidden");
         el.classList.remove("bcast-animate", "bcast-enter");
         lastRenderedBroadcastId = b?.id || null;
         return;
       }
+      const color = normalizeBroadcastColor(b.color);
+      if (color !== "default") el.classList.add("bcast-color-" + color);
       const textEl = document.getElementById("broadcastBannerText");
       const metaEl = document.getElementById("broadcastBannerMeta");
       if (textEl) textEl.textContent = b.text;
@@ -5530,7 +5790,7 @@ service cloud.firestore {
       el.className = "broadcast-status" + (mode ? " " + mode : "");
     }
 
-    function sendWorkspaceBroadcast(text, expirySelect, statusWhich) {
+    function sendWorkspaceBroadcast(text, expirySelect, statusWhich, colorSelect) {
       if (!currentUser || (currentUser.role !== "core" && currentUser.role !== "admin")) {
         setBroadcastStatus(statusWhich, "Only Core or Admin can broadcast.", "err");
         return;
@@ -5549,6 +5809,7 @@ service cloud.firestore {
         at: now,
         active: true,
         expiresAt: expiryFromSelect(expirySelect),
+        color: normalizeBroadcastColor(colorSelect),
       });
       workspaceState.broadcast = broadcast;
       setDismissedBroadcastId("");
@@ -5572,6 +5833,7 @@ service cloud.firestore {
         at: new Date().toISOString(),
         active: false,
         expiresAt: null,
+        color: prev?.color || "default",
       };
       setDismissedBroadcastId("");
       pushActivity("Cleared workspace broadcast");
@@ -5593,7 +5855,8 @@ service cloud.firestore {
         sendWorkspaceBroadcast(
           document.getElementById("dashBroadcastText")?.value,
           document.getElementById("dashBroadcastExpiry")?.value,
-          "dash"
+          "dash",
+          document.getElementById("dashBroadcastColor")?.value
         );
         const ta = document.getElementById("dashBroadcastText");
         if (ta) ta.value = "";
@@ -5605,7 +5868,8 @@ service cloud.firestore {
         sendWorkspaceBroadcast(
           document.getElementById("teamBroadcastText")?.value,
           document.getElementById("teamBroadcastExpiry")?.value,
-          "team"
+          "team",
+          document.getElementById("teamBroadcastColor")?.value
         );
         const ta = document.getElementById("teamBroadcastText");
         if (ta) ta.value = "";
@@ -5639,7 +5903,13 @@ service cloud.firestore {
     function redactChatText(input) {
       const words = getEffectiveBadWords();
       if (!words.length) {
-        return { text: String(input || ""), redacted: false, heavilyRedacted: false, hits: 0 };
+        return {
+          text: String(input || ""),
+          original: String(input || ""),
+          redacted: false,
+          heavilyRedacted: false,
+          hits: 0,
+        };
       }
       const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const pattern = new RegExp(
@@ -5655,6 +5925,7 @@ service cloud.firestore {
       const ratio = String(input || "").length ? hits / Math.max(1, String(input || "").split(/\s+/).length) : 0;
       return {
         text,
+        original: String(input || ""),
         redacted: hits > 0,
         heavilyRedacted: hits >= 3 || ratio >= 0.35,
         hits,
@@ -5741,6 +6012,23 @@ service cloud.firestore {
     function canResolveTickets() {
       const role = currentUser?.role;
       return role === "core" || role === "admin";
+    }
+
+    function updateServiceNavLabel() {
+      const textEl = document.getElementById("navServiceText");
+      const pageTitle = document.querySelector("#page-service .page-title");
+      const pageSub = document.querySelector("#page-service .page-sub");
+      const staff = canResolveTickets();
+      const label = staff ? "Service" : "Report";
+      if (textEl) textEl.textContent = label;
+      if (pageTitle) pageTitle.textContent = staff ? "Service portal" : "Report";
+      if (pageSub) {
+        pageSub.textContent = staff
+          ? "Tickets, claims, and appeals. Core/Admin triage; claimers can update claimed tickets."
+          : "Submit reports and appeals. Core/Admin review Active tickets.";
+      }
+      const navBtn = document.getElementById("navService");
+      if (navBtn) navBtn.setAttribute("aria-label", label);
     }
 
     function canViewTicket(t) {
@@ -5963,7 +6251,23 @@ service cloud.firestore {
         workspaceState.updatedAt = new Date().toISOString();
         if (currentUser?.name) workspaceState.updatedBy = currentUser.name;
       }
-      localStorage.setItem(dataKey(), JSON.stringify(workspaceState));
+      const writeLocal = () => localStorage.setItem(dataKey(), JSON.stringify(workspaceState));
+      try {
+        writeLocal();
+      } catch (err) {
+        // QuotaExceeded often from ticket screenshots — strip heavy dataURLs and retry.
+        console.warn("localStorage full — stripping ticket screenshots", err);
+        workspaceState.tickets = normalizeTickets(workspaceState.tickets || []).map((t) => ({
+          ...t,
+          screenshotDataUrl:
+            t.screenshotUrl || t.screenshotPath
+              ? null
+              : t.screenshotDataUrl && t.screenshotDataUrl.length > MAX_TICKET_EMBED_CHARS
+                ? null
+                : t.screenshotDataUrl,
+        }));
+        writeLocal();
+      }
       const inviteText = JSON.stringify(buildInvitePackage(), null, 2);
       const out = document.getElementById("snapshotOut");
       if (out) out.value = inviteText;
@@ -6101,6 +6405,7 @@ service cloud.firestore {
       document.getElementById("navEquity").classList.toggle("hidden", !meta.canSeeEquity);
       document.getElementById("dashGotoEquity").classList.toggle("hidden", !meta.canSeeEquity);
       document.getElementById("navChat").classList.toggle("hidden", meta.canChat === false);
+      updateServiceNavLabel();
 
       connectChannel();
       workspaceState = loadWorkspaceFromStorage();
@@ -7447,23 +7752,59 @@ service cloud.firestore {
       let thumbDataUrl = null;
       let screenshotPath = null;
       let screenshotUrl = null;
+      let photoNote = null;
+
       if (shot) {
-        const blob = dataUrlToBlob(shot);
+        let blob = null;
         try {
+          blob = dataUrlToBlob(shot);
           if (blob) {
-            const thumb = await compressImageFile(blob, { maxWidth: 240, quality: 0.55 });
-            if (thumb?.dataUrl) thumbDataUrl = thumb.dataUrl;
+            const compressed = await compressImageFile(blob, {
+              maxWidth: TICKET_IMAGE_MAX_WIDTH,
+              quality: TICKET_IMAGE_QUALITY,
+            });
+            shot = compressed.dataUrl;
+            blob = compressed.blob || dataUrlToBlob(shot);
+            try {
+              const thumb = await compressImageFile(blob, { maxWidth: 240, quality: 0.55 });
+              if (thumb?.dataUrl) thumbDataUrl = thumb.dataUrl;
+            } catch (_) {}
           }
-        } catch (_) {}
-        const uploaded = blob ? await uploadTicketScreenshot(id, blob) : null;
-        if (uploaded) {
-          screenshotPath = uploaded.path;
-          screenshotUrl = uploaded.url;
-          if (shot.length > 120000) shot = null;
-        } else if (shot.length > MAX_TICKET_IMAGE_CHARS) {
-          throw new Error("Screenshot too large for local storage. Enable Firebase Storage or use a smaller image.");
+        } catch (err) {
+          photoNote = err?.message || "Could not compress screenshot.";
+          shot = null;
+          blob = null;
+        }
+
+        if (blob) {
+          const uploaded = await uploadTicketScreenshot(id, blob);
+          if (uploaded) {
+            screenshotPath = uploaded.path;
+            screenshotUrl = uploaded.url;
+            // Storage holds the image — keep only a tiny thumb locally / in the index.
+            shot = null;
+          } else if (shot) {
+            // Storage unavailable — keep the screenshot as an embedded dataURL.
+            // Recompress if needed so it fits the Firestore embed cap instead of dropping it.
+            if (shot.length > MAX_TICKET_EMBED_CHARS) {
+              const smaller = await shrinkDataUrlToFit(shot, MAX_TICKET_EMBED_CHARS);
+              if (smaller) shot = smaller;
+            }
+            photoNote =
+              (firebaseEnabled
+                ? storageFailureHint || "Firebase Storage unavailable — screenshot embedded instead."
+                : "Screenshot stored with the ticket on this device.") +
+              (shot.length > MAX_TICKET_EMBED_CHARS
+                ? " Image kept locally but too large to sync to other devices."
+                : "");
+          }
+        } else if (shot && shot.length > MAX_TICKET_EMBED_CHARS) {
+          const smaller = await shrinkDataUrlToFit(shot, MAX_TICKET_EMBED_CHARS);
+          if (smaller) shot = smaller;
+          else photoNote = "Screenshot kept locally — too large to sync to other devices.";
         }
       }
+
       const ticket = normalizeTicket({
         id,
         title: String(title || "").trim().slice(0, 120),
@@ -7490,8 +7831,82 @@ service cloud.firestore {
       workspaceState.updatedBy = currentUser.name || currentUser.username;
       pushActivity("Opened service ticket" + (ticket.title ? ": " + ticket.title : ""));
       persistWorkspace(true);
-      await pushTicketToFirestore(ticket);
+      scheduleFirestorePush(true);
+
+      let syncWarning = null;
+      if (firebaseEnabled && firestoreDb) {
+        try {
+          await pushTicketToFirestore(ticket);
+        } catch (err) {
+          console.warn("Ticket cloud write failed", err);
+          // Retry the cloud doc without the embedded screenshot (covers the
+          // doc-too-large case) using a stripped COPY — never null the local
+          // ticket's screenshotDataUrl, or the image stops displaying on this
+          // device whenever cloud sync fails (e.g. permission-denied rules).
+          if (ticket.screenshotDataUrl) {
+            try {
+              await pushTicketToFirestore({ ...ticket, screenshotDataUrl: null });
+              photoNote =
+                (photoNote ? photoNote + " " : "") +
+                "Cloud saved without the full screenshot — it stays visible on this device.";
+            } catch (err2) {
+              console.warn("Ticket cloud retry failed", err2);
+              syncWarning = err2?.message || err?.message || "Cloud ticket sync failed";
+            }
+          } else {
+            syncWarning = err?.message || "Cloud ticket sync failed";
+          }
+        }
+      }
+
+      ticket._photoNote = photoNote;
+      ticket._syncWarning = syncWarning;
       return ticket;
+    }
+
+    async function queueLanguageFilterReport({ original, redacted, messageId, channel, dmKey }) {
+      if (!currentUser || !original || original === redacted) return;
+      const channelLabel =
+        normalizeChatChannel(channel) === "dm"
+          ? "Direct (" + dmKeyLabel(dmKey) + ")"
+          : "Team";
+      const snippet = (s) => String(s || "").slice(0, 500);
+      const description = [
+        "Automatic language-filter report",
+        "Channel: " + channelLabel,
+        "Submitter: " +
+          (currentUser.name || currentUser.username) +
+          " (@" +
+          currentUser.username +
+          ")",
+        "Role: " + (currentUser.role || "—"),
+        "Message id: " + (messageId || "—"),
+        "",
+        "Original:",
+        "“" + snippet(original) + "”",
+        "",
+        "Redacted (as sent):",
+        "“" + snippet(redacted) + "”",
+      ].join("\n");
+      try {
+        const ticket = await createServiceTicketRecord({
+          title: "Language filter report",
+          description,
+          priority: "high",
+        });
+        syncServiceNotificationsFromState();
+        if (
+          document.getElementById("page-service") &&
+          !document.getElementById("page-service").classList.contains("hidden")
+        ) {
+          renderServicePage();
+        }
+        if (canResolveTickets()) {
+          showChatToast("Language filter report", "Opened ticket " + ticket.id + " for review");
+        }
+      } catch (err) {
+        console.warn("Auto language-filter report failed", err);
+      }
     }
 
     async function reportChatMessage(messageId) {
@@ -7535,17 +7950,30 @@ service cloud.firestore {
         const ticket = await createServiceTicketRecord({
           title: "Chat report",
           description,
+          priority: "high",
         });
-        setChatStatus("Reported — ticket opened in Service", "ok");
-        showChatToast("Chat reported", "Opened Service ticket " + ticket.id);
+        const warn = ticket._syncWarning || ticket._photoNote;
+        setChatStatus(
+          warn ? "Reported (with warning) — see Service" : "Reported — ticket opened in Service",
+          warn ? "err" : "ok"
+        );
+        showChatToast(
+          "Chat reported",
+          warn
+            ? "Ticket " + ticket.id + " saved. " + warn
+            : "Opened ticket " + ticket.id + " in Active tickets"
+        );
         selectedTicketId = ticket.id;
+        setTicketViewMode("active", { keepSelection: true });
         setTimeout(() => {
           showPage("service");
+          setServiceMainTab("tickets");
           openServiceTicket(ticket.id);
         }, 400);
       } catch (err) {
         console.error(err);
         setChatStatus(err?.message || "Could not report message", "err");
+        showChatToast("Report failed", err?.message || "Could not create ticket");
       }
     }
 
@@ -7689,6 +8117,16 @@ service cloud.firestore {
       workspaceState.updatedBy = currentUser.name || currentUser.username;
       persistWorkspace(true);
       renderChat(true);
+      if (filtered.redacted) {
+        // One auto-report per redacted send (not per word hit).
+        queueLanguageFilterReport({
+          original: cleaned,
+          redacted: filtered.text,
+          messageId: msg.id,
+          channel,
+          dmKey,
+        });
+      }
       return true;
     }
 
@@ -7880,16 +8318,37 @@ service cloud.firestore {
       return "";
     }
 
+    function setTicketImageError(imgEl, msg) {
+      const existing = imgEl.nextElementSibling;
+      const isNote = existing && existing.classList && existing.classList.contains("img-load-error");
+      if (!msg) {
+        if (isNote) existing.remove();
+        return;
+      }
+      const note = isNote ? existing : document.createElement("div");
+      note.className = "img-load-error";
+      note.textContent = msg;
+      if (!isNote) imgEl.after(note);
+    }
+
     function bindTicketImageEl(imgEl, t, { thumb = false } = {}) {
       if (!imgEl || !t) return;
       const failHide = !thumb;
+      const hasAnySource = !!(
+        t.screenshotDataUrl || t.thumbDataUrl || t.screenshotUrl || t.screenshotPath
+      );
+      const fail = (msg) => {
+        imgEl.removeAttribute("src");
+        if (failHide) imgEl.classList.add("hidden");
+        else imgEl.classList.add("placeholder");
+        setTicketImageError(imgEl, msg || "");
+      };
       const apply = (src) => {
         if (!src) {
-          imgEl.removeAttribute("src");
-          if (failHide) imgEl.classList.add("hidden");
+          fail(hasAnySource ? "Screenshot could not be loaded." : "");
           return;
         }
-        imgEl.onload = null;
+        imgEl.onload = () => setTicketImageError(imgEl, "");
         imgEl.onerror = async () => {
           if (t.screenshotDataUrl && imgEl.getAttribute("src") !== t.screenshotDataUrl) {
             imgEl.src = t.screenshotDataUrl;
@@ -7907,10 +8366,16 @@ service cloud.firestore {
               return;
             }
           }
-          if (failHide) imgEl.classList.add("hidden");
+          fail(
+            thumb
+              ? "Image failed"
+              : "Screenshot failed to load (cloud image unavailable — check Firebase Storage setup)."
+          );
         };
+        setTicketImageError(imgEl, "");
         imgEl.src = src;
         if (failHide) imgEl.classList.remove("hidden");
+        imgEl.classList.remove("placeholder");
       };
       const src = ticketScreenshotSrc(t, { thumb });
       if (src) {
@@ -7920,6 +8385,13 @@ service cloud.firestore {
       if (failHide) imgEl.classList.add("hidden");
       ensureTicketScreenshotUrl(t).then((url) => {
         if (url) apply(url);
+        else if (hasAnySource) {
+          fail(
+            thumb
+              ? "Image failed"
+              : "Screenshot is stored in Firebase Storage but the download URL could not be resolved (Storage disabled or rules not published)."
+          );
+        }
       });
     }
 
@@ -8119,12 +8591,44 @@ service cloud.firestore {
       return new Blob([arr], { type: mime });
     }
 
+    /**
+     * null = unknown, true = uploads work, false = bucket missing/blocked this session.
+     * Set false after a retry-limit / bucket-not-found failure so later uploads skip
+     * the slow retry loop and fall back to embedded images immediately.
+     */
+    let storageUploadsHealthy = null;
+    let storageFailureHint = "";
+
+    function storageErrorLooksFatal(err) {
+      const code = String(err?.code || "");
+      const resp = String(err?.serverResponse || "");
+      if (code === "storage/retry-limit-exceeded" || code === "storage/unknown") return true;
+      if (code === "storage/unauthorized" || code === "storage/quota-exceeded") return true;
+      return /Not Found/i.test(resp);
+    }
+
+    function describeStorageFailure(err) {
+      const code = String(err?.code || "");
+      if (code === "storage/unauthorized") {
+        return "Firebase Storage rejected the upload — publish storage.rules in Firebase Console → Storage → Rules.";
+      }
+      return (
+        "Firebase Storage is unreachable (bucket may not exist) — open Firebase Console → Storage → Get started, " +
+        "then publish storage.rules."
+      );
+    }
+
     async function uploadTicketScreenshot(ticketId, blob) {
       if (!firebaseEnabled || !blob || typeof firebase === "undefined" || !firebase.storage) {
         return null;
       }
+      if (storageUploadsHealthy === false) return null;
       try {
         await ensureFirebaseAuth();
+        if (!firebase.auth || !firebase.auth().currentUser) {
+          console.warn("Storage upload skipped — not signed in to Firebase Auth");
+          return null;
+        }
         const code = normalizeWorkspaceCode(workspaceId);
         const paths = [
           "workspaces/" + code + "/tickets/" + ticketId + "/shot.jpg",
@@ -8137,17 +8641,47 @@ service cloud.firestore {
             await ref.put(blob, { contentType: "image/jpeg" });
             const url = await ref.getDownloadURL();
             ticketUrlCache.set(path, url);
+            storageUploadsHealthy = true;
+            storageFailureHint = "";
             return { path, url };
           } catch (err) {
             lastErr = err;
+            console.warn("Storage path failed:", path, err?.code || err?.message || err);
           }
         }
-        console.warn("Storage upload failed — using data URL", lastErr);
+        if (storageErrorLooksFatal(lastErr)) {
+          storageUploadsHealthy = false;
+          storageFailureHint = describeStorageFailure(lastErr);
+        }
+        console.warn("Storage upload failed — will fall back", lastErr);
         return null;
       } catch (err) {
-        console.warn("Storage upload failed — using data URL", err);
+        console.warn("Storage upload failed — will fall back", err);
         return null;
       }
+    }
+
+    /** Recompress a dataURL until it fits maxChars (for Firestore embedding). */
+    async function shrinkDataUrlToFit(dataUrl, maxChars) {
+      let out = dataUrl;
+      const steps = [
+        { maxWidth: 640, quality: 0.6 },
+        { maxWidth: 480, quality: 0.55 },
+        { maxWidth: 360, quality: 0.5 },
+        { maxWidth: 280, quality: 0.45 },
+      ];
+      for (const step of steps) {
+        if (out && out.length <= maxChars) return out;
+        const blob = dataUrlToBlob(out);
+        if (!blob) break;
+        try {
+          const c = await compressImageFile(blob, step);
+          if (c?.dataUrl) out = c.dataUrl;
+        } catch (_) {
+          break;
+        }
+      }
+      return out && out.length <= maxChars ? out : null;
     }
 
     function setServiceDraftScreenshot(dataUrl) {
@@ -8346,6 +8880,9 @@ service cloud.firestore {
       if (claimBtn) {
         const canClaim = currentUser && !isClaimed && (t.status === "open" || t.status === "in_progress");
         claimBtn.classList.toggle("hidden", !canClaim);
+        claimBtn.title = currentUser
+          ? "Claim as " + (currentUser.name || currentUser.username)
+          : "Sign in to claim";
       }
       if (unclaimBtn) {
         unclaimBtn.classList.toggle("hidden", !(isClaimed && (iAmClaimer || canResolveTickets())));
@@ -8353,11 +8890,12 @@ service cloud.firestore {
       if (resolvePanel) {
         resolvePanel.classList.toggle("hidden", !canUpdateTicket(t));
       }
+      const assignField = document.getElementById("serviceClaimAssignField");
       if (assignEl) {
-        assignEl.classList.toggle("hidden", !canResolveTickets());
-        const assignWrap = assignEl.closest(".field");
-        if (assignWrap) assignWrap.classList.toggle("hidden", !canResolveTickets());
         assignEl.value = "";
+      }
+      if (assignField) {
+        assignField.classList.toggle("hidden", !canResolveTickets());
       }
       if (statusSelect) {
         statusSelect.value = t.status;
@@ -8410,6 +8948,7 @@ service cloud.firestore {
       if (e) e.preventDefault();
       if (!currentUser) {
         setServiceFormStatus("Sign in to submit a ticket.", "err");
+        showChatToast("Ticket failed", "Sign in to submit a ticket.");
         return;
       }
       const title = String(document.getElementById("serviceTicketTitle")?.value || "").trim().slice(0, 120);
@@ -8436,13 +8975,22 @@ service cloud.firestore {
         setServiceDraftScreenshot(null);
         const fileInput = document.getElementById("serviceShotFile");
         if (fileInput) fileInput.value = "";
-        setServiceFormStatus("Ticket submitted", "ok");
+        const warn = [ticket._photoNote, ticket._syncWarning].filter(Boolean).join(" ");
+        if (warn) {
+          setServiceFormStatus("Ticket submitted — " + warn, "err");
+          showChatToast("Ticket submitted", warn);
+        } else {
+          setServiceFormStatus("Ticket submitted", "ok");
+          showChatToast("Ticket submitted", ticket.title || ticket.id);
+        }
         selectedTicketId = ticket.id;
+        setTicketViewMode("active", { keepSelection: true });
         renderServicePage();
         openServiceTicket(ticket.id);
       } catch (err) {
         console.error(err);
         setServiceFormStatus(err?.message || "Could not submit ticket", "err");
+        showChatToast("Ticket failed", err?.message || "Could not submit ticket");
       } finally {
         if (btn) btn.disabled = false;
       }
@@ -8460,7 +9008,15 @@ service cloud.firestore {
       workspaceState.updatedBy = currentUser?.name || currentUser?.username;
       if (activityMsg) pushActivity(activityMsg);
       persistWorkspace(true);
-      await pushTicketToFirestore(updated);
+      scheduleFirestorePush(true);
+      if (firebaseEnabled && firestoreDb) {
+        try {
+          await pushTicketToFirestore(updated);
+        } catch (err) {
+          console.warn("Ticket patch cloud write failed", err);
+          throw new Error(err?.message || "Cloud sync failed for ticket update");
+        }
+      }
       return updated;
     }
 
@@ -8477,10 +9033,15 @@ service cloud.firestore {
           },
           "Claimed ticket " + selectedTicketId
         );
-        setServiceDetailStatus("Ticket claimed", "ok");
+        setServiceDetailStatus(
+          "Claimed as " + (currentUser.name || currentUser.username),
+          "ok"
+        );
+        showChatToast("Ticket claimed", "You claimed " + updated.id);
         openServiceTicket(updated.id);
       } catch (err) {
         setServiceDetailStatus(err?.message || "Could not claim", "err");
+        showChatToast("Claim failed", err?.message || "Could not claim");
       }
     }
 
@@ -8894,6 +9455,7 @@ service cloud.firestore {
       if (e) e.preventDefault();
       if (!currentUser) {
         setAppealFormStatus("Sign in to submit an appeal.", "err");
+        showChatToast("Appeal failed", "Sign in to submit an appeal.");
         return;
       }
       const reason = String(document.getElementById("appealReason")?.value || "other");
@@ -8903,32 +9465,58 @@ service cloud.firestore {
         setAppealFormStatus("Description is required.", "err");
         return;
       }
-      const now = new Date().toISOString();
-      const appeal = normalizeAppeal({
-        id: newAppealId(),
-        reason,
-        relatedId,
-        description,
-        status: "open",
-        submitterName: currentUser.name || currentUser.username,
-        submitterUsername: currentUser.username,
-        decisionNote: "",
-        createdAt: now,
-        updatedAt: now,
-      });
-      workspaceState.appeals = normalizeAppeals([appeal, ...(workspaceState.appeals || [])]);
-      workspaceState.updatedAt = now;
-      workspaceState.updatedBy = currentUser.name || currentUser.username;
-      pushActivity("Opened appeal: " + appealReasonLabel(reason));
-      persistWorkspace(true);
-      await pushAppealToFirestore(appeal);
-      document.getElementById("appealDesc").value = "";
-      document.getElementById("appealRelatedId").value = "";
-      setAppealFormStatus("Appeal submitted", "ok");
-      setAppealViewMode("active");
-      selectedAppealId = appeal.id;
-      setServiceMainTab("appeals");
-      openAppeal(appeal.id);
+      const btn = document.getElementById("appealSubmitBtn");
+      if (btn) btn.disabled = true;
+      setAppealFormStatus("Submitting appeal…");
+      try {
+        const now = new Date().toISOString();
+        const appeal = normalizeAppeal({
+          id: newAppealId(),
+          reason,
+          relatedId,
+          description,
+          status: "open",
+          submitterName: currentUser.name || currentUser.username,
+          submitterUsername: currentUser.username,
+          decisionNote: "",
+          createdAt: now,
+          updatedAt: now,
+        });
+        workspaceState.appeals = normalizeAppeals([appeal, ...(workspaceState.appeals || [])]);
+        workspaceState.updatedAt = now;
+        workspaceState.updatedBy = currentUser.name || currentUser.username;
+        pushActivity("Opened appeal: " + appealReasonLabel(reason));
+        persistWorkspace(true);
+        scheduleFirestorePush(true);
+        let syncWarning = null;
+        if (firebaseEnabled && firestoreDb) {
+          try {
+            await pushAppealToFirestore(appeal);
+          } catch (err) {
+            console.warn("Appeal cloud write failed", err);
+            syncWarning = err?.message || "Cloud appeal sync failed";
+          }
+        }
+        document.getElementById("appealDesc").value = "";
+        document.getElementById("appealRelatedId").value = "";
+        if (syncWarning) {
+          setAppealFormStatus("Appeal submitted locally — " + syncWarning, "err");
+          showChatToast("Appeal submitted", syncWarning);
+        } else {
+          setAppealFormStatus("Appeal submitted", "ok");
+          showChatToast("Appeal submitted", appealReasonLabel(reason));
+        }
+        setAppealViewMode("active");
+        selectedAppealId = appeal.id;
+        setServiceMainTab("appeals");
+        openAppeal(appeal.id);
+      } catch (err) {
+        console.error(err);
+        setAppealFormStatus(err?.message || "Could not submit appeal", "err");
+        showChatToast("Appeal failed", err?.message || "Could not submit appeal");
+      } finally {
+        if (btn) btn.disabled = false;
+      }
     }
 
     function setAppealFormStatus(textMsg, mode) {
@@ -8962,7 +9550,17 @@ service cloud.firestore {
       workspaceState.updatedBy = currentUser.name || currentUser.username;
       pushActivity("Updated appeal " + updated.id + " → " + status);
       persistWorkspace(true);
-      await pushAppealToFirestore(updated);
+      scheduleFirestorePush(true);
+      if (firebaseEnabled && firestoreDb) {
+        try {
+          await pushAppealToFirestore(updated);
+        } catch (err) {
+          console.warn("Appeal update cloud write failed", err);
+          setAppealDetailStatus(err?.message || "Cloud sync failed", "err");
+          showChatToast("Appeal update failed", err?.message || "Cloud sync failed");
+          return;
+        }
+      }
       setAppealDetailStatus(status === "archived" ? "Moved to appeals archive" : "Appeal updated", "ok");
       if (status === "archived") setAppealViewMode("archive");
       else setAppealViewMode("active");
@@ -9274,6 +9872,7 @@ service cloud.firestore {
     function applyPermissions() {
       const meta = getRole();
       if (!meta) return;
+      updateServiceNavLabel();
       document.getElementById("addRow").disabled = !meta.canEdit;
       document.getElementById("addParty").disabled = !meta.canEditSplit;
       document.getElementById("normalizeParties").disabled = !meta.canEditSplit;
@@ -9288,6 +9887,10 @@ service cloud.firestore {
       if (varOhPerUnitEl) varOhPerUnitEl.disabled = !meta.canEditBreakEven;
       inventoryBody.querySelectorAll("input").forEach((i) => (i.disabled = !meta.canEdit));
       inventoryBody.querySelectorAll("select.breakability").forEach((s) => (s.disabled = !meta.canEdit));
+      // Re-lock aggregate qty inputs on rows with color variants (the loop above re-enabled them).
+      inventoryBody.querySelectorAll("tr:not(.inv-media-panel-row)").forEach((tr) => {
+        if ((tr._variants || []).length) syncVariantAggregates(tr);
+      });
       inventoryBody.querySelectorAll(".remove-row").forEach((btn) => {
         btn.disabled = !meta.canEdit;
         btn.classList.toggle("hidden", !meta.canEdit);
@@ -9307,7 +9910,11 @@ service cloud.firestore {
       document.getElementById("dashBroadcastCard")?.classList.toggle("hidden", !canBroadcast);
       document.getElementById("teamBroadcastCard")?.classList.toggle("hidden", !canBroadcast);
       document.getElementById("broadcastClearBtn")?.classList.toggle("hidden", !canBroadcast);
-      document.getElementById("firebaseCard").classList.toggle("hidden", !meta.canManageSync && currentUser?.role !== "core");
+      // Firebase config manager is Core-only; everyone else gets a plain on/off line.
+      const showSyncManager = currentUser?.role === "core";
+      document.getElementById("firebaseCard").classList.toggle("hidden", !showSyncManager);
+      document.getElementById("syncSimpleCard")?.classList.toggle("hidden", showSyncManager);
+      updateSimpleSyncLine();
       const filterCard = document.getElementById("chatFilterCard");
       if (filterCard) {
         filterCard.classList.toggle("hidden", !canResolveTickets());
@@ -9355,12 +9962,17 @@ service cloud.firestore {
       tr.dataset.sold = String(item.sold);
       tr._photos = item.photos || [];
       tr._models = item.models || [];
+      tr._variants = item.variants || [];
       const canEdit = getRole()?.canEdit !== false;
       const photoN = (item.photos || []).length;
       const modelN = (item.models || []).length;
+      const hasVariants = (item.variants || []).length > 0;
       tr.innerHTML = `
         <td><input type="text" class="item-name" placeholder="Item name" value="${escapeHtml(item.name || "")}" ${canEdit ? "" : "disabled"} /></td>
-        <td><input type="number" class="qty" min="0" step="1" value="${item.qty}" ${canEdit ? "" : "disabled"} /></td>
+        <td>
+          <input type="number" class="qty" min="0" step="1" value="${item.qty}" ${canEdit && !hasVariants ? "" : "disabled"} ${hasVariants ? 'title="Total of color variants — edit colors in the Media panel"' : ""} />
+          <div class="color-chips" data-color-chips></div>
+        </td>
         <td><input type="number" class="cost" min="0" step="0.01" value="${item.cost}" ${canEdit ? "" : "disabled"} /></td>
         <td><input type="number" class="sell" min="0" step="0.01" value="${item.sell}" ${canEdit ? "" : "disabled"} /></td>
         <td>${breakabilitySelectHtml(item.breakability, canEdit)}</td>
@@ -9382,6 +9994,7 @@ service cloud.firestore {
       });
       tr.querySelector(".breakability")?.addEventListener("change", onInventoryChange);
       tr.querySelector(".inv-media-toggle")?.addEventListener("click", () => toggleItemMediaPanel(tr));
+      syncColorChips(tr);
       tr.querySelector(".remove-row").addEventListener("click", () => {
         if (!getRole()?.canEdit) return;
         const panel = tr.nextElementSibling;
@@ -9397,6 +10010,35 @@ service cloud.firestore {
     function mediaSrc(file) {
       if (!file) return "";
       return file.dataUrl || file.url || "";
+    }
+
+    function modelExt(name) {
+      const m = String(name || "").toLowerCase().match(/\.([a-z0-9]+)$/);
+      return m ? m[1] : "";
+    }
+
+    function isSupportedModelFile(name) {
+      return MODEL_EXTENSIONS.includes(modelExt(name));
+    }
+
+    function modelContentType(name) {
+      switch (modelExt(name)) {
+        case "glb": return "model/gltf-binary";
+        case "gltf": return "model/gltf+json";
+        case "stl": return "model/stl";
+        case "3mf": return "model/3mf";
+        case "obj": return "application/octet-stream";
+        default: return "application/octet-stream";
+      }
+    }
+
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result || ""));
+        r.onerror = () => reject(new Error("Could not read file"));
+        r.readAsDataURL(file);
+      });
     }
 
     function syncItemMediaCounts(tr) {
@@ -9419,7 +10061,70 @@ service cloud.firestore {
         breakability: tr.querySelector(".breakability")?.value,
         photos: tr._photos || [],
         models: tr._models || [],
+        variants: tr._variants || [],
       });
+    }
+
+    const PRESET_VARIANT_COLORS = [
+      "Black", "White", "Gray", "Red", "Blue", "Green",
+      "Purple", "Pink", "Orange", "Yellow", "Clear",
+    ];
+
+    function variantSwatchCss(colorName) {
+      const name = String(colorName || "").trim().toLowerCase();
+      if (name === "clear") return "linear-gradient(135deg, #cfd8e3 25%, #f4f7fb 50%, #cfd8e3 75%)";
+      try {
+        if (typeof CSS !== "undefined" && CSS.supports && CSS.supports("color", name)) return name;
+      } catch (_) {}
+      return "#5b6b82";
+    }
+
+    /**
+     * Push tr._variants back into the row: qty input (aggregate, locked) + chips.
+     * tr._variants may hold in-progress rows (empty color names) while editing;
+     * aggregates/chips/persistence use the normalized view.
+     */
+    function syncVariantAggregates(tr) {
+      const variants = normalizeColorVariants(tr._variants || []);
+      const qtyInput = tr.querySelector(".qty");
+      const canEdit = getRole()?.canEdit !== false;
+      if (qtyInput) {
+        if (variants.length) {
+          qtyInput.value = String(variantsTotalQty(variants));
+          qtyInput.disabled = true;
+          qtyInput.title = "Total of color variants — edit colors in the Media panel";
+        } else {
+          qtyInput.disabled = !canEdit;
+          qtyInput.removeAttribute("title");
+        }
+      }
+      syncColorChips(tr);
+    }
+
+    function syncColorChips(tr) {
+      const host = tr.querySelector("[data-color-chips]");
+      if (!host) return;
+      const variants = normalizeColorVariants(tr._variants || []);
+      if (!variants.length) {
+        host.innerHTML = "";
+        return;
+      }
+      host.innerHTML = variants
+        .map(
+          (v) =>
+            `<span class="color-chip" title="${escapeHtml(v.color)} — ${v.qty} in stock${v.sold ? ", " + v.sold + " sold" : ""}">
+              <i style="background:${variantSwatchCss(v.color)}"></i>${escapeHtml(v.color)} ×${v.qty}
+            </span>`
+        )
+        .join("");
+    }
+
+    function readVariantsFromPanel(panelRow) {
+      return [...panelRow.querySelectorAll("[data-variant-row]")].map((row) => ({
+        color: row.querySelector("[data-variant-color]")?.value || "",
+        qty: parseNum(row.querySelector("[data-variant-qty]")?.value),
+        sold: parseNum(row.getAttribute("data-variant-sold")),
+      }));
     }
 
     function persistItemMediaFromDom() {
@@ -9433,6 +10138,7 @@ service cloud.firestore {
       if (!firebaseEnabled || !file || typeof firebase === "undefined" || !firebase.storage) {
         return null;
       }
+      if (storageUploadsHealthy === false) return null;
       try {
         await ensureFirebaseAuth();
         const code = normalizeWorkspaceCode(workspaceId);
@@ -9444,14 +10150,21 @@ service cloud.firestore {
         const path =
           "workspaces/" + code + "/items/" + itemId + "/" + folder + "/" + id + "_" + safeName;
         const ref = firebase.storage().ref(path);
+        // For models, trust the extension mapping over the browser's guess (e.g. .obj
+        // can arrive as text/plain, which storage.rules would reject).
         const contentType =
-          file.type ||
-          (kind === "photo" ? "image/jpeg" : "model/gltf-binary");
+          kind === "photo" ? file.type || "image/jpeg" : modelContentType(file.name);
         await ref.put(file, { contentType });
         const url = await ref.getDownloadURL();
         ticketUrlCache.set(path, url);
+        storageUploadsHealthy = true;
+        storageFailureHint = "";
         return { path, url, id };
       } catch (err) {
+        if (storageErrorLooksFatal(err)) {
+          storageUploadsHealthy = false;
+          storageFailureHint = describeStorageFailure(err);
+        }
         console.warn("Item media upload failed", err);
         return null;
       }
@@ -9503,32 +10216,51 @@ service cloud.firestore {
 
     async function addModelToItemRow(tr, file) {
       if (!currentUser || !file) return;
-      const name = String(file.name || "").toLowerCase();
-      if (!name.endsWith(".glb") && !name.endsWith(".gltf")) {
-        alert("Please upload a .glb or .gltf file.");
+      if (!isSupportedModelFile(file.name)) {
+        alert("Please upload a 3D model file: " + MODEL_EXTENSIONS.map((e) => "." + e).join(", "));
         return;
       }
       const itemId = tr.dataset.itemId || newItemId();
       tr.dataset.itemId = itemId;
       const uploaded = await uploadItemMediaFile(itemId, "model", file);
+      let localDataUrl = null;
       if (!uploaded) {
+        // Storage unavailable — keep small models locally so they still preview on this device.
         if (file.size > MAX_LOCAL_MODEL_WARN_BYTES) {
           alert(
-            "3D models need Firebase Storage (file is " +
+            "3D models this large need Firebase Storage (file is " +
               Math.round(file.size / 1024 / 1024) +
-              " MB). Enable cloud sync + Storage, or use a smaller GLB."
+              " MB). Enable cloud sync + Storage, or use a smaller file."
           );
           return;
         }
-        alert("Could not upload model. Enable Firebase Storage to share 3D files across devices.");
-        return;
+        try {
+          const dataUrl = await fileToDataUrl(file);
+          if (dataUrl.length > MAX_ITEM_MODEL_CHARS) {
+            alert(
+              "Could not upload model and it is too large to keep locally (" +
+                Math.round(file.size / 1024) +
+                " KB). Enable Firebase Storage to store 3D files."
+            );
+            return;
+          }
+          localDataUrl = dataUrl;
+          alert(
+            "Firebase Storage unavailable — model saved on this device only. " +
+              "Enable Storage in Firebase Console to share 3D files across devices."
+          );
+        } catch (err) {
+          alert(err?.message || "Could not read model file.");
+          return;
+        }
       }
       const entry = normalizeMediaFile(
         {
-          id: uploaded.id,
+          id: uploaded?.id,
           name: file.name || "model.glb",
-          url: uploaded.url,
-          path: uploaded.path,
+          url: uploaded?.url || null,
+          path: uploaded?.path || null,
+          dataUrl: localDataUrl,
           size: file.size || 0,
           uploadedBy: currentUser.name || currentUser.username,
           uploadedByUsername: currentUser.username,
@@ -9575,23 +10307,59 @@ service cloud.firestore {
         : `<span class="note">No photos yet</span>`;
       const modelHtml = models.length
         ? models
-            .map(
-              (m) => `<div class="inv-model-card" data-model-id="${escapeHtml(m.id)}">
+            .map((m) => {
+              const ext = modelExt(m.name) || "3d";
+              const canPreview = !!(m.url || m.path || m.dataUrl);
+              const dl = m.url || m.dataUrl || "";
+              return `<div class="inv-model-card" data-model-id="${escapeHtml(m.id)}">
                 <div>
                   <strong>${escapeHtml(m.name)}</strong>
-                  <div class="note" style="margin:0">by ${escapeHtml(m.uploadedBy || "—")}</div>
+                  <div class="note" style="margin:0">
+                    <span class="inv-model-ext">${escapeHtml(ext.toUpperCase())}</span>
+                    by ${escapeHtml(m.uploadedBy || "—")}${canPreview ? "" : " · file on another device (no Storage)"}
+                  </div>
                 </div>
                 <div class="inv-model-actions">
-                  <button type="button" class="btn-ghost" data-view-model="${escapeHtml(m.id)}">View</button>
-                  ${m.url ? `<a class="btn-ghost" href="${escapeHtml(m.url)}" target="_blank" rel="noopener">Download</a>` : ""}
+                  ${canPreview ? `<button type="button" class="btn-ghost" data-view-model="${escapeHtml(m.id)}">View</button>` : ""}
+                  ${dl ? `<a class="btn-ghost" href="${escapeHtml(dl)}" download="${escapeHtml(m.name)}" target="_blank" rel="noopener">Download</a>` : ""}
                   ${canEdit ? `<button type="button" class="btn-ghost btn-danger" data-del-model="${escapeHtml(m.id)}">✕</button>` : ""}
                 </div>
-              </div>`
-            )
+              </div>`;
+            })
             .join("")
         : `<span class="note">No 3D models yet</span>`;
+      const variants = tr._variants || [];
+      const variantRowHtml = (v) => `
+        <div class="variant-row" data-variant-row data-variant-sold="${Math.max(0, Math.floor(parseNum(v.sold)))}">
+          <i class="variant-swatch" style="background:${variantSwatchCss(v.color)}"></i>
+          <input type="text" class="variant-color-input" data-variant-color value="${escapeHtml(v.color)}"
+            placeholder="Color name" maxlength="40" list="variantColorPresets" ${canEdit ? "" : "disabled"} />
+          <input type="number" class="variant-qty-input" data-variant-qty min="0" step="1"
+            value="${Math.max(0, Math.floor(parseNum(v.qty)))}" ${canEdit ? "" : "disabled"} />
+          <span class="note variant-sold-note">${parseNum(v.sold) > 0 ? "sold " + Math.floor(parseNum(v.sold)) : ""}</span>
+          ${canEdit ? `<button type="button" class="inv-media-del variant-del" data-del-variant title="Remove color">×</button>` : ""}
+        </div>`;
+      const variantsHtml = variants.length
+        ? variants.map(variantRowHtml).join("")
+        : `<span class="note" data-no-variants>No colors yet — plain quantity is used.</span>`;
+      const swatchButtons = PRESET_VARIANT_COLORS.map(
+        (c) =>
+          `<button type="button" class="variant-preset" data-add-variant-color="${escapeHtml(c)}" title="Add ${escapeHtml(c)}" ${canEdit ? "" : "disabled"}>
+            <i style="background:${variantSwatchCss(c)}"></i>${escapeHtml(c)}
+          </button>`
+      ).join("");
       panelRow.querySelector("td").innerHTML = `
         <div class="inv-media-panel">
+          <div class="inv-media-slot">
+            <h4>Colors</h4>
+            <div data-variant-list>${variantsHtml}</div>
+            ${canEdit ? `
+            <div class="variant-presets">${swatchButtons}
+              <button type="button" class="btn-ghost" data-add-variant-custom>+ Custom color</button>
+            </div>
+            <datalist id="variantColorPresets">${PRESET_VARIANT_COLORS.map((c) => `<option value="${escapeHtml(c)}"></option>`).join("")}</datalist>` : ""}
+            <p class="note" style="margin-top:0.35rem">Item quantity becomes the sum of color quantities. Sales then ask for a color and track sold per color.</p>
+          </div>
           <div class="inv-media-slot">
             <h4>Photos</h4>
             <div class="inv-media-gallery" data-photo-gallery>${photoHtml}</div>
@@ -9601,13 +10369,13 @@ service cloud.firestore {
             </label>
           </div>
           <div class="inv-media-slot">
-            <h4>3D models (GLB/GLTF)</h4>
+            <h4>3D models (GLB · GLTF · STL · 3MF · OBJ)</h4>
             <div data-model-list>${modelHtml}</div>
             <label class="btn-ghost" style="cursor:pointer;display:inline-flex;margin-top:0.35rem">
               Add model
-              <input type="file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json" hidden data-model-input ${canContribute ? "" : "disabled"} />
+              <input type="file" accept=".glb,.gltf,.stl,.3mf,.obj,model/gltf-binary,model/gltf+json,model/stl,model/3mf" hidden data-model-input ${canContribute ? "" : "disabled"} />
             </label>
-            <p class="note" style="margin-top:0.35rem">Uploads go to Firebase Storage when sync is on. Large models need cloud Storage.</p>
+            <p class="note" style="margin-top:0.35rem">All five formats preview in the 3D viewer. Uploads go to Firebase Storage when sync is on; without Storage, small files (≈300 KB) stay on this device only.</p>
           </div>
         </div>`;
       photos.forEach((p) => {
@@ -9649,6 +10417,60 @@ service cloud.firestore {
           if (m) openGlbViewer(m);
         });
       });
+
+      // Color variants editor
+      const applyVariantEdits = () => {
+        tr._variants = readVariantsFromPanel(panelRow);
+        syncVariantAggregates(tr);
+        recalculate();
+        scheduleSave("Updated color variants");
+      };
+      panelRow.querySelectorAll("[data-variant-color], [data-variant-qty]").forEach((inp) => {
+        inp.addEventListener("input", () => {
+          if (inp.hasAttribute("data-variant-color")) {
+            const sw = inp.closest("[data-variant-row]")?.querySelector(".variant-swatch");
+            if (sw) sw.style.background = variantSwatchCss(inp.value);
+          }
+          applyVariantEdits();
+        });
+      });
+      panelRow.querySelectorAll("[data-del-variant]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const row = btn.closest("[data-variant-row]");
+          const v = normalizeColorVariant({
+            color: row?.querySelector("[data-variant-color]")?.value,
+            sold: row?.getAttribute("data-variant-sold"),
+          });
+          if (v && v.sold > 0 && !confirm(`Remove color "${v.color}"? Its per-color sold history (${v.sold}) will be dropped.`)) {
+            return;
+          }
+          row?.remove();
+          applyVariantEdits();
+          refreshItemMediaPanel(tr);
+        });
+      });
+      const addVariantRow = (color) => {
+        const current = readVariantsFromPanel(panelRow);
+        if (
+          color &&
+          current.some((v) => String(v.color).trim().toLowerCase() === color.toLowerCase())
+        ) {
+          return;
+        }
+        tr._variants = [...current, { color: color || "", qty: 0, sold: 0 }];
+        syncVariantAggregates(tr);
+        refreshItemMediaPanel(tr);
+        const rows = panelRow.querySelectorAll("[data-variant-row]");
+        const last = rows[rows.length - 1];
+        (color
+          ? last?.querySelector("[data-variant-qty]")
+          : last?.querySelector("[data-variant-color]")
+        )?.focus();
+      };
+      panelRow.querySelectorAll("[data-add-variant-color]").forEach((btn) => {
+        btn.addEventListener("click", () => addVariantRow(btn.getAttribute("data-add-variant-color")));
+      });
+      panelRow.querySelector("[data-add-variant-custom]")?.addEventListener("click", () => addVariantRow(""));
     }
 
     function toggleItemMediaPanel(tr) {
@@ -9687,12 +10509,110 @@ service cloud.firestore {
       return modelViewerPromise;
     }
 
+    /** three.js modules for STL/3MF/OBJ preview, lazy-loaded from jsDelivr (+esm shares one three instance). */
+    let threeModulesPromise = null;
+    function loadThreeModules() {
+      if (threeModulesPromise) return threeModulesPromise;
+      const base = "https://cdn.jsdelivr.net/npm/three@0.160.1";
+      threeModulesPromise = Promise.all([
+        import(base + "/+esm"),
+        import(base + "/examples/jsm/controls/OrbitControls.js/+esm"),
+        import(base + "/examples/jsm/loaders/STLLoader.js/+esm"),
+        import(base + "/examples/jsm/loaders/3MFLoader.js/+esm"),
+        import(base + "/examples/jsm/loaders/OBJLoader.js/+esm"),
+      ]).then(([THREE, orbit, stl, mf, obj]) => ({
+        THREE,
+        OrbitControls: orbit.OrbitControls,
+        STLLoader: stl.STLLoader,
+        ThreeMFLoader: mf.ThreeMFLoader,
+        OBJLoader: obj.OBJLoader,
+      }));
+      threeModulesPromise.catch(() => {
+        threeModulesPromise = null;
+      });
+      return threeModulesPromise;
+    }
+
+    async function mountThreeViewer(host, url, ext) {
+      const { THREE, OrbitControls, STLLoader, ThreeMFLoader, OBJLoader } = await loadThreeModules();
+      let object;
+      const defaultMaterial = () =>
+        new THREE.MeshStandardMaterial({ color: 0x8fb4ff, metalness: 0.1, roughness: 0.65 });
+      if (ext === "stl") {
+        const geo = await new STLLoader().loadAsync(url);
+        geo.computeVertexNormals();
+        object = new THREE.Mesh(geo, defaultMaterial());
+      } else if (ext === "3mf") {
+        object = await new ThreeMFLoader().loadAsync(url);
+      } else {
+        object = await new OBJLoader().loadAsync(url);
+        object.traverse((o) => {
+          if (o.isMesh && (!o.material || (Array.isArray(o.material) && !o.material.length))) {
+            o.material = defaultMaterial();
+          }
+        });
+      }
+
+      const group = new THREE.Group();
+      // STL/3MF are typically authored Z-up; rotate to three's Y-up so models sit upright.
+      if (ext === "stl" || ext === "3mf") object.rotation.x = -Math.PI / 2;
+      group.add(object);
+      const box = new THREE.Box3().setFromObject(group);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      group.position.sub(center);
+      const maxDim = Math.max(size.x, size.y, size.z) || 1;
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a0e14);
+      scene.add(group);
+      scene.add(new THREE.HemisphereLight(0xffffff, 0x223044, 1.1));
+      const dir = new THREE.DirectionalLight(0xffffff, 1.6);
+      dir.position.set(1, 2, 1.5);
+      scene.add(dir);
+
+      const w = host.clientWidth || 600;
+      const h = host.clientHeight || 400;
+      const camera = new THREE.PerspectiveCamera(50, w / h, maxDim / 100, maxDim * 100);
+      camera.position.set(maxDim * 1.1, maxDim * 0.8, maxDim * 1.4);
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(window.devicePixelRatio || 1);
+      renderer.setSize(w, h);
+      host.innerHTML = "";
+      host.appendChild(renderer.domElement);
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 1.5;
+
+      let disposed = false;
+      const tick = () => {
+        if (disposed) return;
+        if (!document.body.contains(renderer.domElement)) {
+          disposed = true;
+          try { renderer.dispose(); } catch (_) {}
+          return;
+        }
+        controls.update();
+        renderer.render(scene, camera);
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }
+
     async function openGlbViewer(model) {
-      const url = model.url || (model.path ? await resolveStorageDownloadUrl(model.path) : "");
+      const url =
+        model.url ||
+        model.dataUrl ||
+        (model.path ? await resolveStorageDownloadUrl(model.path) : "");
       if (!url) {
-        alert("Model URL unavailable.");
+        alert(
+          "Model file unavailable on this device. It was saved without Firebase Storage — " +
+            "the file only exists on the uploader's device."
+        );
         return;
       }
+      const ext = modelExt(model.name);
       document.getElementById("glbViewerOverlay")?.remove();
       const overlay = document.createElement("div");
       overlay.className = "glb-viewer-overlay";
@@ -9701,7 +10621,7 @@ service cloud.firestore {
         <div class="glb-viewer-panel">
           <header>
             <strong>${escapeHtml(model.name || "3D model")}</strong>
-            <a class="btn-ghost" href="${escapeHtml(url)}" target="_blank" rel="noopener">Download</a>
+            <a class="btn-ghost" href="${escapeHtml(url)}" download="${escapeHtml(model.name || "model")}" target="_blank" rel="noopener">Download</a>
             <button type="button" class="btn-ghost" id="glbViewerClose">Close</button>
           </header>
           <div class="glb-viewer-canvas-host" id="glbViewerHost"><p class="note" style="padding:1rem">Loading viewer…</p></div>
@@ -9714,21 +10634,26 @@ service cloud.firestore {
       overlay.querySelector("#glbViewerClose")?.addEventListener("click", close);
       const host = overlay.querySelector("#glbViewerHost");
       try {
-        await loadModelViewer();
-        host.innerHTML = "";
-        const mv = document.createElement("model-viewer");
-        mv.setAttribute("src", url);
-        mv.setAttribute("camera-controls", "");
-        mv.setAttribute("auto-rotate", "");
-        mv.setAttribute("shadow-intensity", "0.6");
-        mv.style.width = "100%";
-        mv.style.height = "100%";
-        mv.style.background = "#0a0e14";
-        host.appendChild(mv);
+        if (ext === "stl" || ext === "3mf" || ext === "obj") {
+          await mountThreeViewer(host, url, ext);
+        } else {
+          await loadModelViewer();
+          host.innerHTML = "";
+          const mv = document.createElement("model-viewer");
+          mv.setAttribute("src", url);
+          mv.setAttribute("camera-controls", "");
+          mv.setAttribute("auto-rotate", "");
+          mv.setAttribute("shadow-intensity", "0.6");
+          mv.style.width = "100%";
+          mv.style.height = "100%";
+          mv.style.background = "#0a0e14";
+          host.appendChild(mv);
+        }
       } catch (err) {
         host.innerHTML =
-          `<p class="note" style="padding:1rem">Viewer unavailable. <a href="${escapeHtml(url)}" target="_blank" rel="noopener">Download GLB</a></p>`;
-        console.warn(err);
+          `<p class="note" style="padding:1rem">Viewer failed to load this ${escapeHtml((ext || "3D").toUpperCase())} file. ` +
+          `<a href="${escapeHtml(url)}" download="${escapeHtml(model.name || "model")}" target="_blank" rel="noopener">Download it</a> instead.</p>`;
+        console.warn("3D preview failed", err);
       }
     }
 
@@ -9760,6 +10685,7 @@ service cloud.firestore {
           lineProfit < 0 ? "var(--danger)" : lineProfit > 0 ? "var(--success)" : "";
         return {
           name,
+          variants: normalizeColorVariants(tr._variants || []),
           qty,
           cost,
           sell,
@@ -10115,11 +11041,34 @@ service cloud.firestore {
               const stock = r.qty;
               const disabled = !canSell || stock <= 0;
               const maxAttr = stock > 0 ? `max="${stock}"` : "";
+              const hasVariants = (r.variants || []).length > 0;
+              const variantChips = hasVariants
+                ? `<div class="sell-variant-chips">${r.variants
+                    .map(
+                      (v) =>
+                        `<span class="color-chip" title="${escapeHtml(v.color)}: ${v.qty} in stock, ${v.sold} sold"><i style="background:${variantSwatchCss(v.color)}"></i>${escapeHtml(v.color)} ×${v.qty}</span>`
+                    )
+                    .join("")}</div>`
+                : "";
+              const soldTitle = hasVariants
+                ? r.variants.filter((v) => v.sold > 0).map((v) => `${v.color}: ${v.sold}`).join(", ")
+                : "";
+              const colorSelect = hasVariants
+                ? `<select class="sell-color-select" aria-label="Color sold for ${escapeHtml(r.name)}" ${!canSell ? "disabled" : ""}>
+                    <option value="">Color…</option>
+                    ${r.variants
+                      .map(
+                        (v) =>
+                          `<option value="${escapeHtml(v.color)}" ${v.qty <= 0 ? "disabled" : ""}>${escapeHtml(v.color)} (${v.qty} left)</option>`
+                      )
+                      .join("")}
+                  </select>`
+                : "";
               return `<tr data-row-idx="${idx}">
-                <td>${escapeHtml(r.name)}</td>
+                <td>${escapeHtml(r.name)}${variantChips}</td>
                 <td>${escapeHtml(formatBreakability(r.breakability))}</td>
                 <td class="num">${stock.toLocaleString()}</td>
-                <td class="num">${r.sold.toLocaleString()}</td>
+                <td class="num" ${soldTitle ? `title="${escapeHtml(soldTitle)}"` : ""}>${r.sold.toLocaleString()}</td>
                 <td class="num">${fmt(r.sell)}</td>
                 <td class="num">${fmt(r.soldRevenue)}</td>
                 <td class="num" style="color:${
@@ -10131,6 +11080,7 @@ service cloud.firestore {
                 }">${fmt(r.soldProfit)}</td>
                 <td>
                   <div class="sell-now-cell">
+                    ${colorSelect}
                     <input type="number" class="sell-now-qty" min="1" step="1" ${maxAttr}
                       value="${stock > 0 ? 1 : 0}" ${disabled ? "disabled" : ""}
                       aria-label="Quantity to sell for ${escapeHtml(r.name)}" />
@@ -10143,26 +11093,41 @@ service cloud.firestore {
             .join("")
         : `<tr><td colspan="10" class="note">No inventory items yet. Add items on the Inventory page.</td></tr>`;
 
+      const validateSellRow = (row) => {
+        const idx = Number(row?.dataset.rowIdx);
+        const stockRow = metrics.rows[idx];
+        const btn = row?.querySelector(".sell-record-btn");
+        const input = row?.querySelector(".sell-now-qty");
+        if (!stockRow || !btn || !input) return;
+        const n = Math.floor(parseNum(input.value));
+        const colorSel = row.querySelector(".sell-color-select");
+        const hasVariants = (stockRow.variants || []).length > 0;
+        const color = colorSel ? colorSel.value : "";
+        const variant = hasVariants
+          ? stockRow.variants.find((v) => v.color === color)
+          : null;
+        const cap = hasVariants ? (variant ? variant.qty : 0) : stockRow.qty;
+        let err = "";
+        if (!canSell) {
+          err = "Read-only: your role cannot record sales (needs Edit inventory).";
+        } else if (hasVariants && !color) {
+          err = `Pick a color for ${stockRow.name} before recording the sale.`;
+        } else if (n <= 0) {
+          err = "Enter a sold quantity of at least 1.";
+        } else if (n > cap) {
+          err = hasVariants
+            ? `Cannot sell ${n} × ${stockRow.name} (${color}) — only ${cap} in stock for that color.`
+            : `Cannot sell ${n} of ${stockRow.name} — only ${cap} in stock.`;
+        }
+        btn.disabled = !!err || !canSell;
+        setSellError(err);
+      };
+
       body.querySelectorAll(".sell-now-qty").forEach((input) => {
-        input.addEventListener("input", () => {
-          const row = input.closest("tr");
-          const idx = Number(row?.dataset.rowIdx);
-          const stockRow = metrics.rows[idx];
-          const btn = row?.querySelector(".sell-record-btn");
-          if (!stockRow || !btn) return;
-          const n = Math.floor(parseNum(input.value));
-          const ok = canSell && n > 0 && n <= stockRow.qty;
-          btn.disabled = !ok;
-          if (!canSell) {
-            setSellError("Read-only: your role cannot record sales (needs Edit inventory).");
-          } else if (n > stockRow.qty) {
-            setSellError(`Cannot sell ${n} of ${stockRow.name} — only ${stockRow.qty} in stock.`);
-          } else if (n <= 0) {
-            setSellError("Enter a sold quantity of at least 1.");
-          } else {
-            setSellError("");
-          }
-        });
+        input.addEventListener("input", () => validateSellRow(input.closest("tr")));
+      });
+      body.querySelectorAll(".sell-color-select").forEach((sel) => {
+        sel.addEventListener("change", () => validateSellRow(sel.closest("tr")));
       });
 
       body.querySelectorAll(".sell-record-btn").forEach((btn) => {
@@ -10170,7 +11135,8 @@ service cloud.firestore {
           const idx = Number(btn.getAttribute("data-row-idx"));
           const row = btn.closest("tr");
           const input = row?.querySelector(".sell-now-qty");
-          recordSale(idx, input ? parseNum(input.value) : 0);
+          const colorSel = row?.querySelector(".sell-color-select");
+          recordSale(idx, input ? parseNum(input.value) : 0, colorSel ? colorSel.value : "");
         });
       });
 
@@ -10268,7 +11234,7 @@ service cloud.firestore {
       workspaceState.dailySales = normalizeDailySales(list);
     }
 
-    function recordSale(rowIdx, amount) {
+    function recordSale(rowIdx, amount, color = "") {
       if (!getRole()?.canEdit) {
         setSellError("You do not have permission to record sales.");
         return;
@@ -10288,19 +11254,47 @@ service cloud.firestore {
         setSellError("Enter a sold quantity of at least 1.");
         return;
       }
-      if (n > qty) {
+      const variants = normalizeColorVariants(tr._variants || []);
+      let variant = null;
+      if (variants.length) {
+        const wanted = String(color || "").trim();
+        if (!wanted) {
+          setSellError(`Pick a color for ${name} before recording the sale.`);
+          return;
+        }
+        variant = variants.find((v) => v.color.toLowerCase() === wanted.toLowerCase());
+        if (!variant) {
+          setSellError(`Color "${wanted}" not found on ${name}.`);
+          return;
+        }
+        if (n > variant.qty) {
+          setSellError(`Cannot sell ${n} × ${name} (${variant.color}) — only ${variant.qty} in stock for that color.`);
+          return;
+        }
+        variant.qty -= n;
+        variant.sold += n;
+        tr._variants = variants;
+      } else if (n > qty) {
         setSellError(`Cannot sell ${n} of ${name} — only ${qty} in stock.`);
         return;
       }
       const saleDate = todayISODate();
       const prevSold = Math.max(0, parseNum(tr.dataset.sold));
-      tr.querySelector(".qty").value = String(qty - n);
+      if (variants.length) {
+        tr.querySelector(".qty").value = String(variantsTotalQty(variants));
+        syncColorChips(tr);
+        const panel = tr.nextElementSibling;
+        if (panel && panel.classList.contains("inv-media-panel-row")) refreshItemMediaPanel(tr);
+      } else {
+        tr.querySelector(".qty").value = String(qty - n);
+      }
       tr.dataset.sold = String(prevSold + n);
       upsertDailySaleUnits({ itemName: name, date: saleDate, qty: n, sell, cost });
       pushSellUndo({
         rowDomId: tr.dataset.id,
         rowIdx,
         name,
+        color: variant ? variant.color : "",
         qty: n,
         sell,
         cost,
@@ -10308,7 +11302,7 @@ service cloud.firestore {
         at: new Date().toISOString(),
       });
       setSellError("");
-      scheduleSave(`Sold ${n} × ${name}`);
+      scheduleSave(`Sold ${n} × ${name}` + (variant ? ` (${variant.color})` : ""));
       recalculate();
     }
 
@@ -10323,7 +11317,7 @@ service cloud.firestore {
         return;
       }
       const entry = sellUndoStack[sellUndoStack.length - 1];
-      const label = `${entry.qty} × ${entry.name || "item"}`;
+      const label = `${entry.qty} × ${entry.name || "item"}` + (entry.color ? ` (${entry.color})` : "");
       if (!confirm(`Undo last sale of ${label}? Stock and sold totals will be restored for that action.`)) {
         return;
       }
@@ -10345,7 +11339,26 @@ service cloud.firestore {
       const qty = parseNum(tr.querySelector(".qty").value);
       const prevSold = Math.max(0, parseNum(tr.dataset.sold));
       const restore = Math.min(n, prevSold);
-      tr.querySelector(".qty").value = String(qty + restore);
+      const variants = normalizeColorVariants(tr._variants || []);
+      if (variants.length && entry.color) {
+        // Variant-aware undo: put units back on the color they were sold from.
+        const wanted = String(entry.color).trim().toLowerCase();
+        let variant = variants.find((v) => v.color.toLowerCase() === wanted);
+        if (variant) {
+          variant.qty += restore;
+          variant.sold = Math.max(0, variant.sold - restore);
+        } else {
+          // Color was renamed/removed since the sale — recreate it so totals stay right.
+          variants.push({ color: String(entry.color).trim().slice(0, 40), qty: restore, sold: 0 });
+        }
+        tr._variants = variants;
+        tr.querySelector(".qty").value = String(variantsTotalQty(variants));
+        syncColorChips(tr);
+        const panel = tr.nextElementSibling;
+        if (panel && panel.classList.contains("inv-media-panel-row")) refreshItemMediaPanel(tr);
+      } else {
+        tr.querySelector(".qty").value = String(qty + restore);
+      }
       tr.dataset.sold = String(Math.max(0, prevSold - restore));
       decrementDailySaleUnits({
         itemName: entry.name || tr.querySelector(".item-name").value.trim(),
@@ -10390,8 +11403,27 @@ service cloud.firestore {
       rows.forEach((tr) => {
         const sold = Math.max(0, parseNum(tr.dataset.sold));
         if (sold <= 0) return;
-        const qty = parseNum(tr.querySelector(".qty").value);
-        tr.querySelector(".qty").value = String(qty + sold);
+        const variants = normalizeColorVariants(tr._variants || []);
+        if (variants.length) {
+          // Restore each color's sold units to its own stock; any remainder
+          // (sales recorded before variants existed) goes to the first color.
+          let restoredViaVariants = 0;
+          variants.forEach((v) => {
+            v.qty += v.sold;
+            restoredViaVariants += v.sold;
+            v.sold = 0;
+          });
+          const remainder = Math.max(0, sold - restoredViaVariants);
+          if (remainder > 0 && variants[0]) variants[0].qty += remainder;
+          tr._variants = variants;
+          tr.querySelector(".qty").value = String(variantsTotalQty(variants));
+          syncColorChips(tr);
+          const panel = tr.nextElementSibling;
+          if (panel && panel.classList.contains("inv-media-panel-row")) refreshItemMediaPanel(tr);
+        } else {
+          const qty = parseNum(tr.querySelector(".qty").value);
+          tr.querySelector(".qty").value = String(qty + sold);
+        }
         tr.dataset.sold = "0";
       });
       clearSellUndoStack();
@@ -12474,6 +13506,7 @@ service cloud.firestore {
     });
 
     document.getElementById("saveFirebaseConfigBtn").addEventListener("click", async () => {
+      if (!canSeeSyncInternals()) return;
       const status = document.getElementById("firebaseConfigStatus");
       const ta = document.getElementById("firebaseConfigJson");
       status.style.color = "";
@@ -12529,6 +13562,7 @@ service cloud.firestore {
     });
 
     document.getElementById("disableFirebaseBtn").addEventListener("click", () => {
+      if (!canSeeSyncInternals()) return;
       const prefs = readFirebaseLocalPrefs();
       const cfg = prefs?.config || embeddedFirebaseConfig() || {};
       saveFirebaseConfigStored(cfg, false);
