@@ -22,12 +22,14 @@
       --sidebar: 220px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { color-scheme: dark; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.5;
       min-height: 100vh;
+      color-scheme: dark;
     }
     body.login-mode {
       display: flex;
@@ -322,7 +324,9 @@
     }
     td.num, th.num { text-align: right; }
 
-    input[type="text"], input[type="number"], input[type="password"], textarea {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]):not([type="hidden"]),
+    select,
+    textarea {
       width: 100%;
       min-width: 70px;
       background: var(--surface-2);
@@ -332,14 +336,52 @@
       padding: 0.45rem 0.55rem;
       font: inherit;
       font-size: 0.9rem;
+      color-scheme: dark;
     }
-    input:focus, textarea:focus {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]):not([type="hidden"]):focus,
+    select:focus,
+    textarea:focus {
       outline: none;
       border-color: var(--accent);
       box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
     }
-    input:disabled, textarea:disabled, select:disabled { opacity: 0.7; cursor: not-allowed; }
+    input:disabled,
+    textarea:disabled,
+    select:disabled { opacity: 0.7; cursor: not-allowed; }
     input[type="number"] { text-align: right; }
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"],
+    input[type="month"],
+    input[type="week"] {
+      color-scheme: dark;
+      min-height: 2.35rem;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator,
+    input[type="time"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.85);
+      opacity: 0.85;
+      cursor: pointer;
+    }
+    input[type="checkbox"],
+    input[type="radio"] {
+      width: auto;
+      min-width: 0;
+      accent-color: var(--accent);
+      color-scheme: dark;
+    }
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238b9cb3' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.65rem center;
+      padding-right: 1.75rem;
+    }
+    option,
+    optgroup {
+      background: var(--surface-2);
+      color: var(--text);
+    }
     .item-name { min-width: 130px; }
     .breakability {
       min-width: 8.5rem;
@@ -560,6 +602,139 @@
       margin: 0;
       font-size: 0.82rem;
       color: var(--muted);
+    }
+    .sell-enter-mode {
+      margin: 1rem 0;
+      padding: 1.35rem 1.25rem;
+      text-align: center;
+      background: linear-gradient(160deg, rgba(59, 130, 246, 0.18), rgba(15, 20, 28, 0.35));
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      border-radius: var(--radius);
+    }
+    .sell-enter-mode p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 0 auto 0.85rem;
+      max-width: 36rem;
+    }
+    .sell-enter-mode .btn-primary {
+      font-size: 1.05rem;
+      padding: 0.75rem 1.5rem;
+      font-weight: 700;
+    }
+    .sell-mode-panel { margin-bottom: 1rem; }
+    .sell-mode-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .sell-mode-header h2 { margin: 0; font-size: 1.15rem; }
+    .sell-mode-form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.85rem;
+      align-items: end;
+      margin-bottom: 0.85rem;
+    }
+    .sell-mode-form .field { margin: 0; }
+    .sell-mode-confirm {
+      grid-column: 1 / -1;
+      justify-self: start;
+      font-size: 1rem;
+      padding: 0.65rem 1.25rem;
+      font-weight: 700;
+    }
+    .sell-success {
+      color: var(--success);
+      font-size: 0.9rem;
+      min-height: 1.3em;
+      margin: 0 0 0.75rem;
+      font-weight: 600;
+    }
+    .sell-session-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      padding: 0.65rem 0.75rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .sell-session-strip strong { color: var(--text); }
+    .sell-session-log {
+      list-style: none;
+      max-height: 180px;
+      overflow: auto;
+      margin: 0 0 0.75rem;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(15, 20, 28, 0.4);
+    }
+    .sell-session-log li {
+      padding: 0.45rem 0.7rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+    .sell-session-log li:last-child { border-bottom: none; }
+    .sell-day-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 130;
+      background: rgba(0, 0, 0, 0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .sell-day-panel {
+      width: min(560px, 100%);
+      max-height: min(90vh, 720px);
+      overflow: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 1.15rem 1.25rem 1.35rem;
+    }
+    .sell-day-panel header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.85rem;
+    }
+    .sell-day-panel header h2 { margin: 0; font-size: 1.2rem; }
+    .sell-day-kpis {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.55rem;
+      margin-bottom: 1rem;
+    }
+    .sell-day-kpis .stat { padding: 0.55rem 0.65rem; }
+    .sell-day-breakdown { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .sell-day-breakdown th,
+    .sell-day-breakdown td {
+      padding: 0.4rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    .sell-day-breakdown th.num,
+    .sell-day-breakdown td.num { text-align: right; }
+    .sell-overview-totals {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.75rem;
+      margin-top: 1rem;
     }
     .batch-formula {
       color: var(--muted);
@@ -1727,8 +1902,44 @@
     }
     .variant-swatch { width: 14px; height: 14px; }
     .variant-color-input { flex: 1; min-width: 90px; }
+    .variant-multi-label {
+      flex: 1;
+      min-width: 90px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+    }
     .variant-qty-input { width: 70px; }
     .variant-sold-note { margin: 0; font-size: 0.65rem; white-space: nowrap; }
+    .multicolor-picker {
+      margin-top: 0.55rem;
+      padding: 0.65rem 0.75rem;
+      background: rgba(15, 20, 28, 0.55);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .multicolor-picker .field-hint { margin-bottom: 0.45rem; }
+    .multicolor-checks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.65rem;
+      margin-bottom: 0.5rem;
+    }
+    .multicolor-checks label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.75rem;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .multicolor-checks input { width: auto; min-width: 0; accent-color: var(--accent); }
+    .multicolor-picker-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.45rem;
+    }
     .variant-row .variant-del {
       position: static;
       border: none;
@@ -2397,7 +2608,7 @@
           </div>
           <div class="dash-actions">
             <button type="button" class="btn-primary" data-goto="inventory">Open inventory</button>
-            <button type="button" class="btn-ghost" data-goto="sell">Record sales</button>
+            <button type="button" class="btn-ghost" data-goto="sell">Sales</button>
             <button type="button" class="btn-ghost" data-goto="batch">Next batch</button>
             <button type="button" class="btn-ghost" data-goto="equity" id="dashGotoEquity">Equity split</button>
             <button type="button" class="btn-ghost" data-goto="team">Team &amp; sync</button>
@@ -2483,107 +2694,125 @@
 
       <section class="page hidden" id="page-sell">
         <h1 class="page-title">Sales</h1>
-        <p class="page-sub">Record units sold — each sale also logs today’s units for Next batch and the revenue chart. Stock drops by the amount sold.</p>
-        <div class="kpi-grid">
-          <div class="stat"><label>Gross sales revenue</label><div class="value" id="sellGrossRev">$0.00</div></div>
-          <div class="stat"><label>Units sold</label><div class="value" id="sellUnitsSold">0</div></div>
-          <div class="stat"><label>Sales profit (after fixed + sales overhead)</label><div class="value" id="sellProfitVal">$0.00</div></div>
-          <div class="stat"><label>Stock on hand</label><div class="value" id="sellStockOnHand">0</div></div>
-        </div>
-        <div class="card" id="sellOverheadCard" style="margin-top:1rem">
-          <h2>Sales overhead</h2>
-          <p class="sell-method-note" id="sellOverheadNote">
-            Overhead to recover is paid from sales as units sell. Paid and remaining are derived from current sold totals (undo/reset recalculate automatically).
-          </p>
-          <div class="summary-grid">
-            <div class="stat"><label>Overhead to recover</label><div class="value" id="sellOhTotal">$0.00</div></div>
-            <div class="stat"><label>Paid from sales</label><div class="value" id="sellOhPaid">$0.00</div></div>
-            <div class="stat"><label>Remaining</label><div class="value" id="sellOhRemaining">$0.00</div></div>
+        <p class="page-sub" id="sellPageSub">Overview of revenue, profit, and equity. Enter sales mode to ring up units — each sale updates stock, sold totals, and today’s Next batch log.</p>
+
+        <div id="sellOverviewPanel">
+          <div class="kpi-grid">
+            <div class="stat"><label>Gross sales revenue</label><div class="value" id="sellGrossRev">$0.00</div></div>
+            <div class="stat"><label>Units sold</label><div class="value" id="sellUnitsSold">0</div></div>
+            <div class="stat"><label>Sales profit (after fixed + sales overhead)</label><div class="value" id="sellProfitVal">$0.00</div></div>
+            <div class="stat"><label>Stock on hand</label><div class="value" id="sellStockOnHand">0</div></div>
           </div>
-        </div>
-        <div class="sell-toolbar" id="sellToolbar" role="toolbar" aria-label="Sales actions">
-          <span class="sell-toolbar-label">Sales actions</span>
-          <div class="sell-actions">
-            <button type="button" class="btn-sell-action" id="undoSaleBtn" disabled title="Undo the last recorded sale">
-              Undo last sale
-            </button>
-            <button type="button" class="btn-sell-action btn-danger" id="resetSalesBtn" disabled title="Reset all sold counts and restore stock">
-              Reset all sales
-            </button>
+          <div class="card" id="sellOverheadCard" style="margin-top:1rem">
+            <h2>Sales overhead</h2>
+            <p class="sell-method-note" id="sellOverheadNote">
+              Overhead to recover is paid from sales as units sell. Paid and remaining are derived from current sold totals (undo/reset recalculate automatically).
+            </p>
+            <div class="summary-grid">
+              <div class="stat"><label>Overhead to recover</label><div class="value" id="sellOhTotal">$0.00</div></div>
+              <div class="stat"><label>Paid from sales</label><div class="value" id="sellOhPaid">$0.00</div></div>
+              <div class="stat"><label>Remaining</label><div class="value" id="sellOhRemaining">$0.00</div></div>
+            </div>
           </div>
-          <p class="sell-viewer-note hidden" id="sellViewerNote">View only — Edit inventory permission is required to record, undo, or reset sales.</p>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <h2>Record sales</h2>
+          <div class="sell-toolbar" id="sellToolbar" role="toolbar" aria-label="Sales actions">
+            <span class="sell-toolbar-label">Sales actions</span>
+            <div class="sell-actions">
+              <button type="button" class="btn-sell-action" id="undoSaleBtn" disabled title="Undo the last recorded sale">
+                Undo last sale
+              </button>
+              <button type="button" class="btn-sell-action btn-danger" id="resetSalesBtn" disabled title="Reset all sold counts and restore stock">
+                Reset all sales
+              </button>
+            </div>
+            <p class="sell-viewer-note hidden" id="sellViewerNote">View only — Edit inventory permission is required to record, undo, or reset sales.</p>
           </div>
-          <p class="sell-error" id="sellError" aria-live="polite"></p>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Breakability</th>
-                  <th class="num">Stock</th>
-                  <th class="num">Sold total</th>
-                  <th class="num">Sell / unit</th>
-                  <th class="num">Line revenue</th>
-                  <th class="num">Line profit</th>
-                  <th class="num">Sold now</th>
-                </tr>
-              </thead>
-              <tbody id="sellBody"></tbody>
-            </table>
+          <div class="sell-enter-mode" id="sellEnterMode">
+            <p>Ready to sell? Open sales mode to pick an item (and color), confirm each sale, then end the day for a summary.</p>
+            <button type="button" class="btn-primary" id="enterSalesModeBtn">Enter sales mode</button>
           </div>
-          <div class="summary-grid" style="margin-top:1rem">
+          <div class="card" id="sellChartCard">
+            <div class="card-header">
+              <h2 id="salesChartTitle">Revenue</h2>
+            </div>
+            <div class="chart-range-bar" id="salesChartRanges" role="tablist" aria-label="Chart time range">
+              <button type="button" class="chart-range-btn" data-range="day">Day</button>
+              <button type="button" class="chart-range-btn active" data-range="month">Month</button>
+              <button type="button" class="chart-range-btn" data-range="ytd">YTD</button>
+              <button type="button" class="chart-range-btn" data-range="year">Year</button>
+              <button type="button" class="chart-range-btn" data-range="all">All</button>
+            </div>
+            <p class="batch-formula" id="salesChartHint">Month: one bar per day in the current month.</p>
+            <div class="chart-kpis">
+              <div class="stat"><label>Revenue in range</label><div class="value" id="salesChartRev">$0.00</div></div>
+              <div class="stat"><label>Units in range</label><div class="value" id="salesChartUnits">0</div></div>
+              <div class="stat"><label>Days with sales</label><div class="value" id="salesChartDays">0</div></div>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="salesChartCanvas" aria-label="Sales revenue bar chart"></canvas>
+            </div>
+            <p class="chart-empty hidden" id="salesChartEmpty">No daily sales in this range yet. Record a sale in sales mode (or log a day on Next batch).</p>
+          </div>
+          <div class="card" id="sellEquityCard">
+            <h2>Equity from sales</h2>
+            <p class="sell-method-note" id="sellMethodNote">
+              Sales profit = sold margin − sales overhead paid − allocated fixed costs.
+              Sales overhead pays down a recover budget from sales (margin, % of revenue, or $ / unit).
+              Fixed costs use sold-unit share: fixed × soldUnits / (soldUnits + stock).
+              Foundation takes its cut from sales profit first; remaining parties split the rest.
+            </p>
+            <p class="equity-remainder-note" id="sellEquityNote"></p>
+            <div class="party-grid" id="sellEquityPayments"></div>
+          </div>
+          <div class="summary-grid sell-overview-totals">
             <div class="stat"><label>Gross sales revenue</label><div class="value" id="sellTotalRev">$0.00</div></div>
             <div class="stat"><label>Sold margin (before overhead)</label><div class="value" id="sellTotalMargin">$0.00</div></div>
             <div class="stat"><label>Sales overhead paid</label><div class="value" id="sellAllocOh">$0.00</div></div>
             <div class="stat"><label>Allocated fixed costs</label><div class="value" id="sellAllocFixed">$0.00</div></div>
           </div>
         </div>
-        <div class="card" id="sellChartCard">
-          <div class="card-header">
-            <h2 id="salesChartTitle">Revenue</h2>
+
+        <div class="card sell-mode-panel hidden" id="sellModePanel">
+          <div class="sell-mode-header">
+            <h2>Sales mode</h2>
+            <div class="sell-actions">
+              <button type="button" class="btn-sell-action" id="undoSaleBtnMode" disabled title="Undo the last recorded sale">Undo last sale</button>
+              <button type="button" class="btn-primary" id="endSalesDayBtn">End sales day</button>
+            </div>
           </div>
-          <div class="chart-range-bar" id="salesChartRanges" role="tablist" aria-label="Chart time range">
-            <button type="button" class="chart-range-btn" data-range="day">Day</button>
-            <button type="button" class="chart-range-btn active" data-range="month">Month</button>
-            <button type="button" class="chart-range-btn" data-range="ytd">YTD</button>
-            <button type="button" class="chart-range-btn" data-range="year">Year</button>
-            <button type="button" class="chart-range-btn" data-range="all">All</button>
+          <p class="sell-error" id="sellError" aria-live="polite"></p>
+          <p class="sell-success" id="sellSuccess" aria-live="polite"></p>
+          <div class="sell-mode-form" id="sellModeForm">
+            <div class="field">
+              <label for="sellModeItem">Item</label>
+              <select id="sellModeItem"></select>
+            </div>
+            <div class="field hidden" id="sellModeColorField">
+              <label for="sellModeColor">Color / print</label>
+              <select id="sellModeColor"></select>
+            </div>
+            <div class="field">
+              <label for="sellModeQty">Quantity</label>
+              <input type="number" id="sellModeQty" min="1" step="1" value="1" />
+            </div>
+            <button type="button" class="btn-primary sell-mode-confirm" id="confirmSaleBtn">Confirm sale</button>
           </div>
-          <p class="batch-formula" id="salesChartHint">Month: one bar per day in the current month.</p>
-          <div class="chart-kpis">
-            <div class="stat"><label>Revenue in range</label><div class="value" id="salesChartRev">$0.00</div></div>
-            <div class="stat"><label>Units in range</label><div class="value" id="salesChartUnits">0</div></div>
-            <div class="stat"><label>Days with sales</label><div class="value" id="salesChartDays">0</div></div>
+          <div class="sell-session-strip" id="sellSessionStrip">
+            <span>This session: <strong id="sellSessionUnits">0</strong> units</span>
+            <span>Revenue: <strong id="sellSessionRev">$0.00</strong></span>
+            <span>Profit: <strong id="sellSessionProfit">$0.00</strong></span>
           </div>
-          <div class="chart-wrap">
-            <canvas id="salesChartCanvas" aria-label="Sales revenue bar chart"></canvas>
-          </div>
-          <p class="chart-empty hidden" id="salesChartEmpty">No daily sales in this range yet. Record a sale above (or log a day on Next batch).</p>
-        </div>
-        <div class="card" id="sellEquityCard">
-          <h2>Equity from sales</h2>
-          <p class="sell-method-note" id="sellMethodNote">
-            Sales profit = sold margin − sales overhead paid − allocated fixed costs.
-            Sales overhead pays down a recover budget from sales (margin, % of revenue, or $ / unit).
-            Fixed costs use sold-unit share: fixed × soldUnits / (soldUnits + stock).
-            Foundation takes its cut from sales profit first; remaining parties split the rest.
-          </p>
-          <p class="equity-remainder-note" id="sellEquityNote"></p>
-          <div class="party-grid" id="sellEquityPayments"></div>
+          <ul class="sell-session-log" id="sellSessionLog"></ul>
+          <p class="note" id="sellModeStockHint"></p>
         </div>
       </section>
 
       <section class="page hidden" id="page-batch">
         <h1 class="page-title">Next batch</h1>
-        <p class="page-sub">Plan the next production batch from demand with a safety buffer. Daily units also update automatically when you use Add sold on Sales.</p>
+        <p class="page-sub">Plan the next production batch from demand with a safety buffer — broken down by color / multicolor print. Daily units also update when you confirm a sale in Sales mode.</p>
         <p class="batch-formula" id="batchFormulaNote">
           Next batch ≈ <code>avg daily sold × days of cover × (1 + safety margin/100)</code>, optionally
           <code>max(0, that − stock on hand)</code>. Avg daily uses all logged
-          sales days for each product (÷ distinct dates). Safety margin = extra % buffer above expected demand.
+          sales days for each product + color (÷ distinct dates). Safety margin = extra % buffer above expected demand.
         </p>
         <div class="card">
           <h2>Planner settings</h2>
@@ -2619,6 +2848,10 @@
               <select id="batchItemSelect"></select>
               <div class="field-hint">Pick inventory, or choose Custom name.</div>
             </div>
+            <div class="field hidden" id="batchColorField">
+              <label for="batchSaleColor">Color / print</label>
+              <select id="batchSaleColor"></select>
+            </div>
             <div class="field hidden" id="batchCustomNameField">
               <label for="batchCustomName">Custom product name</label>
               <input type="text" id="batchCustomName" maxlength="80" placeholder="Product name" />
@@ -2651,6 +2884,7 @@
               <thead>
                 <tr>
                   <th>Product</th>
+                  <th>Color</th>
                   <th>Breakability</th>
                   <th class="num">Days logged</th>
                   <th class="num">Avg daily</th>
@@ -2676,6 +2910,7 @@
                 <tr>
                   <th>Date</th>
                   <th>Product</th>
+                  <th>Color</th>
                   <th class="num">Qty</th>
                   <th class="num">Sell</th>
                   <th class="num">Cost</th>
@@ -3657,6 +3892,7 @@ service cloud.firestore {
         id: String(s.id || newDailySaleId()),
         date,
         itemName,
+        color: String(s.color || "").trim().slice(0, 80),
         qty: Math.max(0, Math.floor(parseNum(s.qty))),
         sell: Math.max(0, parseNum(s.sell)),
         cost: Math.max(0, parseNum(s.cost)),
@@ -4764,6 +5000,8 @@ service cloud.firestore {
     let setupMeta = loadSetupMeta();
     const SELL_UNDO_MAX = 20;
     let sellUndoStack = [];
+    let salesModeActive = false;
+    let salesModeSession = [];
     let chatKnownMessageIds = new Set();
     let chatNotifySeeded = false;
     let chatUnreadCount = 0;
@@ -4898,12 +5136,38 @@ service cloud.firestore {
       return out;
     }
 
+    function formatVariantLabel(colors) {
+      return (colors || []).map((c) => String(c || "").trim()).filter(Boolean).join(" + ");
+    }
+
+    function parseVariantColors(raw) {
+      if (Array.isArray(raw?.colors) && raw.colors.length) {
+        return raw.colors
+          .map((c) => String(c || "").trim().slice(0, 40))
+          .filter(Boolean)
+          .slice(0, 6);
+      }
+      const color = String(raw?.color || raw?.name || "").trim();
+      if (!color) return [];
+      if (/\s\+\s/.test(color)) {
+        return color
+          .split(/\s*\+\s*/)
+          .map((s) => s.trim().slice(0, 40))
+          .filter(Boolean)
+          .slice(0, 6);
+      }
+      return [color.slice(0, 40)];
+    }
+
     function normalizeColorVariant(raw) {
       if (!raw || typeof raw !== "object") return null;
-      const color = String(raw.color || raw.name || "").trim().slice(0, 40);
+      const colors = parseVariantColors(raw);
+      if (!colors.length) return null;
+      const color = formatVariantLabel(colors).slice(0, 80);
       if (!color) return null;
       return {
         color,
+        colors,
         qty: Math.max(0, Math.floor(parseNum(raw.qty))),
         sold: Math.max(0, Math.floor(parseNum(raw.sold))),
       };
@@ -4927,6 +5191,10 @@ service cloud.firestore {
 
     function variantsTotalQty(variants) {
       return (variants || []).reduce((s, v) => s + Math.max(0, Math.floor(parseNum(v.qty))), 0);
+    }
+
+    function isMulticolorVariant(v) {
+      return Array.isArray(v?.colors) && v.colors.length >= 2;
     }
 
     function normalizeItem(raw) {
@@ -7519,6 +7787,7 @@ service cloud.firestore {
           s.date +
           " · " +
           s.itemName +
+          (s.color ? " (" + s.color + ")" : "") +
           " × " +
           s.qty +
           " @ " +
@@ -10072,11 +10341,37 @@ service cloud.firestore {
 
     function variantSwatchCss(colorName) {
       const name = String(colorName || "").trim().toLowerCase();
+      if (!name) return "#5b6b82";
       if (name === "clear") return "linear-gradient(135deg, #cfd8e3 25%, #f4f7fb 50%, #cfd8e3 75%)";
       try {
         if (typeof CSS !== "undefined" && CSS.supports && CSS.supports("color", name)) return name;
       } catch (_) {}
       return "#5b6b82";
+    }
+
+    function variantSolidCss(colorName) {
+      const css = variantSwatchCss(colorName);
+      if (String(css).includes("gradient")) return "#cfd8e3";
+      return css;
+    }
+
+    function variantMultiSwatchCss(colors) {
+      const list = (colors || []).map((c) => String(c || "").trim()).filter(Boolean);
+      if (!list.length) return "#5b6b82";
+      if (list.length === 1) return variantSwatchCss(list[0]);
+      const stops = list
+        .map((c, i) => {
+          const start = ((i / list.length) * 100).toFixed(1);
+          const end = (((i + 1) / list.length) * 100).toFixed(1);
+          return `${variantSolidCss(c)} ${start}% ${end}%`;
+        })
+        .join(", ");
+      return `linear-gradient(90deg, ${stops})`;
+    }
+
+    function variantSwatchFor(v) {
+      if (isMulticolorVariant(v)) return variantMultiSwatchCss(v.colors);
+      return variantSwatchCss(v?.color || v?.colors?.[0] || "");
     }
 
     /**
@@ -10112,19 +10407,26 @@ service cloud.firestore {
       host.innerHTML = variants
         .map(
           (v) =>
-            `<span class="color-chip" title="${escapeHtml(v.color)} — ${v.qty} in stock${v.sold ? ", " + v.sold + " sold" : ""}">
-              <i style="background:${variantSwatchCss(v.color)}"></i>${escapeHtml(v.color)} ×${v.qty}
+            `<span class="color-chip" title="${escapeHtml(v.color)} — ${v.qty} in stock${v.sold ? ", " + v.sold + " sold" : ""}${isMulticolorVariant(v) ? " (multicolor)" : ""}">
+              <i style="background:${variantSwatchFor(v)}"></i>${escapeHtml(v.color)} ×${v.qty}
             </span>`
         )
         .join("");
     }
 
     function readVariantsFromPanel(panelRow) {
-      return [...panelRow.querySelectorAll("[data-variant-row]")].map((row) => ({
-        color: row.querySelector("[data-variant-color]")?.value || "",
-        qty: parseNum(row.querySelector("[data-variant-qty]")?.value),
-        sold: parseNum(row.getAttribute("data-variant-sold")),
-      }));
+      return [...panelRow.querySelectorAll("[data-variant-row]")].map((row) => {
+        const colorsAttr = row.getAttribute("data-variant-colors");
+        const colors = colorsAttr
+          ? colorsAttr.split("|").map((s) => s.trim()).filter(Boolean)
+          : undefined;
+        return {
+          color: row.querySelector("[data-variant-color]")?.value || "",
+          colors,
+          qty: parseNum(row.querySelector("[data-variant-qty]")?.value),
+          sold: parseNum(row.getAttribute("data-variant-sold")),
+        };
+      });
     }
 
     function persistItemMediaFromDom() {
@@ -10329,16 +10631,24 @@ service cloud.firestore {
             .join("")
         : `<span class="note">No 3D models yet</span>`;
       const variants = tr._variants || [];
-      const variantRowHtml = (v) => `
-        <div class="variant-row" data-variant-row data-variant-sold="${Math.max(0, Math.floor(parseNum(v.sold)))}">
-          <i class="variant-swatch" style="background:${variantSwatchCss(v.color)}"></i>
-          <input type="text" class="variant-color-input" data-variant-color value="${escapeHtml(v.color)}"
-            placeholder="Color name" maxlength="40" list="variantColorPresets" ${canEdit ? "" : "disabled"} />
+      const variantRowHtml = (v) => {
+        const multi = isMulticolorVariant(v);
+        const colorsAttr = multi ? ` data-variant-colors="${escapeHtml((v.colors || []).join("|"))}"` : "";
+        const colorControl = multi
+          ? `<span class="variant-multi-label" title="Multicolor print recipe">${escapeHtml(v.color)}</span>
+             <input type="hidden" data-variant-color value="${escapeHtml(v.color)}" />`
+          : `<input type="text" class="variant-color-input" data-variant-color value="${escapeHtml(v.color)}"
+            placeholder="Color name" maxlength="40" list="variantColorPresets" ${canEdit ? "" : "disabled"} />`;
+        return `
+        <div class="variant-row" data-variant-row data-variant-sold="${Math.max(0, Math.floor(parseNum(v.sold)))}"${colorsAttr}>
+          <i class="variant-swatch" style="background:${variantSwatchFor(v)}"></i>
+          ${colorControl}
           <input type="number" class="variant-qty-input" data-variant-qty min="0" step="1"
             value="${Math.max(0, Math.floor(parseNum(v.qty)))}" ${canEdit ? "" : "disabled"} />
           <span class="note variant-sold-note">${parseNum(v.sold) > 0 ? "sold " + Math.floor(parseNum(v.sold)) : ""}</span>
           ${canEdit ? `<button type="button" class="inv-media-del variant-del" data-del-variant title="Remove color">×</button>` : ""}
         </div>`;
+      };
       const variantsHtml = variants.length
         ? variants.map(variantRowHtml).join("")
         : `<span class="note" data-no-variants>No colors yet — plain quantity is used.</span>`;
@@ -10348,6 +10658,10 @@ service cloud.firestore {
             <i style="background:${variantSwatchCss(c)}"></i>${escapeHtml(c)}
           </button>`
       ).join("");
+      const multiChecks = PRESET_VARIANT_COLORS.map(
+        (c) =>
+          `<label><input type="checkbox" data-multi-color="${escapeHtml(c)}" /><i class="variant-swatch" style="background:${variantSwatchCss(c)}"></i>${escapeHtml(c)}</label>`
+      ).join("");
       panelRow.querySelector("td").innerHTML = `
         <div class="inv-media-panel">
           <div class="inv-media-slot">
@@ -10356,9 +10670,22 @@ service cloud.firestore {
             ${canEdit ? `
             <div class="variant-presets">${swatchButtons}
               <button type="button" class="btn-ghost" data-add-variant-custom>+ Custom color</button>
+              <button type="button" class="btn-ghost" data-add-variant-multicolor>+ Add multicolor</button>
+            </div>
+            <div class="multicolor-picker hidden" data-multicolor-picker>
+              <div class="field-hint">Pick 2+ colors for one dual-filament / multicolor print recipe (stocked as a single combo).</div>
+              <div class="multicolor-checks">${multiChecks}</div>
+              <div class="field">
+                <label>Add custom color to combo</label>
+                <input type="text" data-multi-custom maxlength="40" placeholder="e.g. Gold" list="variantColorPresets" />
+              </div>
+              <div class="multicolor-picker-actions">
+                <button type="button" class="btn-primary" data-multicolor-confirm>Add combo</button>
+                <button type="button" class="btn-ghost" data-multicolor-cancel>Cancel</button>
+              </div>
             </div>
             <datalist id="variantColorPresets">${PRESET_VARIANT_COLORS.map((c) => `<option value="${escapeHtml(c)}"></option>`).join("")}</datalist>` : ""}
-            <p class="note" style="margin-top:0.35rem">Item quantity becomes the sum of color quantities. Sales then ask for a color and track sold per color.</p>
+            <p class="note" style="margin-top:0.35rem">Item quantity becomes the sum of color quantities. Single colors and multicolor combos (e.g. Red + Black) are separate stock lines for sales and Next batch.</p>
           </div>
           <div class="inv-media-slot">
             <h4>Photos</h4>
@@ -10439,6 +10766,9 @@ service cloud.firestore {
           const row = btn.closest("[data-variant-row]");
           const v = normalizeColorVariant({
             color: row?.querySelector("[data-variant-color]")?.value,
+            colors: row?.getAttribute("data-variant-colors")
+              ? row.getAttribute("data-variant-colors").split("|")
+              : undefined,
             sold: row?.getAttribute("data-variant-sold"),
           });
           if (v && v.sold > 0 && !confirm(`Remove color "${v.color}"? Its per-color sold history (${v.sold}) will be dropped.`)) {
@@ -10449,20 +10779,24 @@ service cloud.firestore {
           refreshItemMediaPanel(tr);
         });
       });
-      const addVariantRow = (color) => {
+      const addVariantRow = (color, colors) => {
         const current = readVariantsFromPanel(panelRow);
+        const draft = colors && colors.length >= 2
+          ? { color: formatVariantLabel(colors), colors, qty: 0, sold: 0 }
+          : { color: color || "", colors: color ? [color] : [], qty: 0, sold: 0 };
+        const label = String(draft.color || "").trim().toLowerCase();
         if (
-          color &&
-          current.some((v) => String(v.color).trim().toLowerCase() === color.toLowerCase())
+          label &&
+          current.some((v) => String(v.color).trim().toLowerCase() === label)
         ) {
           return;
         }
-        tr._variants = [...current, { color: color || "", qty: 0, sold: 0 }];
+        tr._variants = [...current, draft];
         syncVariantAggregates(tr);
         refreshItemMediaPanel(tr);
         const rows = panelRow.querySelectorAll("[data-variant-row]");
         const last = rows[rows.length - 1];
-        (color
+        (draft.color
           ? last?.querySelector("[data-variant-qty]")
           : last?.querySelector("[data-variant-color]")
         )?.focus();
@@ -10471,6 +10805,39 @@ service cloud.firestore {
         btn.addEventListener("click", () => addVariantRow(btn.getAttribute("data-add-variant-color")));
       });
       panelRow.querySelector("[data-add-variant-custom]")?.addEventListener("click", () => addVariantRow(""));
+      const multiPicker = panelRow.querySelector("[data-multicolor-picker]");
+      panelRow.querySelector("[data-add-variant-multicolor]")?.addEventListener("click", () => {
+        multiPicker?.classList.toggle("hidden");
+      });
+      panelRow.querySelector("[data-multicolor-cancel]")?.addEventListener("click", () => {
+        multiPicker?.classList.add("hidden");
+      });
+      panelRow.querySelector("[data-multicolor-confirm]")?.addEventListener("click", () => {
+        const picked = [...(multiPicker?.querySelectorAll("[data-multi-color]:checked") || [])].map(
+          (el) => el.getAttribute("data-multi-color")
+        );
+        const custom = String(multiPicker?.querySelector("[data-multi-custom]")?.value || "").trim();
+        if (custom) picked.push(custom);
+        const unique = [];
+        const seen = new Set();
+        picked.forEach((c) => {
+          const key = String(c || "").trim().toLowerCase();
+          if (!key || seen.has(key)) return;
+          seen.add(key);
+          unique.push(String(c).trim().slice(0, 40));
+        });
+        if (unique.length < 2) {
+          alert("Pick at least 2 colors for a multicolor print.");
+          return;
+        }
+        addVariantRow("", unique);
+        multiPicker?.classList.add("hidden");
+        multiPicker?.querySelectorAll("[data-multi-color]").forEach((el) => {
+          el.checked = false;
+        });
+        const customEl = multiPicker?.querySelector("[data-multi-custom]");
+        if (customEl) customEl.value = "";
+      });
     }
 
     function toggleItemMediaPanel(tr) {
@@ -10886,6 +11253,452 @@ service cloud.firestore {
       if (el) el.textContent = msg || "";
     }
 
+    function setSellSuccess(msg) {
+      const el = document.getElementById("sellSuccess");
+      if (el) el.textContent = msg || "";
+    }
+
+    function updateSellActionButtons() {
+      const meta = getRole();
+      const canSell = !!meta?.canEdit;
+      const undoBtn = document.getElementById("undoSaleBtn");
+      const undoModeBtn = document.getElementById("undoSaleBtnMode");
+      const resetBtn = document.getElementById("resetSalesBtn");
+      const enterBtn = document.getElementById("enterSalesModeBtn");
+      const confirmBtn = document.getElementById("confirmSaleBtn");
+      const endBtn = document.getElementById("endSalesDayBtn");
+      const viewerNote = document.getElementById("sellViewerNote");
+      if (viewerNote) viewerNote.classList.toggle("hidden", canSell);
+      const totalSold = (typeof inventoryItemRows === "function" ? inventoryItemRows() : []).reduce(
+        (s, tr) => s + Math.max(0, parseNum(tr.dataset.sold)),
+        0
+      );
+      const configureUndo = (btn) => {
+        if (!btn) return;
+        btn.disabled = !canSell || sellUndoStack.length === 0;
+        if (!canSell) {
+          btn.title = "Needs Edit inventory permission";
+        } else if (sellUndoStack.length > 0) {
+          btn.title = `Undo last sale (${sellUndoStack.length} in stack)`;
+        } else {
+          btn.title = "Undo the last recorded sale";
+        }
+      };
+      configureUndo(undoBtn);
+      configureUndo(undoModeBtn);
+      if (resetBtn) {
+        resetBtn.disabled = !canSell || totalSold <= 0;
+        resetBtn.title = !canSell
+          ? "Needs Edit inventory permission"
+          : totalSold > 0
+            ? `Reset all sales (${totalSold.toLocaleString()} units sold)`
+            : "No sales to reset";
+      }
+      if (enterBtn) enterBtn.disabled = !canSell;
+      if (confirmBtn) confirmBtn.disabled = !canSell;
+      if (endBtn) endBtn.disabled = !canSell;
+    }
+
+    function renderSellSessionUI() {
+      const unitsEl = document.getElementById("sellSessionUnits");
+      const revEl = document.getElementById("sellSessionRev");
+      const profitEl = document.getElementById("sellSessionProfit");
+      const logEl = document.getElementById("sellSessionLog");
+      let units = 0;
+      let rev = 0;
+      let profit = 0;
+      salesModeSession.forEach((s) => {
+        units += s.qty;
+        rev += s.revenue;
+        profit += s.profit;
+      });
+      if (unitsEl) unitsEl.textContent = String(units);
+      if (revEl) revEl.textContent = fmt(rev);
+      if (profitEl) {
+        profitEl.textContent = fmt(profit);
+        profitEl.style.color =
+          profit < 0 ? "var(--danger)" : profit > 0 ? "var(--success)" : "";
+      }
+      if (logEl) {
+        logEl.innerHTML = salesModeSession.length
+          ? [...salesModeSession]
+              .reverse()
+              .map(
+                (s) =>
+                  `<li><span>${escapeHtml(s.name)}${
+                    s.color ? " · " + escapeHtml(s.color) : ""
+                  } ×${s.qty}</span><span>${fmt(s.revenue)}</span></li>`
+              )
+              .join("")
+          : `<li class="note" style="justify-content:center">No sales in this session yet</li>`;
+      }
+    }
+
+    function syncSellModeItemOptions(preserveItem, preserveColor) {
+      const itemSel = document.getElementById("sellModeItem");
+      const colorField = document.getElementById("sellModeColorField");
+      const colorSel = document.getElementById("sellModeColor");
+      const qtyEl = document.getElementById("sellModeQty");
+      const hint = document.getElementById("sellModeStockHint");
+      if (!itemSel) return;
+      const rows = getRows();
+      const prevItem = preserveItem != null ? preserveItem : itemSel.value;
+      itemSel.innerHTML = rows.length
+        ? rows
+            .map(
+              (r, idx) =>
+                `<option value="${idx}">${escapeHtml(r.name)} (${r.qty} in stock)</option>`
+            )
+            .join("")
+        : `<option value="">No inventory items</option>`;
+      if (prevItem !== "" && [...itemSel.options].some((o) => o.value === String(prevItem))) {
+        itemSel.value = String(prevItem);
+      } else if (rows.length) {
+        itemSel.value = "0";
+      }
+      const idx = Number(itemSel.value);
+      const row = rows[idx];
+      const variants = row?.variants || [];
+      if (colorField && colorSel) {
+        if (variants.length) {
+          colorField.classList.remove("hidden");
+          const prevColor = preserveColor != null ? preserveColor : colorSel.value;
+          colorSel.innerHTML =
+            `<option value="">Color…</option>` +
+            variants
+              .map(
+                (v) =>
+                  `<option value="${escapeHtml(v.color)}" ${v.qty <= 0 ? "disabled" : ""}>${escapeHtml(v.color)} (${v.qty} left)</option>`
+              )
+              .join("");
+          if (prevColor && [...colorSel.options].some((o) => o.value === prevColor && !o.disabled)) {
+            colorSel.value = prevColor;
+          }
+        } else {
+          colorField.classList.add("hidden");
+          colorSel.innerHTML = "";
+        }
+      }
+      let cap = row ? row.qty : 0;
+      if (row && variants.length) {
+        const color = colorSel?.value || "";
+        const v = variants.find((x) => x.color === color);
+        cap = v ? v.qty : 0;
+      }
+      if (qtyEl) {
+        qtyEl.max = String(Math.max(0, cap));
+        const q = Math.floor(parseNum(qtyEl.value));
+        if (!(q > 0)) qtyEl.value = cap > 0 ? "1" : "0";
+        else if (q > cap && cap > 0) qtyEl.value = String(cap);
+      }
+      if (hint) {
+        if (!row) {
+          hint.textContent = "Add inventory items before selling.";
+        } else if (variants.length && !(colorSel?.value || "")) {
+          hint.textContent = `Pick a color / print for ${row.name}.`;
+        } else if (variants.length) {
+          hint.textContent = `${colorSel.value}: ${cap} in stock · sell ${fmt(row.sell)} · cost ${fmt(row.cost)}`;
+        } else {
+          hint.textContent = `${row.name}: ${cap} in stock · sell ${fmt(row.sell)} · cost ${fmt(row.cost)}`;
+        }
+      }
+    }
+
+    function setSalesModeActive(active) {
+      salesModeActive = !!active;
+      const overview = document.getElementById("sellOverviewPanel");
+      const modePanel = document.getElementById("sellModePanel");
+      const sub = document.getElementById("sellPageSub");
+      if (overview) overview.classList.toggle("hidden", salesModeActive);
+      if (modePanel) modePanel.classList.toggle("hidden", !salesModeActive);
+      if (sub) {
+        sub.textContent = salesModeActive
+          ? "Sales mode — pick an item (and color), confirm each sale, then end the day for a summary."
+          : "Overview of revenue, profit, and equity. Enter sales mode to ring up units — each sale updates stock, sold totals, and today’s Next batch log.";
+      }
+      if (salesModeActive) {
+        setSellError("");
+        setSellSuccess("");
+        syncSellModeItemOptions();
+        renderSellSessionUI();
+      }
+      updateSellActionButtons();
+    }
+
+    function enterSalesMode() {
+      if (!getRole()?.canEdit) {
+        setSellError("You do not have permission to record sales.");
+        return;
+      }
+      salesModeSession = [];
+      setSalesModeActive(true);
+    }
+
+    function confirmSaleFromMode() {
+      setSellSuccess("");
+      if (!getRole()?.canEdit) {
+        setSellError("You do not have permission to record sales.");
+        return;
+      }
+      const itemSel = document.getElementById("sellModeItem");
+      const colorSel = document.getElementById("sellModeColor");
+      const qtyEl = document.getElementById("sellModeQty");
+      const idx = Number(itemSel?.value);
+      const colorField = document.getElementById("sellModeColorField");
+      const needsColor = colorField && !colorField.classList.contains("hidden");
+      const color = needsColor ? String(colorSel?.value || "").trim() : "";
+      if (needsColor && !color) {
+        setSellError("Pick a color / print before confirming the sale.");
+        return;
+      }
+      const result = recordSale(idx, qtyEl ? parseNum(qtyEl.value) : 0, color);
+      if (!result?.ok) return;
+      salesModeSession.push({
+        name: result.name,
+        color: result.color || "",
+        qty: result.qty,
+        sell: result.sell,
+        cost: result.cost,
+        revenue: result.revenue,
+        profit: result.profit,
+        at: new Date().toISOString(),
+      });
+      setSellSuccess(
+        `Sold ${result.qty} × ${result.name}` +
+          (result.color ? ` (${result.color})` : "") +
+          ` — ${fmt(result.revenue)}`
+      );
+      if (qtyEl) qtyEl.value = "1";
+      syncSellModeItemOptions(String(idx), result.color || "");
+      renderSellSessionUI();
+      updateSellActionButtons();
+    }
+
+    function buildDayOverviewData() {
+      const today = todayISODate();
+      const byKey = new Map();
+      const addLine = (name, color, qty, revenue, profit) => {
+        const key = itemKey(name) + "\0" + itemKey(color || "");
+        const prev = byKey.get(key) || {
+          name,
+          color: color || "",
+          qty: 0,
+          revenue: 0,
+          profit: 0,
+        };
+        prev.qty += qty;
+        prev.revenue += revenue;
+        prev.profit += profit;
+        byKey.set(key, prev);
+      };
+      salesModeSession.forEach((s) => addLine(s.name, s.color, s.qty, s.revenue, s.profit));
+      const sessionUnits = salesModeSession.reduce((s, x) => s + x.qty, 0);
+      const sessionRev = salesModeSession.reduce((s, x) => s + x.revenue, 0);
+      const sessionProfit = salesModeSession.reduce((s, x) => s + x.profit, 0);
+
+      const todaySales = normalizeDailySales(workspaceState.dailySales).filter((s) => s.date === today);
+      let dayUnits = 0;
+      let dayRev = 0;
+      let dayProfit = 0;
+      const dayByKey = new Map();
+      todaySales.forEach((s) => {
+        const rev = s.qty * s.sell;
+        const profit = s.qty * (s.sell - s.cost);
+        dayUnits += s.qty;
+        dayRev += rev;
+        dayProfit += profit;
+        const key = itemKey(s.itemName) + "\0" + itemKey(s.color || "");
+        const prev = dayByKey.get(key) || {
+          name: s.itemName,
+          color: s.color || "",
+          qty: 0,
+          revenue: 0,
+          profit: 0,
+        };
+        prev.qty += s.qty;
+        prev.revenue += rev;
+        prev.profit += profit;
+        dayByKey.set(key, prev);
+      });
+
+      return {
+        today,
+        session: {
+          units: sessionUnits,
+          revenue: sessionRev,
+          profit: sessionProfit,
+          lines: [...byKey.values()].sort((a, b) => a.name.localeCompare(b.name) || a.color.localeCompare(b.color)),
+        },
+        day: {
+          units: dayUnits,
+          revenue: dayRev,
+          profit: dayProfit,
+          lines: [...dayByKey.values()].sort((a, b) => a.name.localeCompare(b.name) || a.color.localeCompare(b.color)),
+        },
+      };
+    }
+
+    function showSellDayOverview() {
+      const data = buildDayOverviewData();
+      document.getElementById("sellDayOverview")?.remove();
+      const overlay = document.createElement("div");
+      overlay.className = "sell-day-overlay";
+      overlay.id = "sellDayOverview";
+      const lineRows = (lines) =>
+        lines.length
+          ? lines
+              .map(
+                (l) =>
+                  `<tr>
+                    <td>${escapeHtml(l.name)}</td>
+                    <td>${l.color ? escapeHtml(l.color) : "—"}</td>
+                    <td class="num">${l.qty.toLocaleString()}</td>
+                    <td class="num">${fmt(l.revenue)}</td>
+                    <td class="num" style="color:${
+                      l.profit < 0 ? "var(--danger)" : l.profit > 0 ? "var(--success)" : ""
+                    }">${fmt(l.profit)}</td>
+                  </tr>`
+              )
+              .join("")
+          : `<tr><td colspan="5" class="note">No sales</td></tr>`;
+      overlay.innerHTML = `
+        <div class="sell-day-panel" role="dialog" aria-labelledby="sellDayTitle">
+          <header>
+            <div>
+              <h2 id="sellDayTitle">Sales day overview</h2>
+              <p class="note" style="margin:0.25rem 0 0">${escapeHtml(data.today)}</p>
+            </div>
+            <button type="button" class="btn-ghost" id="sellDayClose">Close</button>
+          </header>
+          <h3 style="font-size:0.95rem;margin:0 0 0.5rem">This session</h3>
+          <div class="sell-day-kpis">
+            <div class="stat"><label>Units</label><div class="value">${data.session.units.toLocaleString()}</div></div>
+            <div class="stat"><label>Revenue</label><div class="value">${fmt(data.session.revenue)}</div></div>
+            <div class="stat"><label>Profit</label><div class="value" style="color:${
+              data.session.profit < 0 ? "var(--danger)" : data.session.profit > 0 ? "var(--success)" : ""
+            }">${fmt(data.session.profit)}</div></div>
+          </div>
+          <div class="table-wrap" style="margin-bottom:1rem">
+            <table class="sell-day-breakdown">
+              <thead><tr><th>Item</th><th>Color</th><th class="num">Qty</th><th class="num">Revenue</th><th class="num">Profit</th></tr></thead>
+              <tbody>${lineRows(data.session.lines)}</tbody>
+            </table>
+          </div>
+          <h3 style="font-size:0.95rem;margin:0 0 0.5rem">Today (calendar day)</h3>
+          <div class="sell-day-kpis">
+            <div class="stat"><label>Units</label><div class="value">${data.day.units.toLocaleString()}</div></div>
+            <div class="stat"><label>Revenue</label><div class="value">${fmt(data.day.revenue)}</div></div>
+            <div class="stat"><label>Profit</label><div class="value" style="color:${
+              data.day.profit < 0 ? "var(--danger)" : data.day.profit > 0 ? "var(--success)" : ""
+            }">${fmt(data.day.profit)}</div></div>
+          </div>
+          <div class="table-wrap">
+            <table class="sell-day-breakdown">
+              <thead><tr><th>Item</th><th>Color</th><th class="num">Qty</th><th class="num">Revenue</th><th class="num">Profit</th></tr></thead>
+              <tbody>${lineRows(data.day.lines)}</tbody>
+            </table>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      const close = () => overlay.remove();
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) close();
+      });
+      overlay.querySelector("#sellDayClose")?.addEventListener("click", close);
+    }
+
+    function endSalesDay() {
+      showSellDayOverview();
+      salesModeSession = [];
+      setSalesModeActive(false);
+      setSellSuccess("");
+      setSellError("");
+      renderSellPage();
+    }
+
+    function renderSellPage() {
+      const meta = getRole();
+      const canSell = !!meta?.canEdit;
+      const metrics = getSellMetrics();
+      const set = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      };
+      set("sellGrossRev", fmt(metrics.grossRevenue));
+      set("sellTotalRev", fmt(metrics.grossRevenue));
+      set("sellUnitsSold", metrics.soldUnits.toLocaleString());
+      set("sellStockOnHand", metrics.stockUnits.toLocaleString());
+      set("sellProfitVal", fmt(metrics.sellProfit));
+      set("sellTotalMargin", fmt(metrics.soldMargin));
+      set("sellAllocFixed", fmt(metrics.allocatedFixed));
+      set("sellAllocOh", fmt(metrics.overhead.paid));
+      set("sellOhTotal", metrics.overhead.hasBudget ? fmt(metrics.overhead.total) : "—");
+      set("sellOhPaid", fmt(metrics.overhead.paid));
+      set("sellOhRemaining", metrics.overhead.hasBudget ? fmt(metrics.overhead.remaining) : "—");
+      const ohNote = document.getElementById("sellOverheadNote");
+      if (ohNote) {
+        ohNote.textContent =
+          variableOverheadModeLabel(metrics.overhead) +
+          ". Paid from sales is recalculated from current sold totals (not a running stack).";
+      }
+      const profitEl = document.getElementById("sellProfitVal");
+      if (profitEl) {
+        profitEl.style.color =
+          metrics.sellProfit < 0
+            ? "var(--danger)"
+            : metrics.sellProfit > 0
+              ? "var(--success)"
+              : "";
+      }
+      const ohPaidEl = document.getElementById("sellOhPaid");
+      if (ohPaidEl) {
+        ohPaidEl.style.color = metrics.overhead.paid > 0 ? "var(--warning)" : "";
+      }
+
+      const overview = document.getElementById("sellOverviewPanel");
+      const modePanel = document.getElementById("sellModePanel");
+      if (overview) overview.classList.toggle("hidden", salesModeActive);
+      if (modePanel) modePanel.classList.toggle("hidden", !salesModeActive);
+
+      if (salesModeActive) {
+        syncSellModeItemOptions(
+          document.getElementById("sellModeItem")?.value,
+          document.getElementById("sellModeColor")?.value
+        );
+        renderSellSessionUI();
+      }
+
+      const equityCard = document.getElementById("sellEquityCard");
+      if (equityCard) equityCard.classList.toggle("hidden", !meta?.canSeeEquity);
+      if (meta?.canSeeEquity && !salesModeActive) {
+        const split = computeEquitySplit(metrics.sellProfit);
+        const note = document.getElementById("sellEquityNote");
+        if (note) {
+          if (!(metrics.sellProfit > 0)) {
+            note.textContent =
+              "Sales profit ≤ 0: Foundation and all party payments from sales are $0.";
+          } else {
+            note.textContent = `Sales profit ${fmt(metrics.sellProfit)} (margin ${fmt(
+              metrics.soldMargin
+            )} − sales overhead ${fmt(metrics.overhead.paid)} − allocated fixed ${fmt(
+              metrics.allocatedFixed
+            )}) → Foundation ${fmt(
+              split.foundationAmount
+            )} first → ${fmt(split.remaining)} remaining for parties.`;
+          }
+        }
+        const pay = document.getElementById("sellEquityPayments");
+        if (pay) pay.innerHTML = renderEquityPaymentCards(split);
+      }
+
+      if (!canSell && meta) {
+        setSellError("Read-only view: sales totals are visible; recording sales needs Edit inventory.");
+      } else if (!salesModeActive) {
+        setSellError("");
+      }
+      updateSellActionButtons();
+    }
+
     function sellUndoStorageKey(id = workspaceId) {
       return "inventory-split-sell-undo:" + String(id || "MAIN").trim().toUpperCase();
     }
@@ -10927,38 +11740,6 @@ service cloud.firestore {
       );
     }
 
-    function updateSellActionButtons() {
-      const canSell = !!getRole()?.canEdit;
-      const undoBtn = document.getElementById("undoSaleBtn");
-      const resetBtn = document.getElementById("resetSalesBtn");
-      const viewerNote = document.getElementById("sellViewerNote");
-      const totalSold = inventoryItemRows().reduce(
-        (s, tr) => s + Math.max(0, parseNum(tr.dataset.sold)),
-        0
-      );
-      if (viewerNote) viewerNote.classList.toggle("hidden", canSell);
-      if (undoBtn) {
-        undoBtn.classList.remove("hidden");
-        undoBtn.disabled = !canSell || sellUndoStack.length === 0;
-        if (!canSell) {
-          undoBtn.title = "Edit inventory required";
-        } else if (sellUndoStack.length > 0) {
-          undoBtn.title = `Undo last sale (${sellUndoStack.length} in stack)`;
-        } else {
-          undoBtn.title = "No recent sales to undo";
-        }
-      }
-      if (resetBtn) {
-        resetBtn.classList.remove("hidden");
-        resetBtn.disabled = !canSell || totalSold <= 0;
-        resetBtn.title = !canSell
-          ? "Edit inventory required"
-          : totalSold > 0
-            ? `Reset all sales (${totalSold.toLocaleString()} units sold)`
-            : "No sales to reset";
-      }
-    }
-
     function findInventoryRowForUndo(entry) {
       const trs = inventoryItemRows();
       if (!trs.length) return null;
@@ -10985,202 +11766,23 @@ service cloud.firestore {
       return byName[0] || null;
     }
 
-    function renderSellPage() {
-      const body = document.getElementById("sellBody");
-      if (!body) return;
-      const meta = getRole();
-      const canSell = !!meta?.canEdit;
-      const metrics = getSellMetrics();
-      const set = (id, val) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = val;
-      };
-      set("sellGrossRev", fmt(metrics.grossRevenue));
-      set("sellTotalRev", fmt(metrics.grossRevenue));
-      set("sellUnitsSold", metrics.soldUnits.toLocaleString());
-      set("sellStockOnHand", metrics.stockUnits.toLocaleString());
-      set("sellProfitVal", fmt(metrics.sellProfit));
-      set("sellTotalMargin", fmt(metrics.soldMargin));
-      set("sellAllocFixed", fmt(metrics.allocatedFixed));
-      set("sellAllocOh", fmt(metrics.overhead.paid));
-      set("sellOhTotal", metrics.overhead.hasBudget ? fmt(metrics.overhead.total) : "—");
-      set("sellOhPaid", fmt(metrics.overhead.paid));
-      set("sellOhRemaining", metrics.overhead.hasBudget ? fmt(metrics.overhead.remaining) : "—");
-      const ohNote = document.getElementById("sellOverheadNote");
-      if (ohNote) {
-        ohNote.textContent =
-          variableOverheadModeLabel(metrics.overhead) +
-          ". Paid from sales is recalculated from current sold totals (not a running stack).";
-      }
-      const profitEl = document.getElementById("sellProfitVal");
-      if (profitEl) {
-        profitEl.style.color =
-          metrics.sellProfit < 0
-            ? "var(--danger)"
-            : metrics.sellProfit > 0
-              ? "var(--success)"
-              : "";
-      }
-      const ohPaidEl = document.getElementById("sellOhPaid");
-      if (ohPaidEl) {
-        ohPaidEl.style.color = metrics.overhead.paid > 0 ? "var(--warning)" : "";
-      }
-      const ohRemEl = document.getElementById("sellOhRemaining");
-      if (ohRemEl && metrics.overhead.hasBudget) {
-        ohRemEl.style.color =
-          metrics.overhead.remaining <= 0
-            ? "var(--success)"
-            : metrics.overhead.paid > 0
-              ? ""
-              : "";
-      }
-
-      body.innerHTML = metrics.rows.length
-        ? metrics.rows
-            .map((r, idx) => {
-              const stock = r.qty;
-              const disabled = !canSell || stock <= 0;
-              const maxAttr = stock > 0 ? `max="${stock}"` : "";
-              const hasVariants = (r.variants || []).length > 0;
-              const variantChips = hasVariants
-                ? `<div class="sell-variant-chips">${r.variants
-                    .map(
-                      (v) =>
-                        `<span class="color-chip" title="${escapeHtml(v.color)}: ${v.qty} in stock, ${v.sold} sold"><i style="background:${variantSwatchCss(v.color)}"></i>${escapeHtml(v.color)} ×${v.qty}</span>`
-                    )
-                    .join("")}</div>`
-                : "";
-              const soldTitle = hasVariants
-                ? r.variants.filter((v) => v.sold > 0).map((v) => `${v.color}: ${v.sold}`).join(", ")
-                : "";
-              const colorSelect = hasVariants
-                ? `<select class="sell-color-select" aria-label="Color sold for ${escapeHtml(r.name)}" ${!canSell ? "disabled" : ""}>
-                    <option value="">Color…</option>
-                    ${r.variants
-                      .map(
-                        (v) =>
-                          `<option value="${escapeHtml(v.color)}" ${v.qty <= 0 ? "disabled" : ""}>${escapeHtml(v.color)} (${v.qty} left)</option>`
-                      )
-                      .join("")}
-                  </select>`
-                : "";
-              return `<tr data-row-idx="${idx}">
-                <td>${escapeHtml(r.name)}${variantChips}</td>
-                <td>${escapeHtml(formatBreakability(r.breakability))}</td>
-                <td class="num">${stock.toLocaleString()}</td>
-                <td class="num" ${soldTitle ? `title="${escapeHtml(soldTitle)}"` : ""}>${r.sold.toLocaleString()}</td>
-                <td class="num">${fmt(r.sell)}</td>
-                <td class="num">${fmt(r.soldRevenue)}</td>
-                <td class="num" style="color:${
-                  r.soldProfit < 0
-                    ? "var(--danger)"
-                    : r.soldProfit > 0
-                      ? "var(--success)"
-                      : ""
-                }">${fmt(r.soldProfit)}</td>
-                <td>
-                  <div class="sell-now-cell">
-                    ${colorSelect}
-                    <input type="number" class="sell-now-qty" min="1" step="1" ${maxAttr}
-                      value="${stock > 0 ? 1 : 0}" ${disabled ? "disabled" : ""}
-                      aria-label="Quantity to sell for ${escapeHtml(r.name)}" />
-                    <button type="button" class="btn-primary sell-record-btn"
-                      data-row-idx="${idx}" ${disabled ? "disabled" : ""}>Add sold</button>
-                  </div>
-                </td>
-              </tr>`;
-            })
-            .join("")
-        : `<tr><td colspan="10" class="note">No inventory items yet. Add items on the Inventory page.</td></tr>`;
-
-      const validateSellRow = (row) => {
-        const idx = Number(row?.dataset.rowIdx);
-        const stockRow = metrics.rows[idx];
-        const btn = row?.querySelector(".sell-record-btn");
-        const input = row?.querySelector(".sell-now-qty");
-        if (!stockRow || !btn || !input) return;
-        const n = Math.floor(parseNum(input.value));
-        const colorSel = row.querySelector(".sell-color-select");
-        const hasVariants = (stockRow.variants || []).length > 0;
-        const color = colorSel ? colorSel.value : "";
-        const variant = hasVariants
-          ? stockRow.variants.find((v) => v.color === color)
-          : null;
-        const cap = hasVariants ? (variant ? variant.qty : 0) : stockRow.qty;
-        let err = "";
-        if (!canSell) {
-          err = "Read-only: your role cannot record sales (needs Edit inventory).";
-        } else if (hasVariants && !color) {
-          err = `Pick a color for ${stockRow.name} before recording the sale.`;
-        } else if (n <= 0) {
-          err = "Enter a sold quantity of at least 1.";
-        } else if (n > cap) {
-          err = hasVariants
-            ? `Cannot sell ${n} × ${stockRow.name} (${color}) — only ${cap} in stock for that color.`
-            : `Cannot sell ${n} of ${stockRow.name} — only ${cap} in stock.`;
-        }
-        btn.disabled = !!err || !canSell;
-        setSellError(err);
-      };
-
-      body.querySelectorAll(".sell-now-qty").forEach((input) => {
-        input.addEventListener("input", () => validateSellRow(input.closest("tr")));
-      });
-      body.querySelectorAll(".sell-color-select").forEach((sel) => {
-        sel.addEventListener("change", () => validateSellRow(sel.closest("tr")));
-      });
-
-      body.querySelectorAll(".sell-record-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const idx = Number(btn.getAttribute("data-row-idx"));
-          const row = btn.closest("tr");
-          const input = row?.querySelector(".sell-now-qty");
-          const colorSel = row?.querySelector(".sell-color-select");
-          recordSale(idx, input ? parseNum(input.value) : 0, colorSel ? colorSel.value : "");
-        });
-      });
-
-      const equityCard = document.getElementById("sellEquityCard");
-      if (equityCard) equityCard.classList.toggle("hidden", !meta?.canSeeEquity);
-      if (meta?.canSeeEquity) {
-        const split = computeEquitySplit(metrics.sellProfit);
-        const note = document.getElementById("sellEquityNote");
-        if (note) {
-          if (!(metrics.sellProfit > 0)) {
-            note.textContent =
-              "Sales profit ≤ 0: Foundation and all party payments from sales are $0.";
-          } else {
-            note.textContent = `Sales profit ${fmt(metrics.sellProfit)} (margin ${fmt(
-              metrics.soldMargin
-            )} − sales overhead ${fmt(metrics.overhead.paid)} − allocated fixed ${fmt(
-              metrics.allocatedFixed
-            )}) → Foundation ${fmt(
-              split.foundationAmount
-            )} first → ${fmt(split.remaining)} remaining for parties.`;
-          }
-        }
-        const pay = document.getElementById("sellEquityPayments");
-        if (pay) pay.innerHTML = renderEquityPaymentCards(split);
-      }
-
-      if (!canSell && meta) {
-        setSellError("Read-only view: sales totals are visible; recording sales needs Edit inventory.");
-      } else {
-        setSellError("");
-      }
-      updateSellActionButtons();
-    }
-
-    function upsertDailySaleUnits({ itemName, date, qty, sell, cost }) {
+    function upsertDailySaleUnits({ itemName, date, qty, sell, cost, color = "" }) {
       const name = String(itemName || "").trim() || "Unnamed item";
       const day = String(date || todayISODate()).slice(0, 10);
       const addQty = Math.floor(parseNum(qty));
+      const colorLabel = String(color || "").trim().slice(0, 80);
       if (!(addQty > 0) || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
       const unitSell = Math.max(0, parseNum(sell));
       const unitCost = Math.max(0, parseNum(cost));
       const key = itemKey(name);
+      const colorKey = itemKey(colorLabel);
       const list = normalizeDailySales(workspaceState.dailySales);
-      const idx = list.findIndex((s) => s.date === day && itemKey(s.itemName) === key);
+      const idx = list.findIndex(
+        (s) =>
+          s.date === day &&
+          itemKey(s.itemName) === key &&
+          itemKey(s.color || "") === colorKey
+      );
       if (idx >= 0) {
         const prev = list[idx];
         const prevQty = Math.max(0, prev.qty);
@@ -11191,6 +11793,7 @@ service cloud.firestore {
           nextQty > 0 ? (prevQty * prev.cost + addQty * unitCost) / nextQty : unitCost;
         list[idx] = normalizeDailySale({
           ...prev,
+          color: colorLabel || prev.color || "",
           qty: nextQty,
           sell: nextSell,
           cost: nextCost,
@@ -11203,6 +11806,7 @@ service cloud.firestore {
             id: newDailySaleId(),
             date: day,
             itemName: name,
+            color: colorLabel,
             qty: addQty,
             sell: unitSell,
             cost: unitCost,
@@ -11215,14 +11819,20 @@ service cloud.firestore {
       return list;
     }
 
-    function decrementDailySaleUnits({ itemName, date, qty }) {
+    function decrementDailySaleUnits({ itemName, date, qty, color = "" }) {
       const name = String(itemName || "").trim() || "Unnamed item";
       const day = String(date || todayISODate()).slice(0, 10);
       const removeQty = Math.floor(parseNum(qty));
+      const colorKey = itemKey(color || "");
       if (!(removeQty > 0) || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
       const key = itemKey(name);
       const list = normalizeDailySales(workspaceState.dailySales);
-      const idx = list.findIndex((s) => s.date === day && itemKey(s.itemName) === key);
+      const idx = list.findIndex(
+        (s) =>
+          s.date === day &&
+          itemKey(s.itemName) === key &&
+          itemKey(s.color || "") === colorKey
+      );
       if (idx < 0) return;
       const prev = list[idx];
       const nextQty = Math.max(0, prev.qty - removeQty);
@@ -11237,13 +11847,13 @@ service cloud.firestore {
     function recordSale(rowIdx, amount, color = "") {
       if (!getRole()?.canEdit) {
         setSellError("You do not have permission to record sales.");
-        return;
+        return { ok: false };
       }
       const trs = inventoryItemRows();
       const tr = trs[rowIdx];
       if (!tr) {
         setSellError("Item not found.");
-        return;
+        return { ok: false };
       }
       const name = tr.querySelector(".item-name").value.trim() || "Unnamed item";
       const qty = parseNum(tr.querySelector(".qty").value);
@@ -11252,7 +11862,7 @@ service cloud.firestore {
       const n = Math.floor(parseNum(amount));
       if (!(n > 0)) {
         setSellError("Enter a sold quantity of at least 1.");
-        return;
+        return { ok: false };
       }
       const variants = normalizeColorVariants(tr._variants || []);
       let variant = null;
@@ -11260,23 +11870,23 @@ service cloud.firestore {
         const wanted = String(color || "").trim();
         if (!wanted) {
           setSellError(`Pick a color for ${name} before recording the sale.`);
-          return;
+          return { ok: false };
         }
         variant = variants.find((v) => v.color.toLowerCase() === wanted.toLowerCase());
         if (!variant) {
           setSellError(`Color "${wanted}" not found on ${name}.`);
-          return;
+          return { ok: false };
         }
         if (n > variant.qty) {
           setSellError(`Cannot sell ${n} × ${name} (${variant.color}) — only ${variant.qty} in stock for that color.`);
-          return;
+          return { ok: false };
         }
         variant.qty -= n;
         variant.sold += n;
         tr._variants = variants;
       } else if (n > qty) {
         setSellError(`Cannot sell ${n} of ${name} — only ${qty} in stock.`);
-        return;
+        return { ok: false };
       }
       const saleDate = todayISODate();
       const prevSold = Math.max(0, parseNum(tr.dataset.sold));
@@ -11289,7 +11899,14 @@ service cloud.firestore {
         tr.querySelector(".qty").value = String(qty - n);
       }
       tr.dataset.sold = String(prevSold + n);
-      upsertDailySaleUnits({ itemName: name, date: saleDate, qty: n, sell, cost });
+      upsertDailySaleUnits({
+        itemName: name,
+        date: saleDate,
+        qty: n,
+        sell,
+        cost,
+        color: variant ? variant.color : "",
+      });
       pushSellUndo({
         rowDomId: tr.dataset.id,
         rowIdx,
@@ -11304,6 +11921,16 @@ service cloud.firestore {
       setSellError("");
       scheduleSave(`Sold ${n} × ${name}` + (variant ? ` (${variant.color})` : ""));
       recalculate();
+      return {
+        ok: true,
+        name,
+        color: variant ? variant.color : "",
+        qty: n,
+        sell,
+        cost,
+        revenue: n * sell,
+        profit: n * (sell - cost),
+      };
     }
 
     function undoLastSale() {
@@ -11364,13 +11991,31 @@ service cloud.firestore {
         itemName: entry.name || tr.querySelector(".item-name").value.trim(),
         date: entry.date || (entry.at ? String(entry.at).slice(0, 10) : todayISODate()),
         qty: restore,
+        color: entry.color || "",
       });
       sellUndoStack.pop();
       persistSellUndoStack();
       const name = tr.querySelector(".item-name").value.trim() || entry.name || "item";
+      if (salesModeSession.length) {
+        const last = salesModeSession[salesModeSession.length - 1];
+        if (
+          last &&
+          itemKey(last.name) === itemKey(entry.name) &&
+          itemKey(last.color || "") === itemKey(entry.color || "") &&
+          last.qty === restore
+        ) {
+          salesModeSession.pop();
+        }
+      }
       setSellError("");
+      setSellSuccess(`Undid ${restore} × ${name}` + (entry.color ? ` (${entry.color})` : ""));
       scheduleSave(`Undid sale of ${restore} × ${name}`);
       recalculate();
+      if (salesModeActive) {
+        syncSellModeItemOptions();
+        renderSellSessionUI();
+      }
+      updateSellActionButtons();
     }
 
     function resetAllSales() {
@@ -11427,9 +12072,16 @@ service cloud.firestore {
         tr.dataset.sold = "0";
       });
       clearSellUndoStack();
+      salesModeSession = [];
       setSellError("");
+      setSellSuccess("");
       scheduleSave(`Reset all sales (${totalSold} units restored to stock)`);
       recalculate();
+      if (salesModeActive) {
+        syncSellModeItemOptions();
+        renderSellSessionUI();
+      }
+      updateSellActionButtons();
     }
 
     function setBatchError(msg) {
@@ -11508,6 +12160,46 @@ service cloud.firestore {
       return map;
     }
 
+    /** Per product+color (or multicolor combo) stock lines for Next batch. */
+    function inventoryStockByItemColor() {
+      const map = new Map();
+      getRows().forEach((r) => {
+        const ik = itemKey(r.name);
+        if (!ik) return;
+        const variants = r.variants || [];
+        if (variants.length) {
+          variants.forEach((v) => {
+            const ck = itemKey(v.color);
+            const key = ik + "\0" + ck;
+            map.set(key, {
+              name: r.name,
+              color: v.color,
+              qty: v.qty,
+              cost: r.cost,
+              sell: r.sell,
+              breakability: r.breakability,
+            });
+          });
+        } else {
+          const key = ik + "\0";
+          const prev = map.get(key) || {
+            name: r.name,
+            color: "",
+            qty: 0,
+            cost: r.cost,
+            sell: r.sell,
+            breakability: r.breakability,
+          };
+          prev.qty += r.qty;
+          prev.cost = r.cost;
+          prev.sell = r.sell;
+          prev.breakability = r.breakability;
+          map.set(key, prev);
+        }
+      });
+      return map;
+    }
+
     function filterDailySalesForPlanner(sales) {
       return normalizeDailySales(sales);
     }
@@ -11515,26 +12207,33 @@ service cloud.firestore {
     function computeBatchSuggestions() {
       const planner = normalizeBatchPlanner(workspaceState.batchPlanner);
       const sales = filterDailySalesForPlanner(workspaceState.dailySales);
-      const stockMap = inventoryStockByKey();
-      const byItem = new Map();
+      const stockMap = inventoryStockByItemColor();
+      const productMap = inventoryStockByKey();
+      const byLine = new Map();
 
       sales.forEach((s) => {
-        const key = itemKey(s.itemName);
-        if (!key) return;
-        let g = byItem.get(key);
+        const ik = itemKey(s.itemName);
+        if (!ik) return;
+        const ck = itemKey(s.color || "");
+        const key = ik + "\0" + ck;
+        let g = byLine.get(key);
         if (!g) {
           g = {
             key,
+            itemKey: ik,
+            colorKey: ck,
             name: s.itemName,
+            color: s.color || "",
             entries: [],
           };
-          byItem.set(key, g);
+          byLine.set(key, g);
         }
         g.entries.push(s);
         g.name = s.itemName;
+        if (s.color) g.color = s.color;
       });
 
-      const rows = [...byItem.values()].map((g) => {
+      const rows = [...byLine.values()].map((g) => {
         let entries = g.entries.slice().sort((a, b) => {
           if (a.date !== b.date) return b.date.localeCompare(a.date);
           return String(b.at).localeCompare(String(a.at));
@@ -11558,7 +12257,26 @@ service cloud.firestore {
         const baseTarget = avgDaily * planner.daysOfCover;
         const withSafety = baseTarget * (1 + planner.safetyMarginPct / 100);
         const inv = stockMap.get(g.key);
-        const onHand = inv ? inv.qty : 0;
+        const product = productMap.get(g.itemKey);
+        let onHand = 0;
+        let linked = false;
+        let breakability = DEFAULT_BREAKABILITY;
+        let displayName = g.name;
+        if (inv) {
+          onHand = inv.qty;
+          linked = true;
+          breakability = inv.breakability || DEFAULT_BREAKABILITY;
+          displayName = inv.name;
+        } else if (!g.colorKey && product) {
+          onHand = product.qty;
+          linked = true;
+          breakability = product.breakability || DEFAULT_BREAKABILITY;
+          displayName = product.name;
+        } else if (product) {
+          linked = true;
+          breakability = product.breakability || DEFAULT_BREAKABILITY;
+          displayName = product.name;
+        }
         const nextBatch = planner.deductStock
           ? Math.max(0, Math.ceil(withSafety) - onHand)
           : Math.max(0, Math.ceil(withSafety));
@@ -11568,8 +12286,9 @@ service cloud.firestore {
         const marginPct = marginPctFromPrices(avgSell, avgCost);
         const avgDailyProfit = avgDaily * marginPerUnit;
         return {
-          name: inv?.name || g.name,
-          breakability: inv?.breakability || DEFAULT_BREAKABILITY,
+          name: displayName,
+          color: g.color || "",
+          breakability,
           daysLogged: dates.size,
           avgDaily,
           baseTarget,
@@ -11579,12 +12298,16 @@ service cloud.firestore {
           marginPerUnit,
           marginPct,
           avgDailyProfit,
-          linked: !!inv,
+          linked,
           capped,
         };
       });
 
-      rows.sort((a, b) => a.name.localeCompare(b.name));
+      rows.sort((a, b) => {
+        const byName = a.name.localeCompare(b.name);
+        if (byName) return byName;
+        return String(a.color || "").localeCompare(String(b.color || ""));
+      });
       return { planner, rows };
     }
 
@@ -11620,6 +12343,7 @@ service cloud.firestore {
       if (!sel || !sellEl || !costEl) return;
       const customField = document.getElementById("batchCustomNameField");
       if (customField) customField.classList.toggle("hidden", sel.value !== "custom");
+      syncBatchColorFromSelection();
       if (sel.value === "custom") return;
       const m = /^idx:(\d+)$/.exec(sel.value);
       if (!m) return;
@@ -11630,6 +12354,38 @@ service cloud.firestore {
       if (document.activeElement !== costEl) costEl.value = row.cost;
     }
 
+    function syncBatchColorFromSelection() {
+      const sel = document.getElementById("batchItemSelect");
+      const colorField = document.getElementById("batchColorField");
+      const colorSel = document.getElementById("batchSaleColor");
+      if (!sel || !colorField || !colorSel) return;
+      if (sel.value === "custom") {
+        colorField.classList.add("hidden");
+        colorSel.innerHTML = "";
+        return;
+      }
+      const m = /^idx:(\d+)$/.exec(sel.value);
+      const rows = getRows();
+      const row = m ? rows[Number(m[1])] : null;
+      const variants = row?.variants || [];
+      if (!variants.length) {
+        colorField.classList.add("hidden");
+        colorSel.innerHTML = "";
+        return;
+      }
+      colorField.classList.remove("hidden");
+      const prev = colorSel.value;
+      colorSel.innerHTML =
+        `<option value="">Color…</option>` +
+        variants
+          .map(
+            (v) =>
+              `<option value="${escapeHtml(v.color)}">${escapeHtml(v.color)} (${v.qty} on hand)</option>`
+          )
+          .join("");
+      if (prev && [...colorSel.options].some((o) => o.value === prev)) colorSel.value = prev;
+    }
+
     function applyBatchFormPermissions() {
       const meta = getRole();
       const canEdit = !!meta?.canEdit;
@@ -11638,6 +12394,7 @@ service cloud.firestore {
         "batchSafetyMargin",
         "batchDeductStock",
         "batchItemSelect",
+        "batchSaleColor",
         "batchCustomName",
         "batchSaleDate",
         "batchSaleQty",
@@ -11673,7 +12430,7 @@ service cloud.firestore {
           (planner.deductStock
             ? `, then <code>max(0, ceil(target) − stock on hand)</code>`
             : ` (stock not subtracted; use <code>ceil(target)</code>)`) +
-          `. Safety margin = extra % buffer above expected demand. Avg daily from logged days (÷ distinct dates)${cappedNote}. ` +
+          `. Per color / multicolor print line. Safety margin = extra % buffer above expected demand. Avg daily from logged days (÷ distinct dates)${cappedNote}. ` +
           `Margin % from sales is informational: <code>(sell − cost) / sell × 100</code>.`;
       }
 
@@ -11694,6 +12451,7 @@ service cloud.firestore {
                   <td>${escapeHtml(r.name)}${
                     r.linked ? "" : ' <span class="note">(not in inventory)</span>'
                   }</td>
+                  <td>${r.color ? escapeHtml(r.color) : "—"}</td>
                   <td>${r.linked ? escapeHtml(formatBreakability(r.breakability)) : "—"}</td>
                   <td class="num">${r.daysLogged}</td>
                   <td class="num">${r.avgDaily.toFixed(2)}</td>
@@ -11718,7 +12476,7 @@ service cloud.firestore {
                 </tr>`;
               })
               .join("")
-          : `<tr><td colspan="10" class="note">No daily sales logged yet. Record a sale on Sales, or log a day above.</td></tr>`;
+          : `<tr><td colspan="11" class="note">No daily sales logged yet. Confirm a sale in Sales mode, or log a day above.</td></tr>`;
       }
 
       const canEdit = !!getRole()?.canEdit;
@@ -11737,6 +12495,7 @@ service cloud.firestore {
                 return `<tr data-sale-id="${escapeHtml(s.id)}">
                   <td>${escapeHtml(s.date)}</td>
                   <td>${escapeHtml(s.itemName)}</td>
+                  <td>${s.color ? escapeHtml(s.color) : "—"}</td>
                   <td class="num">${s.qty.toLocaleString()}</td>
                   <td class="num">${fmt(s.sell)}</td>
                   <td class="num">${fmt(s.cost)}</td>
@@ -11757,7 +12516,7 @@ service cloud.firestore {
                 </tr>`;
               })
               .join("")
-          : `<tr><td colspan="9" class="note">No daily sales yet.</td></tr>`;
+          : `<tr><td colspan="10" class="note">No daily sales yet.</td></tr>`;
 
         logBody.querySelectorAll(".batch-del-btn").forEach((btn) => {
           btn.addEventListener("click", () => {
@@ -11804,12 +12563,22 @@ service cloud.firestore {
       }
       const sell = Math.max(0, parseNum(document.getElementById("batchSaleSell")?.value));
       const cost = Math.max(0, parseNum(document.getElementById("batchSaleCost")?.value));
-      upsertDailySaleUnits({ itemName, date, qty, sell, cost });
+      const colorField = document.getElementById("batchColorField");
+      const colorSel = document.getElementById("batchSaleColor");
+      const needsColor = colorField && !colorField.classList.contains("hidden");
+      const color = needsColor ? String(colorSel?.value || "").trim() : "";
+      if (needsColor && !color) {
+        setBatchError("Pick a color / print for this product.");
+        return;
+      }
+      upsertDailySaleUnits({ itemName, date, qty, sell, cost, color });
       workspaceState.batchPlanner = readBatchPlannerFromEditor();
       setBatchError("");
       const qtyEl = document.getElementById("batchSaleQty");
       if (qtyEl) qtyEl.value = "1";
-      scheduleSave(`Logged ${qty} × ${itemName} sold on ${date}`);
+      scheduleSave(
+        `Logged ${qty} × ${itemName}` + (color ? ` (${color})` : "") + ` sold on ${date}`
+      );
       renderBatchPage();
       renderSalesChart();
     }
@@ -12066,7 +12835,7 @@ service cloud.firestore {
         destroySalesChart();
         if (emptyEl) {
           emptyEl.textContent =
-            "No daily sales in this range yet. Log dated sales on Next batch.";
+            "No daily sales in this range yet. Confirm a sale in Sales mode, or log a day on Next batch.";
         }
         return;
       }
@@ -13608,7 +14377,19 @@ service cloud.firestore {
     });
 
     document.getElementById("undoSaleBtn").addEventListener("click", () => undoLastSale());
+    document.getElementById("undoSaleBtnMode")?.addEventListener("click", () => undoLastSale());
     document.getElementById("resetSalesBtn").addEventListener("click", () => resetAllSales());
+    document.getElementById("enterSalesModeBtn")?.addEventListener("click", () => enterSalesMode());
+    document.getElementById("confirmSaleBtn")?.addEventListener("click", () => confirmSaleFromMode());
+    document.getElementById("endSalesDayBtn")?.addEventListener("click", () => endSalesDay());
+    document.getElementById("sellModeItem")?.addEventListener("change", () => syncSellModeItemOptions());
+    document.getElementById("sellModeColor")?.addEventListener("change", () => {
+      syncSellModeItemOptions(
+        document.getElementById("sellModeItem")?.value,
+        document.getElementById("sellModeColor")?.value
+      );
+    });
+    document.getElementById("sellModeQty")?.addEventListener("input", () => setSellError(""));
 
     document.getElementById("batchLogBtn")?.addEventListener("click", () => logDailySale());
     document.getElementById("batchItemSelect")?.addEventListener("change", () => {
