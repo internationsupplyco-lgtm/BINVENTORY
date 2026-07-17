@@ -632,20 +632,368 @@
       margin-bottom: 1rem;
     }
     .sell-mode-header h2 { margin: 0; font-size: 1.15rem; }
+    .sell-pos-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+    @media (min-width: 900px) {
+      .sell-pos-layout {
+        grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
+      }
+      .sell-pos-side {
+        position: sticky;
+        top: 0.75rem;
+      }
+    }
+    .sell-pos-toolbar {
+      margin-bottom: 0.75rem;
+    }
+    .sell-pos-search {
+      width: 100%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      padding: 0.75rem 0.9rem;
+      font: inherit;
+      font-size: 1rem;
+    }
+    .sell-pos-search:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    }
+    .sell-pos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+      gap: 0.75rem;
+      max-height: min(62vh, 720px);
+      overflow: auto;
+      padding: 0.15rem;
+      -webkit-overflow-scrolling: touch;
+    }
+    .sell-pos-tile {
+      display: flex;
+      flex-direction: column;
+      background: #151c27;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      text-align: left;
+      color: inherit;
+      font: inherit;
+      padding: 0;
+      min-height: 0;
+      transition: border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sell-pos-tile:hover {
+      border-color: #3d4f6a;
+    }
+    .sell-pos-tile.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.45), 0 8px 20px rgba(0, 0, 0, 0.28);
+    }
+    .sell-pos-tile.out-of-stock {
+      opacity: 0.48;
+    }
+    .sell-pos-tile-photo {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      background: linear-gradient(160deg, #1c2636 0%, #0f1419 100%);
+      overflow: hidden;
+    }
+    .sell-pos-tile-photo .sell-pos-tile-price {
+      position: absolute;
+      left: 0.5rem;
+      bottom: 0.5rem;
+      z-index: 1;
+      background: rgba(8, 12, 18, 0.78);
+      padding: 0.28rem 0.5rem;
+      border-radius: 7px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text);
+      pointer-events: none;
+    }
+    .sell-pos-chip.more {
+      display: inline-flex;
+      align-items: center;
+      opacity: 0.7;
+      cursor: default;
+      pointer-events: none;
+    }
+    .sell-pos-tile-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: #5a6d88;
+      user-select: none;
+    }
+    .sell-pos-tile-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding: 0.65rem 0.7rem 0.75rem;
+      flex: 1;
+    }
+    .sell-pos-tile-name {
+      font-size: 0.92rem;
+      font-weight: 700;
+      line-height: 1.25;
+      color: var(--text);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .sell-pos-tile-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.25rem 0.5rem;
+      font-size: 0.8rem;
+    }
+    .sell-pos-tile-price {
+      font-weight: 700;
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+    .sell-pos-tile-stock {
+      color: var(--muted);
+    }
+    .sell-pos-tile-stock.low { color: var(--warning); }
+    .sell-pos-tile-stock.empty { color: #f87171; }
+    .sell-pos-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.15rem;
+    }
+    .sell-pos-chip {
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.4rem 0.55rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      line-height: 1.2;
+      cursor: pointer;
+      min-height: 36px;
+      max-width: 100%;
+    }
+    .sell-pos-chip:hover:not(:disabled) {
+      border-color: #4a5f7c;
+    }
+    .sell-pos-chip.selected {
+      border-color: var(--accent);
+      background: rgba(59, 130, 246, 0.18);
+      color: #bfdbfe;
+    }
+    .sell-pos-chip:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .sell-pos-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: var(--muted);
+      padding: 2rem 1rem;
+      font-size: 0.95rem;
+    }
     .sell-mode-form {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 0.85rem;
+      grid-template-columns: 1fr auto;
+      gap: 0.75rem;
       align-items: end;
       margin-bottom: 0.85rem;
+      padding: 0.75rem 0.85rem;
+      background: rgba(15, 20, 28, 0.45);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      position: relative;
     }
     .sell-mode-form .field { margin: 0; }
+    .sell-pos-native-fields {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .sell-pos-pick-summary {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      min-width: 0;
+    }
+    .sell-pos-pick-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+    }
+    .sell-pos-pick-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.25;
+      word-break: break-word;
+    }
+    .sell-pos-pick-name em {
+      font-style: normal;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .sell-pos-qty-row {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+    .sell-pos-stepper {
+      display: inline-flex;
+      align-items: stretch;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--surface-2);
+    }
+    .sell-pos-stepper button {
+      width: 44px;
+      min-height: 44px;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 1.25rem;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .sell-pos-stepper button:hover:not(:disabled) {
+      background: rgba(59, 130, 246, 0.15);
+    }
+    .sell-pos-stepper button:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .sell-pos-stepper input {
+      width: 3.25rem;
+      border: none;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      text-align: center;
+      font: inherit;
+      font-size: 1.05rem;
+      font-weight: 700;
+      min-height: 44px;
+      -moz-appearance: textfield;
+    }
+    .sell-pos-stepper input::-webkit-outer-spin-button,
+    .sell-pos-stepper input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
     .sell-mode-confirm {
-      grid-column: 1 / -1;
-      justify-self: start;
+      font-size: 1rem;
+      padding: 0.75rem 1.15rem;
+      font-weight: 700;
+      min-height: 48px;
+      white-space: nowrap;
+    }
+    .sell-cart-block {
+      margin-bottom: 0.85rem;
+      padding: 0.75rem 0.85rem;
+      background: rgba(15, 20, 28, 0.45);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .sell-cart-block h3 {
+      margin: 0 0 0.55rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+    .sell-cart-list {
+      list-style: none;
+      margin: 0 0 0.65rem;
+      padding: 0;
+      max-height: 280px;
+      overflow: auto;
+    }
+    .sell-cart-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.65rem;
+      padding: 0.45rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+    .sell-cart-list li:last-child { border-bottom: none; }
+    .sell-cart-list .sell-cart-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      min-width: 0;
+    }
+    .sell-cart-list .sell-cart-meta strong { color: var(--text); }
+    .sell-cart-list .sell-cart-meta span { color: var(--muted); font-size: 0.8rem; }
+    .sell-cart-list .sell-cart-right {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      flex-shrink: 0;
+    }
+    .sell-cart-remove {
+      background: transparent;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #f87171;
+      border-radius: 6px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .sell-cart-remove:hover {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.7);
+    }
+    .sell-cart-footer {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.65rem;
+    }
+    .sell-cart-total {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .sell-cart-total strong { color: var(--text); font-size: 1.05rem; }
+    .sell-end-txn {
       font-size: 1rem;
       padding: 0.65rem 1.25rem;
       font-weight: 700;
+    }
+    .sell-end-txn:disabled {
+      opacity: 0.55;
     }
     .sell-success {
       color: var(--success);
@@ -2694,7 +3042,7 @@
 
       <section class="page hidden" id="page-sell">
         <h1 class="page-title">Sales</h1>
-        <p class="page-sub" id="sellPageSub">Overview of revenue, profit, and equity. Enter sales mode to ring up units — each sale updates stock, sold totals, and today’s Next batch log.</p>
+        <p class="page-sub" id="sellPageSub">Overview of revenue, profit, and equity. Enter sales mode to build a cart, then end the transaction to update stock, sold totals, and today’s Next batch log.</p>
 
         <div id="sellOverviewPanel">
           <div class="kpi-grid">
@@ -2717,8 +3065,8 @@
           <div class="sell-toolbar" id="sellToolbar" role="toolbar" aria-label="Sales actions">
             <span class="sell-toolbar-label">Sales actions</span>
             <div class="sell-actions">
-              <button type="button" class="btn-sell-action" id="undoSaleBtn" disabled title="Undo the last recorded sale">
-                Undo last sale
+              <button type="button" class="btn-sell-action" id="undoSaleBtn" disabled title="Undo the last recorded transaction">
+                Undo last transaction
               </button>
               <button type="button" class="btn-sell-action btn-danger" id="resetSalesBtn" disabled title="Reset all sold counts and restore stock">
                 Reset all sales
@@ -2727,7 +3075,7 @@
             <p class="sell-viewer-note hidden" id="sellViewerNote">View only — Edit inventory permission is required to record, undo, or reset sales.</p>
           </div>
           <div class="sell-enter-mode" id="sellEnterMode">
-            <p>Ready to sell? Open sales mode to pick an item (and color), confirm each sale, then end the day for a summary.</p>
+            <p>Ready to sell? Open sales mode to add items to a cart, end each transaction when the customer is done, then end the day for a summary.</p>
             <button type="button" class="btn-primary" id="enterSalesModeBtn">Enter sales mode</button>
           </div>
           <div class="card" id="sellChartCard">
@@ -2750,7 +3098,7 @@
             <div class="chart-wrap">
               <canvas id="salesChartCanvas" aria-label="Sales revenue bar chart"></canvas>
             </div>
-            <p class="chart-empty hidden" id="salesChartEmpty">No daily sales in this range yet. Record a sale in sales mode (or log a day on Next batch).</p>
+            <p class="chart-empty hidden" id="salesChartEmpty">No daily sales in this range yet. End a transaction in sales mode (or log a day on Next batch).</p>
           </div>
           <div class="card" id="sellEquityCard">
             <h2>Equity from sales</h2>
@@ -2775,40 +3123,74 @@
           <div class="sell-mode-header">
             <h2>Sales mode</h2>
             <div class="sell-actions">
-              <button type="button" class="btn-sell-action" id="undoSaleBtnMode" disabled title="Undo the last recorded sale">Undo last sale</button>
+              <button type="button" class="btn-sell-action" id="undoSaleBtnMode" disabled title="Undo the last recorded transaction">Undo last transaction</button>
               <button type="button" class="btn-primary" id="endSalesDayBtn">End sales day</button>
             </div>
           </div>
           <p class="sell-error" id="sellError" aria-live="polite"></p>
           <p class="sell-success" id="sellSuccess" aria-live="polite"></p>
-          <div class="sell-mode-form" id="sellModeForm">
-            <div class="field">
-              <label for="sellModeItem">Item</label>
-              <select id="sellModeItem"></select>
+          <div class="sell-pos-layout">
+            <div class="sell-pos-catalog">
+              <div class="sell-pos-toolbar">
+                <input
+                  type="search"
+                  id="sellPosSearch"
+                  class="sell-pos-search"
+                  placeholder="Search products…"
+                  autocomplete="off"
+                  enterkeyhint="search"
+                  aria-label="Search products"
+                />
+              </div>
+              <div class="sell-pos-grid" id="sellPosGrid" role="listbox" aria-label="Products"></div>
             </div>
-            <div class="field hidden" id="sellModeColorField">
-              <label for="sellModeColor">Color / print</label>
-              <select id="sellModeColor"></select>
-            </div>
-            <div class="field">
-              <label for="sellModeQty">Quantity</label>
-              <input type="number" id="sellModeQty" min="1" step="1" value="1" />
-            </div>
-            <button type="button" class="btn-primary sell-mode-confirm" id="confirmSaleBtn">Confirm sale</button>
+            <aside class="sell-pos-side">
+              <div class="sell-mode-form" id="sellModeForm">
+                <div class="sell-pos-native-fields" aria-hidden="true">
+                  <select id="sellModeItem" tabindex="-1"></select>
+                  <div id="sellModeColorField" class="hidden">
+                    <select id="sellModeColor" tabindex="-1"></select>
+                  </div>
+                </div>
+                <div class="sell-pos-pick-summary">
+                  <span class="sell-pos-pick-label">Selected</span>
+                  <div class="sell-pos-pick-name" id="sellPosPickName">Tap a product</div>
+                  <div class="sell-pos-qty-row">
+                    <div class="sell-pos-stepper" role="group" aria-label="Quantity">
+                      <button type="button" id="sellQtyMinusBtn" aria-label="Decrease quantity">−</button>
+                      <input type="number" id="sellModeQty" min="1" step="1" value="1" aria-label="Quantity" />
+                      <button type="button" id="sellQtyPlusBtn" aria-label="Increase quantity">+</button>
+                    </div>
+                  </div>
+                </div>
+                <button type="button" class="btn-primary sell-mode-confirm" id="addToCartBtn" disabled>Add to cart</button>
+              </div>
+              <p class="note" id="sellModeStockHint"></p>
+              <div class="sell-cart-block" id="sellCartBlock">
+                <h3>Cart</h3>
+                <ul class="sell-cart-list" id="sellCartList"></ul>
+                <div class="sell-cart-footer">
+                  <div class="sell-cart-total">
+                    Cart total: <strong id="sellCartTotal">$0.00</strong>
+                    <span id="sellCartUnitsLabel"> · 0 units</span>
+                  </div>
+                  <button type="button" class="btn-primary sell-end-txn" id="endTransactionBtn" disabled>End transaction</button>
+                </div>
+              </div>
+              <div class="sell-session-strip" id="sellSessionStrip">
+                <span>This session: <strong id="sellSessionUnits">0</strong> units</span>
+                <span>Revenue: <strong id="sellSessionRev">$0.00</strong></span>
+                <span>Profit: <strong id="sellSessionProfit">$0.00</strong></span>
+              </div>
+              <ul class="sell-session-log" id="sellSessionLog"></ul>
+            </aside>
           </div>
-          <div class="sell-session-strip" id="sellSessionStrip">
-            <span>This session: <strong id="sellSessionUnits">0</strong> units</span>
-            <span>Revenue: <strong id="sellSessionRev">$0.00</strong></span>
-            <span>Profit: <strong id="sellSessionProfit">$0.00</strong></span>
-          </div>
-          <ul class="sell-session-log" id="sellSessionLog"></ul>
-          <p class="note" id="sellModeStockHint"></p>
         </div>
       </section>
 
       <section class="page hidden" id="page-batch">
         <h1 class="page-title">Next batch</h1>
-        <p class="page-sub">Plan the next production batch from demand with a safety buffer — broken down by color / multicolor print. Daily units also update when you confirm a sale in Sales mode.</p>
+        <p class="page-sub">Plan the next production batch from demand with a safety buffer — broken down by color / multicolor print. Daily units also update when you end a transaction in Sales mode.</p>
         <p class="batch-formula" id="batchFormulaNote">
           Next batch ≈ <code>avg daily sold × days of cover × (1 + safety margin/100)</code>, optionally
           <code>max(0, that − stock on hand)</code>. Avg daily uses all logged
@@ -5002,6 +5384,12 @@ service cloud.firestore {
     let sellUndoStack = [];
     let salesModeActive = false;
     let salesModeSession = [];
+    /** Pending cart lines (not yet committed). Cleared on End transaction / End day / Reset. */
+    let salesCart = [];
+    let salesCartSeq = 0;
+    /** POS picker: selected inventory index + optional color, plus name filter. */
+    let salesPosFilter = "";
+    let salesPosSelection = { rowIdx: null, color: "" };
     let chatKnownMessageIds = new Set();
     let chatNotifySeeded = false;
     let chatUnreadCount = 0;
@@ -11265,7 +11653,8 @@ service cloud.firestore {
       const undoModeBtn = document.getElementById("undoSaleBtnMode");
       const resetBtn = document.getElementById("resetSalesBtn");
       const enterBtn = document.getElementById("enterSalesModeBtn");
-      const confirmBtn = document.getElementById("confirmSaleBtn");
+      const addCartBtn = document.getElementById("addToCartBtn");
+      const endTxnBtn = document.getElementById("endTransactionBtn");
       const endBtn = document.getElementById("endSalesDayBtn");
       const viewerNote = document.getElementById("sellViewerNote");
       if (viewerNote) viewerNote.classList.toggle("hidden", canSell);
@@ -11279,9 +11668,14 @@ service cloud.firestore {
         if (!canSell) {
           btn.title = "Needs Edit inventory permission";
         } else if (sellUndoStack.length > 0) {
-          btn.title = `Undo last sale (${sellUndoStack.length} in stack)`;
+          const top = sellUndoStack[sellUndoStack.length - 1];
+          const lineCount =
+            top?.type === "transaction" && Array.isArray(top.lines) ? top.lines.length : 1;
+          btn.title = `Undo last transaction (${sellUndoStack.length} in stack${
+            lineCount > 1 ? `, ${lineCount} lines` : ""
+          })`;
         } else {
-          btn.title = "Undo the last recorded sale";
+          btn.title = "Undo the last recorded transaction";
         }
       };
       configureUndo(undoBtn);
@@ -11295,8 +11689,349 @@ service cloud.firestore {
             : "No sales to reset";
       }
       if (enterBtn) enterBtn.disabled = !canSell;
-      if (confirmBtn) confirmBtn.disabled = !canSell;
+      if (addCartBtn) {
+        const selReady = salesPosSelection.rowIdx != null;
+        const rows = typeof getRows === "function" ? getRows() : [];
+        const row = selReady ? rows[salesPosSelection.rowIdx] : null;
+        const needsColor = !!(row?.variants || []).length;
+        const colorOk = !needsColor || !!String(salesPosSelection.color || "").trim();
+        const avail =
+          selReady && colorOk
+            ? stockAvailableForCart(salesPosSelection.rowIdx, salesPosSelection.color || "")
+            : 0;
+        addCartBtn.disabled = !canSell || !selReady || !colorOk || avail <= 0;
+      }
+      if (endTxnBtn) endTxnBtn.disabled = !canSell || salesCart.length === 0;
       if (endBtn) endBtn.disabled = !canSell;
+    }
+
+    function firstItemPhotoSrc(tr) {
+      const photos = tr?._photos || [];
+      for (const p of photos) {
+        const src = mediaSrc(p);
+        if (src) return src;
+      }
+      return "";
+    }
+
+    function clampSellPosQty() {
+      const qtyEl = document.getElementById("sellModeQty");
+      if (!qtyEl) return 1;
+      const idx = salesPosSelection.rowIdx;
+      const color = salesPosSelection.color || "";
+      let available = 0;
+      if (idx != null) available = stockAvailableForCart(idx, color);
+      const q = Math.floor(parseNum(qtyEl.value));
+      let next = q > 0 ? q : 1;
+      if (available > 0 && next > available) next = available;
+      if (available <= 0) next = 1;
+      qtyEl.value = String(next);
+      qtyEl.max = String(Math.max(1, available));
+      const minus = document.getElementById("sellQtyMinusBtn");
+      const plus = document.getElementById("sellQtyPlusBtn");
+      if (minus) minus.disabled = next <= 1 || available <= 0;
+      if (plus) plus.disabled = available > 0 ? next >= available : true;
+      return next;
+    }
+
+    function updateSellPosSelectedBar() {
+      const nameEl = document.getElementById("sellPosPickName");
+      const hint = document.getElementById("sellModeStockHint");
+      const rows = getRows();
+      const idx = salesPosSelection.rowIdx;
+      const row = idx != null ? rows[idx] : null;
+      if (!row) {
+        if (nameEl) nameEl.textContent = "Tap a product";
+        if (hint) {
+          hint.textContent = "Tap a tile to select · pick a color if needed · set qty · Add to cart";
+        }
+        clampSellPosQty();
+        updateSellActionButtons();
+        return;
+      }
+      const variants = row.variants || [];
+      const color = String(salesPosSelection.color || "").trim();
+      const needsColor = variants.length > 0;
+      const colorOk = !needsColor || !!color;
+      let cap = row.qty;
+      if (needsColor && color) {
+        const v = variants.find((x) => x.color.toLowerCase() === color.toLowerCase());
+        cap = v ? v.qty : 0;
+      } else if (needsColor) {
+        cap = 0;
+      }
+      const reserved = cartReservedQty(idx, color);
+      const available = colorOk ? Math.max(0, cap - reserved) : 0;
+      if (nameEl) {
+        nameEl.innerHTML =
+          escapeHtml(row.name) +
+          (color
+            ? ` <em>· ${escapeHtml(color)}</em>`
+            : needsColor
+              ? ` <em>· pick color</em>`
+              : "");
+      }
+      if (hint) {
+        if (needsColor && !color) {
+          hint.textContent = `Pick a color / print on the tile for ${row.name}.`;
+        } else {
+          hint.textContent =
+            `${available} available` +
+            (reserved > 0 ? ` (${cap} in stock, ${reserved} in cart)` : "") +
+            ` · sell ${fmt(row.sell)} · cost ${fmt(row.cost)}`;
+        }
+      }
+      clampSellPosQty();
+      updateSellActionButtons();
+    }
+
+    function renderSellPosGrid() {
+      const grid = document.getElementById("sellPosGrid");
+      const itemSel = document.getElementById("sellModeItem");
+      const colorField = document.getElementById("sellModeColorField");
+      const colorSel = document.getElementById("sellModeColor");
+      if (!grid) return;
+      const rows = getRows();
+      const filter = String(salesPosFilter || "")
+        .trim()
+        .toLowerCase();
+      const filtered = rows
+        .map((r, idx) => ({ r, idx }))
+        .filter(({ r }) => !filter || r.name.toLowerCase().includes(filter));
+
+      if (itemSel) {
+        itemSel.innerHTML = rows.length
+          ? `<option value="">Select…</option>` +
+            rows
+              .map(
+                (r, idx) =>
+                  `<option value="${idx}">${escapeHtml(r.name)} (${r.qty} in stock)</option>`
+              )
+              .join("")
+          : `<option value="">No inventory items</option>`;
+        if (salesPosSelection.rowIdx != null && rows[salesPosSelection.rowIdx]) {
+          itemSel.value = String(salesPosSelection.rowIdx);
+        } else {
+          itemSel.value = "";
+        }
+      }
+
+      if (!filtered.length) {
+        grid.innerHTML = `<div class="sell-pos-empty">${
+          rows.length ? "No products match your search." : "Add inventory items before selling."
+        }</div>`;
+        updateSellPosSelectedBar();
+        return;
+      }
+
+      const CHIP_MAX = 4;
+      grid.innerHTML = filtered
+        .map(({ r, idx }) => {
+          const variants = r.variants || [];
+          const photo = firstItemPhotoSrc(r.rowEl);
+          const selected = salesPosSelection.rowIdx === idx;
+          const selColor = selected ? String(salesPosSelection.color || "") : "";
+          let availableTotal = Math.max(0, r.qty);
+          if (variants.length) {
+            availableTotal = variants.reduce(
+              (s, v) => s + stockAvailableForCart(idx, v.color),
+              0
+            );
+          } else {
+            availableTotal = stockAvailableForCart(idx, "");
+          }
+          const stockClass =
+            availableTotal <= 0 ? "empty" : availableTotal <= 3 ? "low" : "";
+          const initials = String(r.name || "?")
+            .trim()
+            .split(/\s+/)
+            .slice(0, 2)
+            .map((w) => w.charAt(0).toUpperCase())
+            .join("") || "?";
+          const shownVariants = selected ? variants : variants.slice(0, CHIP_MAX);
+          const chips =
+            variants.length > 0
+              ? `<div class="sell-pos-chips">${shownVariants
+                  .map((v) => {
+                    const avail = stockAvailableForCart(idx, v.color);
+                    const active =
+                      selected && itemKey(selColor) === itemKey(v.color) ? " selected" : "";
+                    return `<button type="button" class="sell-pos-chip${active}" data-pos-color="${escapeHtml(
+                      v.color
+                    )}" data-pos-idx="${idx}" ${avail <= 0 ? "disabled" : ""} title="${escapeHtml(
+                      v.color
+                    )} · ${avail} left">${escapeHtml(v.color)}</button>`;
+                  })
+                  .join("")}${
+                  !selected && variants.length > CHIP_MAX
+                    ? `<span class="sell-pos-chip more">+${variants.length - CHIP_MAX}</span>`
+                    : ""
+                }</div>`
+              : "";
+          return `<div class="sell-pos-tile${selected ? " selected" : ""}${
+            availableTotal <= 0 ? " out-of-stock" : ""
+          }" role="option" tabindex="0" aria-selected="${selected ? "true" : "false"}" data-pos-idx="${idx}">
+            <div class="sell-pos-tile-photo">
+              ${
+                photo
+                  ? `<img src="${photo}" alt="" loading="lazy" />`
+                  : `<div class="sell-pos-tile-placeholder">${escapeHtml(initials)}</div>`
+              }
+            </div>
+            <div class="sell-pos-tile-body">
+              <div class="sell-pos-tile-name">${escapeHtml(r.name)}</div>
+              <div class="sell-pos-tile-meta">
+                <span class="sell-pos-tile-price">${fmt(r.sell)}</span>
+                <span class="sell-pos-tile-stock ${stockClass}">${
+                  availableTotal <= 0 ? "Out of stock" : `${availableTotal} avail`
+                }</span>
+              </div>
+              ${chips}
+            </div>
+          </div>`;
+        })
+        .join("");
+
+      // Sync hidden color select for selected item
+      const row = salesPosSelection.rowIdx != null ? rows[salesPosSelection.rowIdx] : null;
+      const variants = row?.variants || [];
+      if (colorField && colorSel) {
+        if (variants.length) {
+          colorField.classList.remove("hidden");
+          colorSel.innerHTML =
+            `<option value="">Color…</option>` +
+            variants
+              .map(
+                (v) =>
+                  `<option value="${escapeHtml(v.color)}">${escapeHtml(v.color)}</option>`
+              )
+              .join("");
+          colorSel.value = salesPosSelection.color || "";
+        } else {
+          colorField.classList.add("hidden");
+          colorSel.innerHTML = "";
+        }
+      }
+      updateSellPosSelectedBar();
+    }
+
+    function syncSellModeItemOptions(preserveItem, preserveColor) {
+      if (preserveItem != null && preserveItem !== "") {
+        const idx = Number(preserveItem);
+        if (Number.isInteger(idx) && idx >= 0) {
+          salesPosSelection.rowIdx = idx;
+          if (preserveColor != null) salesPosSelection.color = String(preserveColor || "");
+        }
+      }
+      renderSellPosGrid();
+    }
+
+    function selectSellPosItem(rowIdx, color) {
+      const rows = getRows();
+      const idx = Number(rowIdx);
+      const row = rows[idx];
+      if (!row) return;
+      const variants = row.variants || [];
+      let nextColor = color != null ? String(color || "").trim() : salesPosSelection.color || "";
+      if (salesPosSelection.rowIdx !== idx) {
+        nextColor = color != null ? String(color || "").trim() : "";
+        const qtyEl = document.getElementById("sellModeQty");
+        if (qtyEl) qtyEl.value = "1";
+      }
+      if (variants.length) {
+        if (nextColor) {
+          const match = variants.find((v) => itemKey(v.color) === itemKey(nextColor));
+          nextColor = match ? match.color : "";
+        }
+        // Auto-pick only color if there's exactly one with stock
+        if (!nextColor) {
+          const withStock = variants.filter((v) => stockAvailableForCart(idx, v.color) > 0);
+          if (withStock.length === 1) nextColor = withStock[0].color;
+        }
+      } else {
+        nextColor = "";
+      }
+      salesPosSelection = { rowIdx: idx, color: nextColor };
+      setSellError("");
+      renderSellPosGrid();
+    }
+
+    function adjustSellPosQty(delta) {
+      const qtyEl = document.getElementById("sellModeQty");
+      if (!qtyEl) return;
+      const cur = Math.floor(parseNum(qtyEl.value)) || 1;
+      qtyEl.value = String(Math.max(1, cur + delta));
+      clampSellPosQty();
+      setSellError("");
+      updateSellActionButtons();
+    }
+
+    function newCartLineId() {
+      salesCartSeq += 1;
+      return "cart_" + salesCartSeq + "_" + Date.now().toString(36);
+    }
+
+    function cartReservedQty(rowIdx, color) {
+      const colorKey = itemKey(color || "");
+      return salesCart.reduce((sum, line) => {
+        if (line.rowIdx !== rowIdx) return sum;
+        if (itemKey(line.color || "") !== colorKey) return sum;
+        return sum + Math.max(0, Math.floor(parseNum(line.qty)));
+      }, 0);
+    }
+
+    function stockAvailableForCart(rowIdx, color) {
+      const rows = getRows();
+      const row = rows[rowIdx];
+      if (!row) return 0;
+      const variants = row.variants || [];
+      let onHand = 0;
+      if (variants.length) {
+        const wanted = String(color || "").trim().toLowerCase();
+        const variant = variants.find((v) => v.color.toLowerCase() === wanted);
+        onHand = variant ? Math.max(0, variant.qty) : 0;
+      } else {
+        onHand = Math.max(0, Math.floor(parseNum(row.qty)));
+      }
+      return Math.max(0, onHand - cartReservedQty(rowIdx, color));
+    }
+
+    function renderSellCartUI() {
+      const listEl = document.getElementById("sellCartList");
+      const totalEl = document.getElementById("sellCartTotal");
+      const unitsLabel = document.getElementById("sellCartUnitsLabel");
+      let units = 0;
+      let rev = 0;
+      salesCart.forEach((line) => {
+        units += line.qty;
+        rev += line.revenue;
+      });
+      if (totalEl) totalEl.textContent = fmt(rev);
+      if (unitsLabel) unitsLabel.textContent = ` · ${units.toLocaleString()} unit${units === 1 ? "" : "s"}`;
+      if (listEl) {
+        listEl.innerHTML = salesCart.length
+          ? salesCart
+              .map(
+                (line) =>
+                  `<li data-cart-id="${escapeHtml(line.id)}">
+                    <div class="sell-cart-meta">
+                      <strong>${escapeHtml(line.name)}${
+                        line.color ? " · " + escapeHtml(line.color) : ""
+                      }</strong>
+                      <span>×${line.qty} · ${fmt(line.sell)} each</span>
+                    </div>
+                    <div class="sell-cart-right">
+                      <span>${fmt(line.revenue)}</span>
+                      <button type="button" class="sell-cart-remove" data-remove-cart="${escapeHtml(
+                        line.id
+                      )}">Remove</button>
+                    </div>
+                  </li>`
+              )
+              .join("")
+          : `<li class="note" style="justify-content:center;border:none">Cart is empty — tap a product to add</li>`;
+      }
+      updateSellActionButtons();
     }
 
     function renderSellSessionUI() {
@@ -11327,81 +12062,14 @@ service cloud.firestore {
                 (s) =>
                   `<li><span>${escapeHtml(s.name)}${
                     s.color ? " · " + escapeHtml(s.color) : ""
-                  } ×${s.qty}</span><span>${fmt(s.revenue)}</span></li>`
+                  } ×${s.qty}${
+                    s.txnLabel ? ` <em style="color:var(--muted);font-style:normal">(${escapeHtml(s.txnLabel)})</em>` : ""
+                  }</span><span>${fmt(s.revenue)}</span></li>`
               )
               .join("")
-          : `<li class="note" style="justify-content:center">No sales in this session yet</li>`;
+          : `<li class="note" style="justify-content:center">No completed transactions this session</li>`;
       }
-    }
-
-    function syncSellModeItemOptions(preserveItem, preserveColor) {
-      const itemSel = document.getElementById("sellModeItem");
-      const colorField = document.getElementById("sellModeColorField");
-      const colorSel = document.getElementById("sellModeColor");
-      const qtyEl = document.getElementById("sellModeQty");
-      const hint = document.getElementById("sellModeStockHint");
-      if (!itemSel) return;
-      const rows = getRows();
-      const prevItem = preserveItem != null ? preserveItem : itemSel.value;
-      itemSel.innerHTML = rows.length
-        ? rows
-            .map(
-              (r, idx) =>
-                `<option value="${idx}">${escapeHtml(r.name)} (${r.qty} in stock)</option>`
-            )
-            .join("")
-        : `<option value="">No inventory items</option>`;
-      if (prevItem !== "" && [...itemSel.options].some((o) => o.value === String(prevItem))) {
-        itemSel.value = String(prevItem);
-      } else if (rows.length) {
-        itemSel.value = "0";
-      }
-      const idx = Number(itemSel.value);
-      const row = rows[idx];
-      const variants = row?.variants || [];
-      if (colorField && colorSel) {
-        if (variants.length) {
-          colorField.classList.remove("hidden");
-          const prevColor = preserveColor != null ? preserveColor : colorSel.value;
-          colorSel.innerHTML =
-            `<option value="">Color…</option>` +
-            variants
-              .map(
-                (v) =>
-                  `<option value="${escapeHtml(v.color)}" ${v.qty <= 0 ? "disabled" : ""}>${escapeHtml(v.color)} (${v.qty} left)</option>`
-              )
-              .join("");
-          if (prevColor && [...colorSel.options].some((o) => o.value === prevColor && !o.disabled)) {
-            colorSel.value = prevColor;
-          }
-        } else {
-          colorField.classList.add("hidden");
-          colorSel.innerHTML = "";
-        }
-      }
-      let cap = row ? row.qty : 0;
-      if (row && variants.length) {
-        const color = colorSel?.value || "";
-        const v = variants.find((x) => x.color === color);
-        cap = v ? v.qty : 0;
-      }
-      if (qtyEl) {
-        qtyEl.max = String(Math.max(0, cap));
-        const q = Math.floor(parseNum(qtyEl.value));
-        if (!(q > 0)) qtyEl.value = cap > 0 ? "1" : "0";
-        else if (q > cap && cap > 0) qtyEl.value = String(cap);
-      }
-      if (hint) {
-        if (!row) {
-          hint.textContent = "Add inventory items before selling.";
-        } else if (variants.length && !(colorSel?.value || "")) {
-          hint.textContent = `Pick a color / print for ${row.name}.`;
-        } else if (variants.length) {
-          hint.textContent = `${colorSel.value}: ${cap} in stock · sell ${fmt(row.sell)} · cost ${fmt(row.cost)}`;
-        } else {
-          hint.textContent = `${row.name}: ${cap} in stock · sell ${fmt(row.sell)} · cost ${fmt(row.cost)}`;
-        }
-      }
+      renderSellCartUI();
     }
 
     function setSalesModeActive(active) {
@@ -11413,8 +12081,8 @@ service cloud.firestore {
       if (modePanel) modePanel.classList.toggle("hidden", !salesModeActive);
       if (sub) {
         sub.textContent = salesModeActive
-          ? "Sales mode — pick an item (and color), confirm each sale, then end the day for a summary."
-          : "Overview of revenue, profit, and equity. Enter sales mode to ring up units — each sale updates stock, sold totals, and today’s Next batch log.";
+          ? "Sales mode — add items to the cart, end the transaction to commit, then end the day for a summary."
+          : "Overview of revenue, profit, and equity. Enter sales mode to build a cart, then end the transaction to update stock, sold totals, and today’s Next batch log.";
       }
       if (salesModeActive) {
         setSellError("");
@@ -11431,45 +12099,169 @@ service cloud.firestore {
         return;
       }
       salesModeSession = [];
+      salesCart = [];
+      salesPosFilter = "";
+      salesPosSelection = { rowIdx: null, color: "" };
+      const searchEl = document.getElementById("sellPosSearch");
+      if (searchEl) searchEl.value = "";
+      const qtyEl = document.getElementById("sellModeQty");
+      if (qtyEl) qtyEl.value = "1";
       setSalesModeActive(true);
     }
 
-    function confirmSaleFromMode() {
+    function addToCartFromMode() {
       setSellSuccess("");
       if (!getRole()?.canEdit) {
         setSellError("You do not have permission to record sales.");
         return;
       }
-      const itemSel = document.getElementById("sellModeItem");
-      const colorSel = document.getElementById("sellModeColor");
-      const qtyEl = document.getElementById("sellModeQty");
-      const idx = Number(itemSel?.value);
-      const colorField = document.getElementById("sellModeColorField");
-      const needsColor = colorField && !colorField.classList.contains("hidden");
-      const color = needsColor ? String(colorSel?.value || "").trim() : "";
-      if (needsColor && !color) {
-        setSellError("Pick a color / print before confirming the sale.");
+      const idx = salesPosSelection.rowIdx;
+      if (idx == null) {
+        setSellError("Tap a product tile to select it.");
         return;
       }
-      const result = recordSale(idx, qtyEl ? parseNum(qtyEl.value) : 0, color);
-      if (!result?.ok) return;
-      salesModeSession.push({
-        name: result.name,
-        color: result.color || "",
-        qty: result.qty,
-        sell: result.sell,
-        cost: result.cost,
-        revenue: result.revenue,
-        profit: result.profit,
+      const rows = getRows();
+      const row = rows[idx];
+      if (!row) {
+        setSellError("Item not found.");
+        return;
+      }
+      const variants = row.variants || [];
+      const needsColor = variants.length > 0;
+      const color = needsColor ? String(salesPosSelection.color || "").trim() : "";
+      if (needsColor && !color) {
+        setSellError("Pick a color / print on the tile before adding to cart.");
+        return;
+      }
+      const qtyEl = document.getElementById("sellModeQty");
+      const n = clampSellPosQty();
+      if (!(n > 0)) {
+        setSellError("Enter a quantity of at least 1.");
+        return;
+      }
+      const available = stockAvailableForCart(idx, color);
+      if (n > available) {
+        setSellError(
+          `Cannot add ${n} × ${row.name}` +
+            (color ? ` (${color})` : "") +
+            ` — only ${available} available` +
+            (cartReservedQty(idx, color) > 0 ? " after cart" : " in stock") +
+            "."
+        );
+        return;
+      }
+      const sell = Math.max(0, parseNum(row.sell));
+      const cost = Math.max(0, parseNum(row.cost));
+      const trs = inventoryItemRows();
+      const tr = trs[idx];
+      salesCart.push({
+        id: newCartLineId(),
+        rowIdx: idx,
+        rowDomId: tr?.dataset?.id || "",
+        name: row.name,
+        color: color || "",
+        qty: n,
+        sell,
+        cost,
+        revenue: n * sell,
+        profit: n * (sell - cost),
+      });
+      setSellError("");
+      setSellSuccess(`Added ${n} × ${row.name}` + (color ? ` (${color})` : "") + ` to cart`);
+      if (qtyEl) qtyEl.value = "1";
+      syncSellModeItemOptions(String(idx), color || "");
+      renderSellSessionUI();
+    }
+
+    function removeCartLine(cartId) {
+      const id = String(cartId || "");
+      const before = salesCart.length;
+      salesCart = salesCart.filter((line) => line.id !== id);
+      if (salesCart.length === before) return;
+      setSellSuccess("Removed line from cart");
+      setSellError("");
+      syncSellModeItemOptions(
+        salesPosSelection.rowIdx != null ? String(salesPosSelection.rowIdx) : undefined,
+        salesPosSelection.color || ""
+      );
+      renderSellSessionUI();
+    }
+
+    function endTransaction() {
+      setSellSuccess("");
+      if (!getRole()?.canEdit) {
+        setSellError("You do not have permission to record sales.");
+        return;
+      }
+      if (!salesCart.length) {
+        setSellError("Cart is empty — add items before ending the transaction.");
+        return;
+      }
+      const committed = [];
+      const undoLines = [];
+      let totalUnits = 0;
+      let totalRev = 0;
+      const cartSnapshot = salesCart.slice();
+      for (const line of cartSnapshot) {
+        let rowIdx = line.rowIdx;
+        if (line.rowDomId) {
+          const trs = inventoryItemRows();
+          const found = trs.findIndex((tr) => tr.dataset.id === String(line.rowDomId));
+          if (found >= 0) rowIdx = found;
+        }
+        const result = recordSale(rowIdx, line.qty, line.color, {
+          deferUndo: true,
+          silent: true,
+        });
+        if (!result?.ok) {
+          // Roll back any lines already applied in this transaction.
+          for (const applied of [...undoLines].reverse()) {
+            revertSaleLine(applied);
+          }
+          setSellError(result?.error || "Could not complete transaction — cart was not cleared.");
+          recalculate();
+          syncSellModeItemOptions();
+          renderSellSessionUI();
+          return;
+        }
+        undoLines.push(result.undoEntry);
+        committed.push({
+          name: result.name,
+          color: result.color || "",
+          qty: result.qty,
+          sell: result.sell,
+          cost: result.cost,
+          revenue: result.revenue,
+          profit: result.profit,
+          at: new Date().toISOString(),
+          txnLabel: "txn",
+        });
+        totalUnits += result.qty;
+        totalRev += result.revenue;
+      }
+      const txnId = "txn_" + Date.now().toString(36);
+      committed.forEach((line) => {
+        line.txnLabel = txnId;
+        salesModeSession.push(line);
+      });
+      pushSellUndo({
+        type: "transaction",
+        txnId,
+        lines: undoLines,
         at: new Date().toISOString(),
       });
+      salesCart = [];
+      setSellError("");
       setSellSuccess(
-        `Sold ${result.qty} × ${result.name}` +
-          (result.color ? ` (${result.color})` : "") +
-          ` — ${fmt(result.revenue)}`
+        `Transaction complete: ${totalUnits.toLocaleString()} unit${totalUnits === 1 ? "" : "s"} · ${fmt(
+          totalRev
+        )}` + (committed.length > 1 ? ` (${committed.length} lines)` : "")
       );
-      if (qtyEl) qtyEl.value = "1";
-      syncSellModeItemOptions(String(idx), result.color || "");
+      scheduleSave(
+        `Sale transaction: ${totalUnits} unit(s), ${committed.length} line(s), ${fmt(totalRev)}`
+      );
+      recalculate();
+      syncSellModeItemOptions();
       renderSellSessionUI();
       updateSellActionButtons();
     }
@@ -11608,8 +12400,18 @@ service cloud.firestore {
     }
 
     function endSalesDay() {
+      if (salesCart.length) {
+        if (
+          !confirm(
+            `You still have ${salesCart.length} line(s) in the cart. End sales day and discard the cart without committing?`
+          )
+        ) {
+          return;
+        }
+      }
       showSellDayOverview();
       salesModeSession = [];
+      salesCart = [];
       setSalesModeActive(false);
       setSellSuccess("");
       setSellError("");
@@ -11844,16 +12646,18 @@ service cloud.firestore {
       workspaceState.dailySales = normalizeDailySales(list);
     }
 
-    function recordSale(rowIdx, amount, color = "") {
+    function recordSale(rowIdx, amount, color = "", opts = {}) {
+      const silent = !!opts.silent;
+      const deferUndo = !!opts.deferUndo;
       if (!getRole()?.canEdit) {
-        setSellError("You do not have permission to record sales.");
-        return { ok: false };
+        if (!silent) setSellError("You do not have permission to record sales.");
+        return { ok: false, error: "You do not have permission to record sales." };
       }
       const trs = inventoryItemRows();
       const tr = trs[rowIdx];
       if (!tr) {
-        setSellError("Item not found.");
-        return { ok: false };
+        if (!silent) setSellError("Item not found.");
+        return { ok: false, error: "Item not found." };
       }
       const name = tr.querySelector(".item-name").value.trim() || "Unnamed item";
       const qty = parseNum(tr.querySelector(".qty").value);
@@ -11861,32 +12665,37 @@ service cloud.firestore {
       const sell = parseNum(tr.querySelector(".sell").value);
       const n = Math.floor(parseNum(amount));
       if (!(n > 0)) {
-        setSellError("Enter a sold quantity of at least 1.");
-        return { ok: false };
+        const msg = "Enter a sold quantity of at least 1.";
+        if (!silent) setSellError(msg);
+        return { ok: false, error: msg };
       }
       const variants = normalizeColorVariants(tr._variants || []);
       let variant = null;
       if (variants.length) {
         const wanted = String(color || "").trim();
         if (!wanted) {
-          setSellError(`Pick a color for ${name} before recording the sale.`);
-          return { ok: false };
+          const msg = `Pick a color for ${name} before recording the sale.`;
+          if (!silent) setSellError(msg);
+          return { ok: false, error: msg };
         }
         variant = variants.find((v) => v.color.toLowerCase() === wanted.toLowerCase());
         if (!variant) {
-          setSellError(`Color "${wanted}" not found on ${name}.`);
-          return { ok: false };
+          const msg = `Color "${wanted}" not found on ${name}.`;
+          if (!silent) setSellError(msg);
+          return { ok: false, error: msg };
         }
         if (n > variant.qty) {
-          setSellError(`Cannot sell ${n} × ${name} (${variant.color}) — only ${variant.qty} in stock for that color.`);
-          return { ok: false };
+          const msg = `Cannot sell ${n} × ${name} (${variant.color}) — only ${variant.qty} in stock for that color.`;
+          if (!silent) setSellError(msg);
+          return { ok: false, error: msg };
         }
         variant.qty -= n;
         variant.sold += n;
         tr._variants = variants;
       } else if (n > qty) {
-        setSellError(`Cannot sell ${n} of ${name} — only ${qty} in stock.`);
-        return { ok: false };
+        const msg = `Cannot sell ${n} of ${name} — only ${qty} in stock.`;
+        if (!silent) setSellError(msg);
+        return { ok: false, error: msg };
       }
       const saleDate = todayISODate();
       const prevSold = Math.max(0, parseNum(tr.dataset.sold));
@@ -11907,7 +12716,7 @@ service cloud.firestore {
         cost,
         color: variant ? variant.color : "",
       });
-      pushSellUndo({
+      const undoEntry = {
         rowDomId: tr.dataset.id,
         rowIdx,
         name,
@@ -11917,10 +12726,15 @@ service cloud.firestore {
         cost,
         date: saleDate,
         at: new Date().toISOString(),
-      });
-      setSellError("");
-      scheduleSave(`Sold ${n} × ${name}` + (variant ? ` (${variant.color})` : ""));
-      recalculate();
+      };
+      if (!deferUndo) {
+        pushSellUndo(undoEntry);
+      }
+      if (!silent) {
+        setSellError("");
+        scheduleSave(`Sold ${n} × ${name}` + (variant ? ` (${variant.color})` : ""));
+        recalculate();
+      }
       return {
         ok: true,
         name,
@@ -11930,52 +12744,27 @@ service cloud.firestore {
         cost,
         revenue: n * sell,
         profit: n * (sell - cost),
+        undoEntry,
       };
     }
 
-    function undoLastSale() {
-      if (!getRole()?.canEdit) {
-        setSellError("You do not have permission to undo sales.");
-        return;
-      }
-      if (!sellUndoStack.length) {
-        setSellError("Nothing to undo.");
-        updateSellActionButtons();
-        return;
-      }
-      const entry = sellUndoStack[sellUndoStack.length - 1];
-      const label = `${entry.qty} × ${entry.name || "item"}` + (entry.color ? ` (${entry.color})` : "");
-      if (!confirm(`Undo last sale of ${label}? Stock and sold totals will be restored for that action.`)) {
-        return;
-      }
+    /** Restore stock / sold / daily log for one undo line (no stack mutation). */
+    function revertSaleLine(entry) {
       const tr = findInventoryRowForUndo(entry);
-      if (!tr) {
-        sellUndoStack.pop();
-        persistSellUndoStack();
-        setSellError(`Cannot undo: item "${entry.name || "unknown"}" is no longer in inventory.`);
-        updateSellActionButtons();
-        return;
-      }
+      if (!tr) return { ok: false, missing: true, name: entry?.name || "unknown" };
       const n = Math.max(0, Math.floor(parseNum(entry.qty)));
-      if (!(n > 0)) {
-        sellUndoStack.pop();
-        persistSellUndoStack();
-        updateSellActionButtons();
-        return;
-      }
+      if (!(n > 0)) return { ok: true, restore: 0, tr, name: entry?.name || "item" };
       const qty = parseNum(tr.querySelector(".qty").value);
       const prevSold = Math.max(0, parseNum(tr.dataset.sold));
       const restore = Math.min(n, prevSold);
       const variants = normalizeColorVariants(tr._variants || []);
       if (variants.length && entry.color) {
-        // Variant-aware undo: put units back on the color they were sold from.
         const wanted = String(entry.color).trim().toLowerCase();
         let variant = variants.find((v) => v.color.toLowerCase() === wanted);
         if (variant) {
           variant.qty += restore;
           variant.sold = Math.max(0, variant.sold - restore);
         } else {
-          // Color was renamed/removed since the sale — recreate it so totals stay right.
           variants.push({ color: String(entry.color).trim().slice(0, 40), qty: restore, sold: 0 });
         }
         tr._variants = variants;
@@ -11993,11 +12782,33 @@ service cloud.firestore {
         qty: restore,
         color: entry.color || "",
       });
-      sellUndoStack.pop();
-      persistSellUndoStack();
       const name = tr.querySelector(".item-name").value.trim() || entry.name || "item";
+      return { ok: true, restore, tr, name, color: entry.color || "" };
+    }
+
+    function popSessionLinesMatchingUndo(entry) {
+      if (entry?.type === "transaction" && Array.isArray(entry.lines)) {
+        const toRemove = entry.lines.slice();
+        for (let i = toRemove.length - 1; i >= 0; i--) {
+          const want = toRemove[i];
+          for (let j = salesModeSession.length - 1; j >= 0; j--) {
+            const last = salesModeSession[j];
+            if (
+              last &&
+              itemKey(last.name) === itemKey(want.name) &&
+              itemKey(last.color || "") === itemKey(want.color || "") &&
+              last.qty === Math.max(0, Math.floor(parseNum(want.qty)))
+            ) {
+              salesModeSession.splice(j, 1);
+              break;
+            }
+          }
+        }
+        return;
+      }
       if (salesModeSession.length) {
         const last = salesModeSession[salesModeSession.length - 1];
+        const restore = Math.max(0, Math.floor(parseNum(entry.qty)));
         if (
           last &&
           itemKey(last.name) === itemKey(entry.name) &&
@@ -12007,9 +12818,60 @@ service cloud.firestore {
           salesModeSession.pop();
         }
       }
+    }
+
+    function undoLastSale() {
+      if (!getRole()?.canEdit) {
+        setSellError("You do not have permission to undo sales.");
+        return;
+      }
+      if (!sellUndoStack.length) {
+        setSellError("Nothing to undo.");
+        updateSellActionButtons();
+        return;
+      }
+      const entry = sellUndoStack[sellUndoStack.length - 1];
+      const isTxn = entry?.type === "transaction" && Array.isArray(entry.lines);
+      const lines = isTxn ? entry.lines : [entry];
+      const totalQty = lines.reduce((s, l) => s + Math.max(0, Math.floor(parseNum(l.qty))), 0);
+      const confirmLabel = isTxn
+        ? `Undo last transaction (${lines.length} line${lines.length === 1 ? "" : "s"}, ${totalQty.toLocaleString()} unit${
+            totalQty === 1 ? "" : "s"
+          })? Stock, sold totals, and the revenue chart will be restored for that transaction.`
+        : `Undo last sale of ${entry.qty} × ${entry.name || "item"}${
+            entry.color ? ` (${entry.color})` : ""
+          }? Stock and sold totals will be restored for that action.`;
+      if (!confirm(confirmLabel)) {
+        return;
+      }
+      const results = [];
+      for (const line of [...lines].reverse()) {
+        results.push(revertSaleLine(line));
+      }
+      const missing = results.find((r) => r.missing);
+      if (missing && results.every((r) => r.missing || !r.restore)) {
+        sellUndoStack.pop();
+        persistSellUndoStack();
+        setSellError(`Cannot undo: item "${missing.name || "unknown"}" is no longer in inventory.`);
+        updateSellActionButtons();
+        return;
+      }
+      sellUndoStack.pop();
+      persistSellUndoStack();
+      popSessionLinesMatchingUndo(entry);
+      const restored = results.reduce((s, r) => s + (r.restore || 0), 0);
       setSellError("");
-      setSellSuccess(`Undid ${restore} × ${name}` + (entry.color ? ` (${entry.color})` : ""));
-      scheduleSave(`Undid sale of ${restore} × ${name}`);
+      setSellSuccess(
+        isTxn
+          ? `Undid transaction: ${restored.toLocaleString()} unit${restored === 1 ? "" : "s"} restored`
+          : `Undid ${restored} × ${results[0]?.name || entry.name || "item"}` +
+              (entry.color ? ` (${entry.color})` : "")
+      );
+      scheduleSave(
+        isTxn
+          ? `Undid sale transaction (${restored} units)`
+          : `Undid sale of ${restored} × ${results[0]?.name || entry.name || "item"}`
+      );
       recalculate();
       if (salesModeActive) {
         syncSellModeItemOptions();
@@ -12038,9 +12900,12 @@ service cloud.firestore {
         updateSellActionButtons();
         return;
       }
+      const dailyCount = normalizeDailySales(workspaceState.dailySales || []).length;
       if (
         !confirm(
-          `Reset all sales?\n\nThis restores ${totalSold.toLocaleString()} sold unit(s) across ${affected} item(s) back into stock and sets every sold total to 0. This cannot be undone from the Undo stack.`
+          `Reset all sales?\n\nThis restores ${totalSold.toLocaleString()} sold unit(s) across ${affected} item(s) back into stock, sets every sold total to 0, and clears the daily sales log (${dailyCount.toLocaleString()} entr${
+            dailyCount === 1 ? "y" : "ies"
+          }) so the revenue chart goes to empty/zero. Manually logged Next-batch days are cleared too (same chart source; entries are not tagged separately). This cannot be undone from the Undo stack.`
         )
       ) {
         return;
@@ -12071,11 +12936,14 @@ service cloud.firestore {
         }
         tr.dataset.sold = "0";
       });
+      // Clear chart source: dailySales feeds the revenue chart (Sales mode + Next-batch log share it).
+      workspaceState.dailySales = [];
       clearSellUndoStack();
       salesModeSession = [];
+      salesCart = [];
       setSellError("");
       setSellSuccess("");
-      scheduleSave(`Reset all sales (${totalSold} units restored to stock)`);
+      scheduleSave(`Reset all sales (${totalSold} units restored to stock; daily sales / chart cleared)`);
       recalculate();
       if (salesModeActive) {
         syncSellModeItemOptions();
@@ -12476,7 +13344,7 @@ service cloud.firestore {
                 </tr>`;
               })
               .join("")
-          : `<tr><td colspan="11" class="note">No daily sales logged yet. Confirm a sale in Sales mode, or log a day above.</td></tr>`;
+          : `<tr><td colspan="11" class="note">No daily sales logged yet. End a transaction in Sales mode, or log a day above.</td></tr>`;
       }
 
       const canEdit = !!getRole()?.canEdit;
@@ -12835,7 +13703,7 @@ service cloud.firestore {
         destroySalesChart();
         if (emptyEl) {
           emptyEl.textContent =
-            "No daily sales in this range yet. Confirm a sale in Sales mode, or log a day on Next batch.";
+            "No daily sales in this range yet. End a transaction in Sales mode, or log a day on Next batch.";
         }
         return;
       }
@@ -14380,16 +15248,45 @@ service cloud.firestore {
     document.getElementById("undoSaleBtnMode")?.addEventListener("click", () => undoLastSale());
     document.getElementById("resetSalesBtn").addEventListener("click", () => resetAllSales());
     document.getElementById("enterSalesModeBtn")?.addEventListener("click", () => enterSalesMode());
-    document.getElementById("confirmSaleBtn")?.addEventListener("click", () => confirmSaleFromMode());
+    document.getElementById("addToCartBtn")?.addEventListener("click", () => addToCartFromMode());
+    document.getElementById("endTransactionBtn")?.addEventListener("click", () => endTransaction());
     document.getElementById("endSalesDayBtn")?.addEventListener("click", () => endSalesDay());
-    document.getElementById("sellModeItem")?.addEventListener("change", () => syncSellModeItemOptions());
-    document.getElementById("sellModeColor")?.addEventListener("change", () => {
-      syncSellModeItemOptions(
-        document.getElementById("sellModeItem")?.value,
-        document.getElementById("sellModeColor")?.value
-      );
+    document.getElementById("sellCartList")?.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-remove-cart]");
+      if (!btn) return;
+      removeCartLine(btn.getAttribute("data-remove-cart"));
     });
-    document.getElementById("sellModeQty")?.addEventListener("input", () => setSellError(""));
+    document.getElementById("sellPosGrid")?.addEventListener("click", (e) => {
+      const chip = e.target.closest("[data-pos-color]");
+      if (chip) {
+        if (chip.disabled) return;
+        e.preventDefault();
+        e.stopPropagation();
+        selectSellPosItem(chip.getAttribute("data-pos-idx"), chip.getAttribute("data-pos-color"));
+        return;
+      }
+      const tile = e.target.closest(".sell-pos-tile[data-pos-idx]");
+      if (!tile) return;
+      selectSellPosItem(tile.getAttribute("data-pos-idx"), undefined);
+    });
+    document.getElementById("sellPosGrid")?.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const tile = e.target.closest(".sell-pos-tile[data-pos-idx]");
+      if (!tile || e.target.closest("[data-pos-color]")) return;
+      e.preventDefault();
+      selectSellPosItem(tile.getAttribute("data-pos-idx"), undefined);
+    });
+    document.getElementById("sellPosSearch")?.addEventListener("input", (e) => {
+      salesPosFilter = String(e.target.value || "");
+      renderSellPosGrid();
+    });
+    document.getElementById("sellQtyMinusBtn")?.addEventListener("click", () => adjustSellPosQty(-1));
+    document.getElementById("sellQtyPlusBtn")?.addEventListener("click", () => adjustSellPosQty(1));
+    document.getElementById("sellModeQty")?.addEventListener("input", () => {
+      clampSellPosQty();
+      setSellError("");
+      updateSellActionButtons();
+    });
 
     document.getElementById("batchLogBtn")?.addEventListener("click", () => logDailySale());
     document.getElementById("batchItemSelect")?.addEventListener("change", () => {
