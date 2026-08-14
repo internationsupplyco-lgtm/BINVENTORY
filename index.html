@@ -632,6 +632,28 @@
       margin-bottom: 1rem;
     }
     .sell-mode-header h2 { margin: 0; font-size: 1.15rem; }
+    .sell-cashier-ready {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem 1.25rem;
+      flex-wrap: wrap;
+      margin: 0 0 0.85rem;
+      padding: 0.7rem 0.9rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+    }
+    .sell-cashier-ready-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+    .sell-cashier-ready-sub {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
     .sell-pos-layout {
       display: grid;
       grid-template-columns: 1fr;
@@ -2213,6 +2235,52 @@
     }
     .service-filter-row select { width: auto; min-width: 140px; flex: 1; }
 
+    /* Inventory drag reorder */
+    .inv-drag-cell {
+      width: 1.5rem;
+      padding-left: 0.25rem;
+      padding-right: 0.15rem;
+      vertical-align: middle;
+    }
+    .inv-drag-handle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.35rem;
+      height: 1.6rem;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      cursor: grab;
+      font-size: 0.85rem;
+      letter-spacing: -0.12em;
+      line-height: 1;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    .inv-drag-handle:hover:not(:disabled) {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .inv-drag-handle:disabled,
+    .inv-drag-handle[aria-disabled="true"] {
+      opacity: 0.35;
+      cursor: default;
+      pointer-events: none;
+    }
+    .inv-drag-handle:active:not(:disabled) { cursor: grabbing; }
+    tr.inv-row-dragging {
+      opacity: 0.45;
+    }
+    tr.inv-row-drop-before td {
+      box-shadow: inset 0 2px 0 0 var(--accent);
+    }
+    tr.inv-row-drop-after td {
+      box-shadow: inset 0 -2px 0 0 var(--accent);
+    }
+
     /* Inventory media slots */
     .inv-media-cell { white-space: nowrap; }
     .inv-media-cell .btn-ghost { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
@@ -2694,8 +2762,7 @@
       border-bottom: 1px solid #2a2a2a;
     }
     .cd-brand-logo,
-    .cd-cart-logo,
-    .cd-ready-logo {
+    .cd-cart-logo {
       width: clamp(36px, 5vw, 52px);
       height: clamp(36px, 5vw, 52px);
       object-fit: contain;
@@ -2704,8 +2771,7 @@
       flex: 0 0 auto;
     }
     .cd-brand-text,
-    .cd-cart-brand-text,
-    .cd-ready-brand-text {
+    .cd-cart-brand-text {
       min-width: 0;
     }
     .cd-slide-wrap {
@@ -2887,49 +2953,6 @@
     .cd-thanks.cd-thanks-show-total .cd-thanks-total {
       transition-delay: 0.12s;
     }
-    .cd-ready {
-      position: relative;
-      background: #0a0a0a;
-    }
-    .cd-ready-bg {
-      position: absolute;
-      inset: 0;
-    }
-    .cd-ready-bg img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: opacity 0.5s ease;
-      filter: brightness(0.55);
-    }
-    .cd-ready-overlay {
-      position: absolute;
-      inset: 0;
-      z-index: 2;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 2rem;
-      background: rgba(0, 0, 0, 0.28);
-    }
-    .cd-ready-brand {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.65rem;
-      font-size: clamp(0.95rem, 1.8vw, 1.2rem);
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #cfcfcf;
-      margin-bottom: 1rem;
-    }
-    .cd-ready-logo {
-      width: clamp(44px, 6vw, 64px);
-      height: clamp(44px, 6vw, 64px);
-    }
     .cd-brand-editor {
       display: flex;
       flex-wrap: wrap;
@@ -2953,17 +2976,6 @@
       object-fit: contain;
       background: var(--surface-2);
       border: 1px solid var(--border);
-    }
-    .cd-ready-overlay h1 {
-      margin: 0;
-      font-size: clamp(2rem, 6.5vw, 4rem);
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
-    .cd-ready-sub {
-      margin-top: 0.85rem;
-      color: #b0b0b0;
-      font-size: clamp(1rem, 2vw, 1.25rem);
     }
     .cd-slides-thumbs {
       display: flex;
@@ -3032,19 +3044,6 @@
           <span class="cd-cart-footer-label">Total</span>
           <div class="cd-cart-total" id="cdCartTotal">$0.00</div>
         </div>
-      </div>
-    </div>
-    <div class="cd-phase cd-ready hidden" id="cdPhaseReady">
-      <div class="cd-ready-bg">
-        <img id="cdReadySlideImg" alt="" class="hidden" />
-      </div>
-      <div class="cd-ready-overlay">
-        <div class="cd-ready-brand">
-          <img id="cdReadyLogo" class="cd-ready-logo hidden" alt="" />
-          <span class="cd-ready-brand-text" id="cdReadyBrand">Inventory Split</span>
-        </div>
-        <h1>Ready for sales</h1>
-        <p class="cd-ready-sub">New transaction</p>
       </div>
     </div>
     <div class="cd-phase cd-thanks hidden" id="cdPhaseThanks">
@@ -3425,6 +3424,7 @@
             <table>
               <thead>
                 <tr>
+                  <th class="inv-drag-cell" aria-label="Reorder"></th>
                   <th>Item</th>
                   <th class="num">Qty</th>
                   <th class="num">Cost / unit</th>
@@ -3498,9 +3498,10 @@
               <h2>Customer screen</h2>
             </div>
             <p class="note" style="margin-top:0">
-              Open a second browser window on the customer-facing monitor. In sales mode with an empty cart it shows
-              <strong>Ready for sales</strong> over a photo screensaver; during a sale it shows cart lines and the running total;
-              after <strong>End transaction</strong> it shows Thank you + total, then Ready for sales again.
+              Open a second browser window on the customer-facing monitor. While waiting it shows your company logo, name, and
+              presentation slideshow; during a sale it shows cart lines and the running total; after
+              <strong>End transaction</strong> it shows Thank you + total, then returns to the branded slideshow.
+              The cashier screen shows <strong>Ready for sales</strong> when the cart is empty.
             </p>
             <div class="customer-display-actions">
               <button type="button" class="btn-primary" id="openCustomerDisplayBtn2">Open customer screen</button>
@@ -3579,6 +3580,10 @@
               <button type="button" class="btn-sell-action" id="undoSaleBtnMode" disabled title="Undo the last recorded transaction">Undo last transaction</button>
               <button type="button" class="btn-primary" id="endSalesDayBtn">End sales day</button>
             </div>
+          </div>
+          <div class="sell-cashier-ready hidden" id="sellCashierReady" role="status" aria-live="polite">
+            <span class="sell-cashier-ready-title">Ready for sales</span>
+            <span class="sell-cashier-ready-sub">Waiting for next transaction</span>
           </div>
           <p class="sell-error" id="sellError" aria-live="polite"></p>
           <p class="sell-success" id="sellSuccess" aria-live="polite"></p>
@@ -7629,7 +7634,6 @@ service cloud.firestore {
       const pairs = [
         ["cdBrand", "cdBrandLogo"],
         ["cdCartBrand", "cdCartLogo"],
-        ["cdReadyBrand", "cdReadyLogo"],
       ];
       for (const [textId, logoId] of pairs) {
         const textEl = document.getElementById(textId);
@@ -7779,8 +7783,8 @@ service cloud.firestore {
 
     function publishCustomerDisplay(phase, extras) {
       if (customerDisplayIsDisplayWindow) return;
-      if (phase) customerDisplayPhase = phase;
-      if (phase !== "thanks" && customerDisplayThanksTimer) {
+      if (phase) customerDisplayPhase = normalizeCustomerDisplayPhase(phase);
+      if (customerDisplayPhase !== "thanks" && customerDisplayThanksTimer) {
         clearTimeout(customerDisplayThanksTimer);
         customerDisplayThanksTimer = null;
       }
@@ -7793,6 +7797,23 @@ service cloud.firestore {
           customerChannel.postMessage(payload);
         } catch (_) {}
       }
+      updateCashierReadyBanner();
+    }
+
+    function normalizeCustomerDisplayPhase(phase) {
+      const p = String(phase || "").trim().toLowerCase();
+      // Legacy "ready" from older cashier sync → branded slideshow idle.
+      if (p === "ready" || p === "idle" || p === "presentation") {
+        if (p === "ready") return "idle";
+        return p;
+      }
+      if (p === "cart" || p === "thanks") return p;
+      return "presentation";
+    }
+
+    function isCustomerSlideshowPhase(phase) {
+      const p = normalizeCustomerDisplayPhase(phase);
+      return p === "presentation" || p === "idle";
     }
 
     function openCustomerDisplay() {
@@ -7810,7 +7831,7 @@ service cloud.firestore {
             ? "cart"
             : customerDisplayPhase === "thanks"
               ? "thanks"
-              : "ready"
+              : "idle"
           : "presentation"
       );
       setTimeout(() => publishCustomerDisplay(), 350);
@@ -7824,12 +7845,11 @@ service cloud.firestore {
       }
     }
 
-    function startCustomerSlideshow(slides, mode) {
+    function startCustomerSlideshow(slides) {
       stopCustomerSlideshow();
-      const isReady = mode === "ready";
-      const img = document.getElementById(isReady ? "cdReadySlideImg" : "cdSlideImg");
-      const cap = isReady ? null : document.getElementById("cdSlideCaption");
-      const empty = isReady ? null : document.getElementById("cdPresentationEmpty");
+      const img = document.getElementById("cdSlideImg");
+      const cap = document.getElementById("cdSlideCaption");
+      const empty = document.getElementById("cdPresentationEmpty");
       if (!img) return;
       const list = Array.isArray(slides) ? slides.filter((s) => s && s.src) : [];
       if (!list.length) {
@@ -7868,22 +7888,21 @@ service cloud.firestore {
     function setCustomerDisplayPhaseUi(phase) {
       const pres = document.getElementById("cdPhasePresentation");
       const cart = document.getElementById("cdPhaseCart");
-      const ready = document.getElementById("cdPhaseReady");
       const thanks = document.getElementById("cdPhaseThanks");
-      if (!pres || !cart || !thanks || !ready) return;
+      if (!pres || !cart || !thanks) return;
+      const normalized = normalizeCustomerDisplayPhase(phase);
       const show = (el, on) => el.classList.toggle("hidden", !on);
-      show(pres, phase === "presentation");
-      show(cart, phase === "cart");
-      show(ready, phase === "ready");
-      show(thanks, phase === "thanks");
-      if (phase !== "thanks") {
+      show(pres, isCustomerSlideshowPhase(normalized));
+      show(cart, normalized === "cart");
+      show(thanks, normalized === "thanks");
+      if (normalized !== "thanks") {
         thanks.classList.remove("cd-thanks-show-total");
         if (customerDisplayThanksRevealTimer) {
           clearTimeout(customerDisplayThanksRevealTimer);
           customerDisplayThanksRevealTimer = null;
         }
       }
-      if (phase !== "presentation" && phase !== "ready") stopCustomerSlideshow();
+      if (!isCustomerSlideshowPhase(normalized)) stopCustomerSlideshow();
     }
 
     function scrollCustomerCartToBottom() {
@@ -7896,19 +7915,16 @@ service cloud.firestore {
 
     function applyCustomerDisplayState(msg) {
       if (!msg || typeof msg !== "object") return;
-      const phase = msg.phase || "presentation";
+      const phase = normalizeCustomerDisplayPhase(msg.phase || "presentation");
       customerDisplayPhase = phase;
+      // Prefer brand/slides stored on this customer computer via localStorage.
       const localBrand = loadCustomerDisplayBrand();
-      const brand = msg.brand || getCustomerDisplayBrandName(localBrand);
-      const logoSrc = msg.logoSrc || localBrand.logoDataUrl || "";
+      const brand = getCustomerDisplayBrandName(localBrand) || msg.brand || "Inventory Split";
+      const logoSrc = localBrand.logoDataUrl || msg.logoSrc || "";
       applyCustomerDisplayBrandUi(brand, logoSrc);
       setCustomerDisplayPhaseUi(phase);
-      if (phase === "presentation") {
-        startCustomerSlideshow(gatherPresentationSlides(), "presentation");
-        return;
-      }
-      if (phase === "ready") {
-        startCustomerSlideshow(gatherPresentationSlides(), "ready");
+      if (isCustomerSlideshowPhase(phase)) {
+        startCustomerSlideshow(gatherPresentationSlides());
         return;
       }
       if (phase === "thanks") {
@@ -8010,7 +8026,7 @@ service cloud.firestore {
       saveCustomerDisplaySlides(slides);
       renderCustomerDisplaySlidesEditor();
       setSellSuccess("Presentation slides saved on this device.");
-      if (customerDisplayPhase === "presentation" || customerDisplayPhase === "ready") {
+      if (isCustomerSlideshowPhase(customerDisplayPhase)) {
         publishCustomerDisplay(customerDisplayPhase);
       }
     }
@@ -8024,7 +8040,7 @@ service cloud.firestore {
       saveCustomerDisplaySlides(slides);
       renderCustomerDisplaySlidesEditor();
       setSellSuccess("Removed presentation slide.");
-      if (customerDisplayPhase === "presentation" || customerDisplayPhase === "ready") {
+      if (isCustomerSlideshowPhase(customerDisplayPhase)) {
         publishCustomerDisplay(customerDisplayPhase);
       }
     }
@@ -8095,21 +8111,15 @@ service cloud.firestore {
         const slidesKey = customerDisplaySlidesKey();
         if (
           (ev.key === slidesKey || ev.key === slidesKey + ":ping") &&
-          (customerDisplayPhase === "presentation" || customerDisplayPhase === "ready")
+          isCustomerSlideshowPhase(customerDisplayPhase)
         ) {
-          startCustomerSlideshow(
-            gatherPresentationSlides(),
-            customerDisplayPhase === "ready" ? "ready" : "presentation"
-          );
+          startCustomerSlideshow(gatherPresentationSlides());
         }
         if (
           ev.key === dataKey(workspaceId) &&
-          (customerDisplayPhase === "presentation" || customerDisplayPhase === "ready")
+          isCustomerSlideshowPhase(customerDisplayPhase)
         ) {
-          startCustomerSlideshow(
-            gatherPresentationSlides(),
-            customerDisplayPhase === "ready" ? "ready" : "presentation"
-          );
+          startCustomerSlideshow(gatherPresentationSlides());
         }
       });
     }
@@ -11638,6 +11648,7 @@ service cloud.firestore {
       // Re-lock aggregate qty inputs on rows with color variants (the loop above re-enabled them).
       inventoryBody.querySelectorAll("tr:not(.inv-media-panel-row)").forEach((tr) => {
         if ((tr._variants || []).length) syncVariantAggregates(tr);
+        setInventoryRowDragEnabled(tr, !!meta.canEdit);
       });
       inventoryBody.querySelectorAll(".remove-row").forEach((btn) => {
         btn.disabled = !meta.canEdit;
@@ -11716,6 +11727,9 @@ service cloud.firestore {
       const modelN = (item.models || []).length;
       const hasVariants = (item.variants || []).length > 0;
       tr.innerHTML = `
+        <td class="inv-drag-cell">
+          <span class="inv-drag-handle" draggable="${canEdit ? "true" : "false"}" role="button" tabindex="${canEdit ? "0" : "-1"}" aria-label="Drag to reorder" title="Drag to reorder" aria-disabled="${canEdit ? "false" : "true"}">⋮⋮</span>
+        </td>
         <td><input type="text" class="item-name" placeholder="Item name" value="${escapeHtml(item.name || "")}" ${canEdit ? "" : "disabled"} /></td>
         <td>
           <input type="number" class="qty" min="0" step="1" value="${item.qty}" ${canEdit && !hasVariants ? "" : "disabled"} ${hasVariants ? 'title="Total of color variants — edit colors in the Media panel"' : ""} />
@@ -11752,8 +11766,160 @@ service cloud.firestore {
         recalculate();
         scheduleSave("Removed an inventory item");
       });
+      bindInventoryRowDrag(tr);
+      setInventoryRowDragEnabled(tr, canEdit);
       return tr;
     }
+
+    let dragInventoryRow = null;
+
+    function setInventoryRowDragEnabled(tr, enabled) {
+      const handle = tr.querySelector(".inv-drag-handle");
+      if (!handle) return;
+      handle.draggable = !!enabled;
+      handle.tabIndex = enabled ? 0 : -1;
+      handle.setAttribute("aria-disabled", enabled ? "false" : "true");
+    }
+
+    function bindInventoryRowDrag(tr) {
+      if (tr.dataset.dragBound === "1") return;
+      tr.dataset.dragBound = "1";
+
+      const onDragStart = (e) => {
+        if (!getRole()?.canEdit) {
+          e.preventDefault();
+          return;
+        }
+        const t = e.target;
+        if (t && t.closest && t.closest("input, select, button, textarea, a, label")) {
+          e.preventDefault();
+          return;
+        }
+        dragInventoryRow = tr;
+        tr.classList.add("inv-row-dragging");
+        try {
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", tr.dataset.itemId || tr.dataset.id || "row");
+        } catch (_) {}
+      };
+
+      const onDragEnd = () => {
+        clearInventoryDropIndicators();
+        tr.classList.remove("inv-row-dragging");
+        tr.draggable = false;
+        dragInventoryRow = null;
+      };
+
+      // Enable whole-row drag only when the press isn't on an editable control.
+      tr.addEventListener("mousedown", (e) => {
+        if (!getRole()?.canEdit) return;
+        if (e.target.closest("input, select, button, textarea, a, label")) {
+          tr.draggable = false;
+          return;
+        }
+        tr.draggable = true;
+      });
+      tr.addEventListener("dragstart", onDragStart);
+      tr.addEventListener("dragend", onDragEnd);
+    }
+
+    function inventoryItemRowFromEventTarget(el) {
+      const tr = el?.closest?.("tr");
+      if (!tr || !inventoryBody.contains(tr)) return null;
+      if (tr.classList.contains("inv-media-panel-row")) {
+        const prev = tr.previousElementSibling;
+        return prev && !prev.classList.contains("inv-media-panel-row") ? prev : null;
+      }
+      return tr;
+    }
+
+    function inventoryRowBundle(tr) {
+      const next = tr?.nextElementSibling;
+      const panel = next && next.classList.contains("inv-media-panel-row") ? next : null;
+      return { tr, panel };
+    }
+
+    function clearInventoryDropIndicators() {
+      inventoryBody
+        .querySelectorAll(".inv-row-drop-before, .inv-row-drop-after")
+        .forEach((el) => el.classList.remove("inv-row-drop-before", "inv-row-drop-after"));
+    }
+
+    function placeInventoryRowRelative(dragTr, targetTr, placeAfter) {
+      if (!dragTr || !targetTr || dragTr === targetTr) return false;
+      const { tr, panel } = inventoryRowBundle(dragTr);
+      const targetBundle = inventoryRowBundle(targetTr);
+      if (placeAfter) {
+        const anchor = targetBundle.panel || targetTr;
+        if (anchor.nextElementSibling === tr) return false;
+      } else if (targetTr.previousElementSibling === tr || targetTr.previousElementSibling === panel) {
+        return false;
+      }
+
+      const frag = document.createDocumentFragment();
+      frag.appendChild(tr);
+      if (panel) frag.appendChild(panel);
+      if (placeAfter) {
+        (targetBundle.panel || targetTr).after(frag);
+      } else {
+        targetTr.before(frag);
+      }
+      return true;
+    }
+
+    function rematchSalesIndicesAfterInventoryReorder(selectedDomId) {
+      const trs = inventoryItemRows();
+      if (selectedDomId != null && selectedDomId !== "") {
+        const idx = trs.findIndex((t) => String(t.dataset.id) === String(selectedDomId));
+        salesPosSelection.rowIdx = idx >= 0 ? idx : null;
+      }
+      if (Array.isArray(salesCart)) {
+        salesCart.forEach((line) => {
+          if (!line?.rowDomId) return;
+          const idx = trs.findIndex((t) => String(t.dataset.id) === String(line.rowDomId));
+          if (idx >= 0) line.rowIdx = idx;
+        });
+      }
+    }
+
+    function onInventoryBodyDragOver(e) {
+      if (!dragInventoryRow || !getRole()?.canEdit) return;
+      const target = inventoryItemRowFromEventTarget(e.target);
+      if (!target || target === dragInventoryRow) {
+        clearInventoryDropIndicators();
+        return;
+      }
+      e.preventDefault();
+      try {
+        e.dataTransfer.dropEffect = "move";
+      } catch (_) {}
+      const rect = target.getBoundingClientRect();
+      const placeAfter = e.clientY > rect.top + rect.height / 2;
+      clearInventoryDropIndicators();
+      target.classList.add(placeAfter ? "inv-row-drop-after" : "inv-row-drop-before");
+    }
+
+    function onInventoryBodyDrop(e) {
+      if (!dragInventoryRow || !getRole()?.canEdit) return;
+      const target = inventoryItemRowFromEventTarget(e.target);
+      if (!target || target === dragInventoryRow) return;
+      e.preventDefault();
+      const rect = target.getBoundingClientRect();
+      const placeAfter = e.clientY > rect.top + rect.height / 2;
+      const selectedDomId =
+        salesPosSelection.rowIdx != null
+          ? inventoryItemRows()[salesPosSelection.rowIdx]?.dataset?.id
+          : null;
+      const moved = placeInventoryRowRelative(dragInventoryRow, target, placeAfter);
+      clearInventoryDropIndicators();
+      if (!moved) return;
+      rematchSalesIndicesAfterInventoryReorder(selectedDomId);
+      recalculate();
+      scheduleSave("Reordered inventory");
+    }
+
+    inventoryBody.addEventListener("dragover", onInventoryBodyDragOver);
+    inventoryBody.addEventListener("drop", onInventoryBodyDrop);
 
     function mediaSrc(file) {
       if (!file) return "";
@@ -12327,7 +12493,7 @@ service cloud.firestore {
       }
       const panelRow = document.createElement("tr");
       panelRow.className = "inv-media-panel-row";
-      panelRow.innerHTML = `<td colspan="10"></td>`;
+      panelRow.innerHTML = `<td colspan="11"></td>`;
       tr.after(panelRow);
       refreshItemMediaPanel(tr);
     }
@@ -13087,6 +13253,16 @@ service cloud.firestore {
       return Math.max(0, onHand - cartReservedQty(rowIdx, color));
     }
 
+    function updateCashierReadyBanner() {
+      const el = document.getElementById("sellCashierReady");
+      if (!el) return;
+      const show =
+        salesModeActive &&
+        salesCart.length === 0 &&
+        customerDisplayPhase !== "thanks";
+      el.classList.toggle("hidden", !show);
+    }
+
     function renderSellCartUI() {
       const listEl = document.getElementById("sellCartList");
       const totalEl = document.getElementById("sellCartTotal");
@@ -13123,6 +13299,7 @@ service cloud.firestore {
           : `<li class="note" style="justify-content:center;border:none">Cart is empty — tap a product to add</li>`;
       }
       updateSellActionButtons();
+      updateCashierReadyBanner();
       if (salesModeActive && customerDisplayPhase === "cart") {
         publishCustomerDisplay("cart");
       }
@@ -13183,11 +13360,12 @@ service cloud.firestore {
         setSellSuccess("");
         syncSellModeItemOptions();
         renderSellSessionUI();
-        publishCustomerDisplay(salesCart.length ? "cart" : "ready");
+        publishCustomerDisplay(salesCart.length ? "cart" : "idle");
       } else {
         publishCustomerDisplay("presentation");
       }
       updateSellActionButtons();
+      updateCashierReadyBanner();
     }
 
     function enterSalesMode() {
@@ -13204,7 +13382,8 @@ service cloud.firestore {
       const qtyEl = document.getElementById("sellModeQty");
       if (qtyEl) qtyEl.value = "1";
       setSalesModeActive(true);
-      publishCustomerDisplay("ready");
+      publishCustomerDisplay("idle");
+      updateCashierReadyBanner();
     }
 
     function addToCartFromMode() {
@@ -13271,6 +13450,7 @@ service cloud.firestore {
       syncSellModeItemOptions(String(idx), color || "");
       renderSellSessionUI();
       publishCustomerDisplay("cart");
+      updateCashierReadyBanner();
     }
 
     function removeCartLine(cartId) {
@@ -13285,8 +13465,9 @@ service cloud.firestore {
         salesPosSelection.color || ""
       );
       renderSellSessionUI();
-      if (!salesCart.length && salesModeActive) publishCustomerDisplay("ready");
+      if (!salesCart.length && salesModeActive) publishCustomerDisplay("idle");
       else if (customerDisplayPhase === "cart") publishCustomerDisplay("cart");
+      updateCashierReadyBanner();
     }
 
     function endTransaction() {
@@ -13371,10 +13552,14 @@ service cloud.firestore {
         totalLabel: fmt(totalRev),
         units: totalUnits,
       });
+      updateCashierReadyBanner();
       if (customerDisplayThanksTimer) clearTimeout(customerDisplayThanksTimer);
       customerDisplayThanksTimer = setTimeout(() => {
         customerDisplayThanksTimer = null;
-        if (salesModeActive) publishCustomerDisplay("ready");
+        if (salesModeActive) {
+          publishCustomerDisplay("idle");
+          updateCashierReadyBanner();
+        }
       }, 5200);
     }
 
