@@ -3588,15 +3588,25 @@
             <div class="field" style="margin-top:1rem">
               <label>Receipt printer &amp; cash drawer</label>
               <div class="field-hint">
-                Windows 11 + serial-to-USB adapter: use <strong>Chrome or Edge</strong> on this https:// site, then
-                <strong>Connect serial printer</strong> and pick the COM port (e.g. COM3). Install the adapter’s
-                Windows driver first (FTDI / Prolific / CH340 / CP210x) and confirm Device Manager → Ports (COM &amp; LPT)
-                shows a COM number while the printer is powered on. “Connect USB printer” is only for a direct USB
-                TM-T88III cable — not a serial adapter.
+                Text Only is not required — pick whichever fits:<br />
+                <strong>1. Generic / Text Only (works today):</strong> keep Windows mode below. Receipts go through the print
+                dialog; the app cannot kick the drawer. To skip the dialog, launch Chrome with
+                <code>--kiosk-printing</code> and make the printer the Windows default.<br />
+                <strong>2. Epson APD driver (best if Windows should own the printer):</strong> install Epson’s Advanced Printer
+                Driver, then enable its cash-drawer option so the drawer fires on each receipt. Still uses Windows mode here.<br />
+                <strong>3. Serial COM + ESC/POS (most control):</strong> remove/disable the Windows printer holding the COM port
+                so it is free, then use Serial mode — no print dialog, proper 80 mm formatting, auto-cut and drawer kick from the app.
               </div>
               <label><input type="checkbox" id="receiptPrintEnabled" /> Print receipt when a transaction ends</label>
               <label><input type="checkbox" id="drawerKickEnabled" /> Kick cash drawer when a transaction ends</label>
-              <div class="field-row" style="margin-top:.6rem">
+              <div class="field" style="margin-top:.6rem">
+                <label for="receiptPrintMode">How to reach the printer</label>
+                <select id="receiptPrintMode">
+                  <option value="windows">Windows Text Only / browser print (recommended for Generic/Text Only)</option>
+                  <option value="serial">Serial COM + ESC/POS (needs free COM port, not held by Windows printer)</option>
+                </select>
+              </div>
+              <div class="field-row" id="receiptSerialOptions" style="margin-top:.6rem">
                 <div class="field">
                   <label for="receiptBaudRate">Serial speed</label>
                   <select id="receiptBaudRate"></select>
@@ -7628,6 +7638,8 @@ service cloud.firestore {
     let customerPrinterPort = null;
     /** WebUSB fallback for USB-attached ESC/POS printers: { device, endpoint }. */
     let customerPrinterUsb = null;
+    /** Windows Text Only mode cannot kick the drawer; warn once per session, not per sale. */
+    let customerPrinterDrawerNoticeShown = false;
 
     function customerMediaId(id = workspaceId) {
       return String(id || "MAIN").toUpperCase();
@@ -13799,7 +13811,14 @@ service cloud.firestore {
     const RECEIPT_BAUD_RATES = [9600, 19200, 38400, 57600, 115200];
     function loadCustomerPrinterSettings() {
       // TM-T88III leaves the factory at 38400 8N1 with DTR/DSR flow control.
-      const fallback = { printReceipt: false, kickDrawer: false, baudRate: 38400, flowControl: "hardware" };
+      // Windows Generic/Text Only uses browser print — that driver often holds the COM port.
+      const fallback = {
+        printReceipt: false,
+        kickDrawer: false,
+        baudRate: 38400,
+        flowControl: "hardware",
+        printMode: "windows",
+      };
       try {
         const raw = JSON.parse(localStorage.getItem(customerPrinterSettingsKey()) || "{}");
         const baudRate = RECEIPT_BAUD_RATES.includes(Number(raw.baudRate)) ? Number(raw.baudRate) : fallback.baudRate;
@@ -13808,6 +13827,7 @@ service cloud.firestore {
           kickDrawer: raw.kickDrawer === true,
           baudRate,
           flowControl: raw.flowControl === "none" ? "none" : "hardware",
+          printMode: raw.printMode === "serial" ? "serial" : "windows",
         };
       } catch (_) { return fallback; }
     }
@@ -13820,6 +13840,14 @@ service cloud.firestore {
       const print = document.getElementById("receiptPrintEnabled"), drawer = document.getElementById("drawerKickEnabled");
       if (print) { print.checked = settings.printReceipt; print.disabled = !getRole()?.canEdit; }
       if (drawer) { drawer.checked = settings.kickDrawer; drawer.disabled = !getRole()?.canEdit; }
+      const mode = document.getElementById("receiptPrintMode");
+      if (mode) { mode.value = settings.printMode; mode.disabled = !getRole()?.canEdit; }
+      const serialOpts = document.getElementById("receiptSerialOptions");
+      if (serialOpts) serialOpts.classList.toggle("hidden", settings.printMode !== "serial");
+      const connectBtn = document.getElementById("connectReceiptPrinterBtn");
+      const usbBtn = document.getElementById("connectReceiptPrinterUsbBtn");
+      if (connectBtn) connectBtn.classList.toggle("hidden", settings.printMode !== "serial");
+      if (usbBtn) usbBtn.classList.toggle("hidden", settings.printMode !== "serial");
       const baud = document.getElementById("receiptBaudRate");
       if (baud) {
         if (!baud.options.length) {
@@ -13832,11 +13860,15 @@ service cloud.firestore {
       if (flow) { flow.value = settings.flowControl; flow.disabled = !getRole()?.canEdit; }
       const status = document.getElementById("receiptPrinterStatus");
       if (status) {
-        status.textContent = customerPrinterPort
-          ? "Serial printer connected for this session"
-          : customerPrinterUsb
-            ? "USB printer connected for this session"
-            : "Not connected";
+        if (settings.printMode === "windows") {
+          status.textContent = "Windows Text Only mode — uses browser print dialog";
+        } else {
+          status.textContent = customerPrinterPort
+            ? "Serial printer connected for this session"
+            : customerPrinterUsb
+              ? "USB printer connected for this session"
+              : "Not connected";
+        }
       }
       const diag = document.getElementById("receiptPrinterDiag");
       if (diag) {
@@ -13987,13 +14019,20 @@ service cloud.firestore {
       const brand = getCustomerDisplayBrandName(loadCustomerDisplayBrand());
       const lines = [{ name: "Test item", color: "", qty: 1, sell: 1, revenue: 1 }];
       try {
+        if (settings.printMode === "windows") {
+          browserReceiptPrint(lines, 1, brand);
+          setSellSuccess(
+            "Test receipt opened — in the print dialog pick your Generic/Text Only TM-T88III (or set it as the default printer)."
+          );
+          return;
+        }
         const sent = await writeToReceiptPrinter(receiptEscPos(lines, 1, brand, settings.kickDrawer));
         if (sent) {
           setSellSuccess("Test receipt sent to the printer.");
           return;
         }
         browserReceiptPrint(lines, 1, brand);
-        setSellSuccess("No printer is connected, so the test receipt opened in the browser print dialog.");
+        setSellSuccess("No serial printer is connected, so the test receipt opened in the browser print dialog.");
       } catch (err) {
         setSellError("Test print failed: " + (err?.message || "printer error"));
       }
@@ -14007,11 +14046,42 @@ service cloud.firestore {
       bytes.push(0x1d, 0x56, 0x00);
       return new Uint8Array(bytes);
     }
+    /** Plain monospace receipt for Windows Generic/Text Only drivers (and browser print). */
     function browserReceiptPrint(lines, total, brand) {
-      const popup = window.open("", "_blank", "width=400,height=600");
+      const popup = window.open("", "_blank", "width=420,height=640");
       if (!popup) throw new Error("Pop-up blocked; allow pop-ups to print the receipt.");
-      const safe = (v) => escapeHtml(String(v));
-      popup.document.write(`<html><head><title>Receipt</title><style>@page{size:80mm auto;margin:4mm}body{width:72mm;font:12px monospace}h1{text-align:center;font-size:16px}.total{font-weight:bold;font-size:15px;border-top:1px dashed #000;padding-top:6px;margin-top:8px}</style></head><body><h1>${safe(brand)}</h1><div>${safe(new Date().toLocaleString())}</div><hr>${lines.map((l) => `<div>${safe(l.name)}${l.color ? " · " + safe(l.color) : ""}<br>${l.qty} × ${safe(fmt(l.sell))} <span style="float:right">${safe(fmt(l.revenue))}</span></div>`).join("")}<div class="total">TOTAL <span style="float:right">${safe(fmt(total))}</span></div><p style="text-align:center">Thank you!</p><scr` + `ipt>window.onload=()=>window.print()</scr` + `ipt></body></html>`);
+      const pad = (left, right, width = 42) => {
+        const L = String(left || "");
+        const R = String(right || "");
+        const gap = Math.max(1, width - L.length - R.length);
+        return L + " ".repeat(gap) + R;
+      };
+      const bodyLines = [
+        String(brand || "Receipt").slice(0, 42),
+        new Date().toLocaleString(),
+        "-".repeat(42),
+        ...lines.flatMap((l) => [
+          String(l.name || "") + (l.color ? " · " + l.color : ""),
+          pad(String(l.qty) + " x " + fmt(l.sell), fmt(l.revenue)),
+        ]),
+        "-".repeat(42),
+        pad("TOTAL", fmt(total)),
+        "",
+        "Thank you!",
+        "",
+        "",
+      ];
+      const text = bodyLines.map((l) => escapeHtml(l)).join("\n");
+      popup.document.write(
+        `<!DOCTYPE html><html><head><title>Receipt</title><style>
+@page{size:80mm auto;margin:3mm}
+html,body{margin:0;padding:0;background:#fff;color:#000}
+pre{margin:0;font:12px/1.35 "Consolas","Courier New",monospace;white-space:pre-wrap;width:72mm}
+@media print{body{-webkit-print-color-adjust:exact}}
+</style></head><body><pre>${text}</pre><scr` +
+          `ipt>window.onload=function(){window.focus();window.print();}</scr` +
+          `ipt></body></html>`
+      );
       popup.document.close();
     }
     async function printTransactionReceipt(lines, total) {
@@ -14019,6 +14089,16 @@ service cloud.firestore {
       if (!settings.printReceipt && !settings.kickDrawer) return;
       const brand = getCustomerDisplayBrandName(loadCustomerDisplayBrand());
       try {
+        if (settings.printMode === "windows") {
+          if (settings.printReceipt) browserReceiptPrint(lines, total, brand);
+          if (settings.kickDrawer && !customerPrinterDrawerNoticeShown) {
+            customerPrinterDrawerNoticeShown = true;
+            setSellError(
+              "Heads up: in Windows Text Only mode the app cannot kick the drawer. Use the Epson APD driver’s cash-drawer setting, or switch to Serial COM mode on a free COM port."
+            );
+          }
+          return;
+        }
         if (customerPrinterPort?.writable || customerPrinterUsb?.device) {
           await writeToReceiptPrinter(receiptEscPos(lines, total, brand, settings.kickDrawer));
         } else if (settings.printReceipt) {
@@ -17179,6 +17259,10 @@ service cloud.firestore {
     document.getElementById("drawerKickEnabled")?.addEventListener("change", (e) => {
       if (!getRole()?.canEdit) return;
       saveCustomerPrinterSettings({ ...loadCustomerPrinterSettings(), kickDrawer: e.target.checked });
+    });
+    document.getElementById("receiptPrintMode")?.addEventListener("change", (e) => {
+      if (!getRole()?.canEdit) return;
+      saveCustomerPrinterSettings({ ...loadCustomerPrinterSettings(), printMode: e.target.value });
     });
     document.getElementById("receiptBaudRate")?.addEventListener("change", (e) => {
       if (!getRole()?.canEdit) return;
