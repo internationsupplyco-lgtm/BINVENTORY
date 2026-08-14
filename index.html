@@ -2655,9 +2655,262 @@
       margin-top: 0.35rem;
     }
     .recovery-status.set { color: var(--success); }
+
+    /* ——— Customer display (2nd screen) ——— */
+    body.customer-display-mode {
+      display: block;
+      padding: 0;
+      overflow: hidden;
+      background: #070b12;
+    }
+    .cd-shell {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background:
+        radial-gradient(ellipse 90% 60% at 50% -10%, #1a3058 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 100% 100%, #122038 0%, transparent 50%),
+        #070b12;
+      color: var(--text);
+      font-family: "Segoe UI", "Avenir Next", system-ui, sans-serif;
+    }
+    .cd-phase {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(1rem, 3vw, 2.5rem);
+      opacity: 1;
+      transition: opacity 0.45s ease;
+    }
+    .cd-phase.cd-fade-out { opacity: 0; }
+    .cd-brand {
+      font-size: clamp(1.6rem, 4vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: clamp(0.75rem, 2vh, 1.5rem);
+      text-align: center;
+    }
+    .cd-slide-wrap {
+      position: relative;
+      width: min(92vw, 1100px);
+      height: min(72vh, 720px);
+      border-radius: 18px;
+      overflow: hidden;
+      background: #0c121c;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+    }
+    .cd-slide-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: opacity 0.35s ease;
+    }
+    .cd-slide-caption {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 1.1rem 1.25rem;
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.72));
+      font-size: clamp(1rem, 2.2vw, 1.35rem);
+      font-weight: 600;
+    }
+    .cd-presentation-empty {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(1.4rem, 3.5vw, 2.2rem);
+      color: var(--muted);
+      text-align: center;
+      padding: 2rem;
+    }
+    .cd-cart-layout {
+      width: min(96vw, 1200px);
+      height: min(92vh, 900px);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 1rem;
+    }
+    .cd-cart-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .cd-brand-sm {
+      font-size: clamp(1.15rem, 2.5vw, 1.6rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .cd-cart-list {
+      list-style: none;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding-right: 0.25rem;
+    }
+    .cd-cart-list li {
+      display: grid;
+      grid-template-columns: 88px 1fr auto;
+      gap: 1rem;
+      align-items: center;
+      background: rgba(26, 35, 50, 0.85);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 0.75rem 1rem;
+    }
+    .cd-cart-list li.cd-cart-empty {
+      display: flex;
+      justify-content: center;
+      grid-template-columns: none;
+      color: var(--muted);
+      font-size: clamp(1.1rem, 2.5vw, 1.45rem);
+      padding: 2.5rem 1rem;
+    }
+    .cd-cart-thumb {
+      width: 88px;
+      height: 88px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: #0c121c;
+    }
+    .cd-cart-thumb.placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+    .cd-cart-meta strong {
+      display: block;
+      font-size: clamp(1.05rem, 2.2vw, 1.35rem);
+    }
+    .cd-cart-meta span {
+      color: var(--muted);
+      font-size: clamp(0.9rem, 1.6vw, 1.05rem);
+    }
+    .cd-cart-line-total {
+      font-size: clamp(1.1rem, 2.4vw, 1.5rem);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .cd-cart-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      background: rgba(26, 35, 50, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+    }
+    .cd-cart-footer-label {
+      color: var(--muted);
+      font-size: clamp(0.95rem, 1.8vw, 1.15rem);
+    }
+    .cd-cart-total {
+      font-size: clamp(1.75rem, 4.5vw, 2.75rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #fff;
+    }
+    .cd-thanks {
+      text-align: center;
+    }
+    .cd-thanks h1 {
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      margin-bottom: 0.75rem;
+      animation: cdThanksIn 0.7s ease;
+    }
+    .cd-thanks p {
+      font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+      color: var(--muted);
+      animation: cdThanksIn 0.7s ease 0.12s both;
+    }
+    @keyframes cdThanksIn {
+      from { opacity: 0; transform: translateY(18px) scale(0.96); }
+      to { opacity: 1; transform: none; }
+    }
+    .cd-slides-thumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.65rem;
+    }
+    .cd-slides-thumbs .cd-slide-thumb {
+      position: relative;
+      width: 64px;
+      height: 64px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .cd-slides-thumbs .cd-slide-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .cd-slides-thumbs .cd-slide-thumb button {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 1.35rem;
+      height: 1.35rem;
+      border: none;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.75rem;
+      line-height: 1;
+    }
+    .customer-display-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin-top: 0.75rem;
+    }
 </style>
 </head>
 <body class="login-mode">
+  <div id="customerDisplayView" class="cd-shell hidden" aria-live="polite">
+    <div class="cd-phase" id="cdPhasePresentation">
+      <div class="cd-brand" id="cdBrand">Inventory Split</div>
+      <div class="cd-slide-wrap">
+        <img id="cdSlideImg" alt="" class="hidden" />
+        <p class="cd-slide-caption hidden" id="cdSlideCaption"></p>
+        <p class="cd-presentation-empty" id="cdPresentationEmpty">Welcome</p>
+      </div>
+    </div>
+    <div class="cd-phase hidden" id="cdPhaseCart">
+      <div class="cd-cart-layout">
+        <div class="cd-cart-header">
+          <div class="cd-brand-sm" id="cdCartBrand">Inventory Split</div>
+          <div class="cd-cart-footer-label" id="cdCartUnits">0 items</div>
+        </div>
+        <ul class="cd-cart-list" id="cdCartList"></ul>
+        <div class="cd-cart-footer">
+          <span class="cd-cart-footer-label">Total</span>
+          <div class="cd-cart-total" id="cdCartTotal">$0.00</div>
+        </div>
+      </div>
+    </div>
+    <div class="cd-phase cd-thanks hidden" id="cdPhaseThanks">
+      <h1>Thank you!</h1>
+      <p id="cdThanksSub">We appreciate your business.</p>
+    </div>
+  </div>
+
   <div id="welcomeView" class="login-shell">
     <div class="login-brand">
       <h1 id="welcomeBrandTitle">Inventory Split</h1>
@@ -3092,7 +3345,28 @@
           </div>
           <div class="sell-enter-mode" id="sellEnterMode">
             <p>Ready to sell? Open sales mode to add items to a cart, end each transaction when the customer is done, then end the day for a summary.</p>
-            <button type="button" class="btn-primary" id="enterSalesModeBtn">Enter sales mode</button>
+            <div class="customer-display-actions">
+              <button type="button" class="btn-primary" id="enterSalesModeBtn">Enter sales mode</button>
+              <button type="button" class="btn-ghost" id="openCustomerDisplayBtn">Open customer screen</button>
+            </div>
+          </div>
+          <div class="card" id="customerDisplayCard">
+            <div class="card-header">
+              <h2>Customer screen</h2>
+            </div>
+            <p class="note" style="margin-top:0">
+              Open a second browser window on the customer-facing monitor. During a sale it shows cart lines and the running total;
+              after <strong>End transaction</strong> it shows Thank you, then a photo slideshow until the next sale.
+            </p>
+            <div class="customer-display-actions">
+              <button type="button" class="btn-primary" id="openCustomerDisplayBtn2">Open customer screen</button>
+            </div>
+            <div class="field" style="margin-top:1rem">
+              <label for="cdSlideFileInput">Presentation photos (optional)</label>
+              <div class="field-hint">Stored in this browser’s local storage only (not cloud sync). If empty, inventory item photos are used. Up to 12 slides.</div>
+              <input type="file" id="cdSlideFileInput" accept="image/*" multiple />
+              <div class="cd-slides-thumbs" id="cdSlidesList"></div>
+            </div>
           </div>
           <div class="card" id="sellChartCard">
             <div class="card-header">
@@ -3139,6 +3413,7 @@
           <div class="sell-mode-header">
             <h2>Sales mode</h2>
             <div class="sell-actions">
+              <button type="button" class="btn-ghost" id="openCustomerDisplayBtnMode" title="Open customer-facing display window">Customer screen</button>
               <button type="button" class="btn-sell-action" id="undoSaleBtnMode" disabled title="Undo the last recorded transaction">Undo last transaction</button>
               <button type="button" class="btn-primary" id="endSalesDayBtn">End sales day</button>
             </div>
@@ -4065,6 +4340,7 @@ service cloud.firestore {
     const HASH_PIPELINE_VERSION = "v4-sha256-sha3-blake3-sha256";
     const SESSION_KEY = "inventory-split-session";
     const SETUP_KEY = "inventory-split-setup";
+    const CUSTOMER_SLIDES_KEY = "inventory-split-customer-slides:";
     const WS_PREFIX = "inventory-split-ws:";
     const FIREBASE_LS_KEY = "inventory-split-firebase";
     const CHAT_PIP_KEY = "inventory-split-chat-pip";
@@ -4265,6 +4541,20 @@ service cloud.firestore {
         safetyMarginPct: Math.max(0, Math.min(200, safetyMarginPct)),
         deductStock: b.deductStock !== false,
       };
+    }
+
+    function normalizeCustomerDisplaySlides(list) {
+      if (!Array.isArray(list)) return [];
+      const out = [];
+      for (const raw of list) {
+        const m = normalizeMediaFile(raw, "photo");
+        if (!m) continue;
+        if (!m.dataUrl && !m.url) continue;
+        m.caption = String(raw.caption || raw.name || "").slice(0, 80);
+        out.push(m);
+        if (out.length >= 12) break;
+      }
+      return out;
     }
 
     function marginPctFromPrices(sell, cost) {
@@ -5406,6 +5696,12 @@ service cloud.firestore {
     /** POS picker: selected inventory index + optional color, plus name filter. */
     let salesPosFilter = "";
     let salesPosSelection = { rowIdx: null, color: "" };
+    let customerChannel = null;
+    let customerDisplayPhase = "presentation";
+    let customerDisplayThanksTimer = null;
+    let customerDisplaySlideTimer = null;
+    let customerDisplaySlideIdx = 0;
+    let customerDisplayIsDisplayWindow = false;
     let chatKnownMessageIds = new Set();
     let chatNotifySeeded = false;
     let chatUnreadCount = 0;
@@ -7038,6 +7334,409 @@ service cloud.firestore {
       } catch {
         channel = null;
       }
+      connectCustomerChannel();
+    }
+
+    function customerDisplayChannelName(id = workspaceId) {
+      return "inventory-split-customer-" + String(id || "MAIN").toUpperCase();
+    }
+
+    function customerDisplayStateKey(id = workspaceId) {
+      return "inventory-split-customer-state:" + String(id || "MAIN").toUpperCase();
+    }
+
+    function customerDisplaySlidesKey(id = workspaceId) {
+      return CUSTOMER_SLIDES_KEY + String(id || "MAIN").toUpperCase();
+    }
+
+    function loadCustomerDisplaySlides(id = workspaceId) {
+      try {
+        const raw = JSON.parse(localStorage.getItem(customerDisplaySlidesKey(id)) || "null");
+        const slides = normalizeCustomerDisplaySlides(raw);
+        if (slides.length) return slides;
+      } catch (_) {}
+      // One-time migrate from older workspace-synced slides, if any.
+      try {
+        const ws = readWorkspaceRaw(id);
+        const migrated = normalizeCustomerDisplaySlides(ws?.customerDisplaySlides);
+        if (migrated.length) {
+          saveCustomerDisplaySlides(migrated, id);
+          try {
+            delete ws.customerDisplaySlides;
+            localStorage.setItem(dataKey(id), JSON.stringify(ws));
+          } catch (_) {}
+          return migrated;
+        }
+      } catch (_) {}
+      return [];
+    }
+
+    function saveCustomerDisplaySlides(slides, id = workspaceId) {
+      const next = normalizeCustomerDisplaySlides(slides);
+      try {
+        localStorage.setItem(customerDisplaySlidesKey(id), JSON.stringify(next));
+      } catch (err) {
+        console.warn(err);
+        setSellError("Could not save slides to local storage (browser storage may be full).");
+        return next;
+      }
+      // Notify customer display window in the same browser.
+      try {
+        localStorage.setItem(
+          customerDisplaySlidesKey(id) + ":ping",
+          String(Date.now())
+        );
+      } catch (_) {}
+      return next;
+    }
+
+    function isCustomerDisplayMode() {
+      try {
+        return new URLSearchParams(location.search).get("display") === "customer";
+      } catch {
+        return false;
+      }
+    }
+
+    function connectCustomerChannel() {
+      if (customerChannel) {
+        try { customerChannel.close(); } catch (_) {}
+        customerChannel = null;
+      }
+      try {
+        customerChannel = new BroadcastChannel(customerDisplayChannelName());
+        if (customerDisplayIsDisplayWindow) {
+          customerChannel.onmessage = (ev) => {
+            const msg = ev.data;
+            if (!msg || msg.type !== "customerDisplay") return;
+            if (msg.workspaceId && msg.workspaceId !== String(workspaceId || "").toUpperCase()) return;
+            applyCustomerDisplayState(msg);
+          };
+        }
+      } catch {
+        customerChannel = null;
+      }
+    }
+
+    function gatherPresentationSlides() {
+      const custom = loadCustomerDisplaySlides();
+      const fromCustom = custom
+        .map((s) => ({ src: mediaSrc(s), caption: s.caption || "" }))
+        .filter((s) => s.src);
+      if (fromCustom.length) return fromCustom;
+      let items = normalizeItems(workspaceState?.items || []);
+      try {
+        const raw = readWorkspaceRaw(workspaceId);
+        if (raw?.items?.length) items = normalizeItems(raw.items);
+      } catch (_) {}
+      const slides = [];
+      for (const item of items) {
+        for (const p of item.photos || []) {
+          const src = mediaSrc(p);
+          if (!src) continue;
+          slides.push({ src, caption: item.name || "" });
+          if (slides.length >= 24) return slides;
+        }
+      }
+      return slides;
+    }
+
+    function buildCustomerDisplayPayload(phase) {
+      const lines = (salesCart || []).map((line) => ({
+        id: line.id,
+        name: line.name,
+        color: line.color || "",
+        qty: line.qty,
+        sellLabel: fmt(line.sell),
+        revenueLabel: fmt(line.revenue),
+        photoSrc: line.photoSrc || "",
+      }));
+      let units = 0;
+      let rev = 0;
+      (salesCart || []).forEach((l) => {
+        units += l.qty;
+        rev += l.revenue;
+      });
+      return {
+        type: "customerDisplay",
+        workspaceId: String(workspaceId || "MAIN").toUpperCase(),
+        phase: phase || customerDisplayPhase || "presentation",
+        brand: workspaceState?.loginTitle || setupMeta?.loginTitle || "Inventory Split",
+        lines,
+        totalLabel: fmt(rev),
+        units,
+        at: Date.now(),
+      };
+    }
+
+    function publishCustomerDisplay(phase) {
+      if (customerDisplayIsDisplayWindow) return;
+      if (phase) customerDisplayPhase = phase;
+      if (phase !== "thanks" && customerDisplayThanksTimer) {
+        clearTimeout(customerDisplayThanksTimer);
+        customerDisplayThanksTimer = null;
+      }
+      const payload = buildCustomerDisplayPayload(customerDisplayPhase);
+      try {
+        localStorage.setItem(customerDisplayStateKey(), JSON.stringify(payload));
+      } catch (_) {}
+      if (customerChannel) {
+        try {
+          customerChannel.postMessage(payload);
+        } catch (_) {}
+      }
+    }
+
+    function openCustomerDisplay() {
+      const u = new URL(location.href);
+      u.searchParams.set("display", "customer");
+      u.searchParams.set("ws", String(workspaceId || "MAIN").toUpperCase());
+      const w = window.open(u.toString(), "inventory-customer-display");
+      if (!w) {
+        setSellError("Pop-up blocked — allow pop-ups, or copy the address bar URL and open it on the other screen.");
+        return;
+      }
+      publishCustomerDisplay(salesModeActive ? customerDisplayPhase || "cart" : "presentation");
+      setTimeout(() => publishCustomerDisplay(), 350);
+      setSellSuccess("Customer screen opened — drag that window to the second monitor and fullscreen it (F11).");
+    }
+
+    function stopCustomerSlideshow() {
+      if (customerDisplaySlideTimer) {
+        clearInterval(customerDisplaySlideTimer);
+        customerDisplaySlideTimer = null;
+      }
+    }
+
+    function startCustomerSlideshow(slides) {
+      stopCustomerSlideshow();
+      const img = document.getElementById("cdSlideImg");
+      const cap = document.getElementById("cdSlideCaption");
+      const empty = document.getElementById("cdPresentationEmpty");
+      if (!img) return;
+      const list = Array.isArray(slides) ? slides.filter((s) => s && s.src) : [];
+      if (!list.length) {
+        img.classList.add("hidden");
+        img.removeAttribute("src");
+        if (cap) {
+          cap.textContent = "";
+          cap.classList.add("hidden");
+        }
+        if (empty) {
+          empty.classList.remove("hidden");
+          empty.textContent = "Welcome";
+        }
+        return;
+      }
+      if (empty) empty.classList.add("hidden");
+      img.classList.remove("hidden");
+      customerDisplaySlideIdx = 0;
+      const show = () => {
+        const s = list[customerDisplaySlideIdx % list.length];
+        img.style.opacity = "0";
+        setTimeout(() => {
+          img.src = s.src;
+          if (cap) {
+            cap.textContent = s.caption || "";
+            cap.classList.toggle("hidden", !s.caption);
+          }
+          img.style.opacity = "1";
+        }, 220);
+        customerDisplaySlideIdx += 1;
+      };
+      show();
+      customerDisplaySlideTimer = setInterval(show, 5200);
+    }
+
+    function setCustomerDisplayPhaseUi(phase) {
+      const pres = document.getElementById("cdPhasePresentation");
+      const cart = document.getElementById("cdPhaseCart");
+      const thanks = document.getElementById("cdPhaseThanks");
+      if (!pres || !cart || !thanks) return;
+      const show = (el, on) => el.classList.toggle("hidden", !on);
+      show(pres, phase === "presentation");
+      show(cart, phase === "cart");
+      show(thanks, phase === "thanks");
+      if (phase !== "presentation") stopCustomerSlideshow();
+    }
+
+    function applyCustomerDisplayState(msg) {
+      if (!msg || typeof msg !== "object") return;
+      const phase = msg.phase || "presentation";
+      customerDisplayPhase = phase;
+      const brand = msg.brand || "Inventory Split";
+      const brandEl = document.getElementById("cdBrand");
+      const cartBrand = document.getElementById("cdCartBrand");
+      if (brandEl) brandEl.textContent = brand;
+      if (cartBrand) cartBrand.textContent = brand;
+      setCustomerDisplayPhaseUi(phase);
+      if (phase === "presentation") {
+        startCustomerSlideshow(gatherPresentationSlides());
+        return;
+      }
+      if (phase === "thanks") return;
+      if (phase === "cart") {
+        const listEl = document.getElementById("cdCartList");
+        const totalEl = document.getElementById("cdCartTotal");
+        const unitsEl = document.getElementById("cdCartUnits");
+        const lines = Array.isArray(msg.lines) ? msg.lines : [];
+        const units = Math.max(0, Math.floor(parseNum(msg.units)));
+        if (totalEl) totalEl.textContent = msg.totalLabel || "$0.00";
+        if (unitsEl) {
+          unitsEl.textContent =
+            units.toLocaleString() + " item" + (units === 1 ? "" : "s");
+        }
+        if (listEl) {
+          listEl.innerHTML = lines.length
+            ? lines
+                .map((line) => {
+                  const thumb = line.photoSrc
+                    ? `<img class="cd-cart-thumb" src="${escapeHtml(line.photoSrc)}" alt="" />`
+                    : `<div class="cd-cart-thumb placeholder">No photo</div>`;
+                  return `<li>
+                    ${thumb}
+                    <div class="cd-cart-meta">
+                      <strong>${escapeHtml(line.name || "")}${
+                        line.color ? " · " + escapeHtml(line.color) : ""
+                      }</strong>
+                      <span>×${escapeHtml(String(line.qty))} · ${escapeHtml(line.sellLabel || "")} each</span>
+                    </div>
+                    <div class="cd-cart-line-total">${escapeHtml(line.revenueLabel || "")}</div>
+                  </li>`;
+                })
+                .join("")
+            : `<li class="cd-cart-empty">Your items will appear here</li>`;
+        }
+      }
+    }
+
+    function renderCustomerDisplaySlidesEditor() {
+      const list = document.getElementById("cdSlidesList");
+      if (!list) return;
+      const slides = loadCustomerDisplaySlides();
+      list.innerHTML = slides.length
+        ? slides
+            .map((s, i) => {
+              const src = mediaSrc(s);
+              return `<div class="cd-slide-thumb">
+                ${src ? `<img src="${escapeHtml(src)}" alt="" />` : ""}
+                <button type="button" data-remove-cd-slide="${i}" aria-label="Remove slide">×</button>
+              </div>`;
+            })
+            .join("")
+        : `<span class="note">Using inventory photos until you add slides.</span>`;
+    }
+
+    async function addCustomerDisplaySlides(fileList) {
+      if (!getRole()?.canEdit) {
+        setSellError("You do not have permission to edit presentation slides.");
+        return;
+      }
+      const files = [...(fileList || [])].filter((f) => f && /^image\//.test(f.type));
+      if (!files.length) return;
+      const slides = loadCustomerDisplaySlides();
+      for (const file of files) {
+        if (slides.length >= 12) break;
+        try {
+          const dataUrl = await compressImageFile(file, { maxWidth: 1400, quality: 0.72 });
+          if (!dataUrl || dataUrl.length > MAX_ITEM_PHOTO_CHARS) continue;
+          const entry = normalizeMediaFile(
+            {
+              name: file.name || "slide.jpg",
+              dataUrl,
+              size: file.size || 0,
+              uploadedBy: currentUser?.name || currentUser?.username || "Unknown",
+              uploadedByUsername: currentUser?.username || "",
+              caption: "",
+              at: new Date().toISOString(),
+            },
+            "photo"
+          );
+          if (entry) slides.push(entry);
+        } catch (_) {}
+      }
+      saveCustomerDisplaySlides(slides);
+      renderCustomerDisplaySlidesEditor();
+      setSellSuccess("Presentation slides saved on this device.");
+      if (customerDisplayPhase === "presentation") publishCustomerDisplay("presentation");
+    }
+
+    function removeCustomerDisplaySlide(idx) {
+      if (!getRole()?.canEdit) return;
+      const slides = loadCustomerDisplaySlides();
+      const i = Math.floor(parseNum(idx));
+      if (i < 0 || i >= slides.length) return;
+      slides.splice(i, 1);
+      saveCustomerDisplaySlides(slides);
+      renderCustomerDisplaySlidesEditor();
+      setSellSuccess("Removed presentation slide.");
+      if (customerDisplayPhase === "presentation") publishCustomerDisplay("presentation");
+    }
+
+    function bootCustomerDisplayWindow() {
+      customerDisplayIsDisplayWindow = true;
+      document.title = "Customer display";
+      document.body.className = "customer-display-mode";
+      [
+        "welcomeView",
+        "joinView",
+        "setupView",
+        "loginView",
+        "recoverView",
+        "wsRecoverView",
+        "appView",
+      ].forEach((id) => document.getElementById(id)?.classList.add("hidden"));
+      document.getElementById("customerDisplayView")?.classList.remove("hidden");
+
+      const urlWs = getWsFromUrl();
+      let sessionWs = null;
+      try {
+        const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+        sessionWs = session?.workspaceId || null;
+      } catch (_) {}
+      workspaceId = String(urlWs || sessionWs || setupMeta?.defaultWorkspaceId || "MAIN").toUpperCase();
+      try {
+        const raw = readWorkspaceRaw(workspaceId);
+        if (raw) workspaceState = ensureAccounts({ ...emptyState(), ...raw });
+      } catch (_) {}
+
+      connectCustomerChannel();
+      let applied = false;
+      try {
+        const last = JSON.parse(localStorage.getItem(customerDisplayStateKey()) || "null");
+        if (last && last.type === "customerDisplay") {
+          applyCustomerDisplayState(last);
+          applied = true;
+        }
+      } catch (_) {}
+      if (!applied) {
+        applyCustomerDisplayState({
+          type: "customerDisplay",
+          phase: "presentation",
+          brand: workspaceState.loginTitle || "Inventory Split",
+          lines: [],
+          totalLabel: "$0.00",
+          units: 0,
+        });
+      }
+
+      window.addEventListener("storage", (ev) => {
+        if (ev.key === customerDisplayStateKey() && ev.newValue) {
+          try {
+            applyCustomerDisplayState(JSON.parse(ev.newValue));
+          } catch (_) {}
+        }
+        const slidesKey = customerDisplaySlidesKey();
+        if (
+          (ev.key === slidesKey || ev.key === slidesKey + ":ping") &&
+          customerDisplayPhase === "presentation"
+        ) {
+          startCustomerSlideshow(gatherPresentationSlides());
+        }
+        if (ev.key === dataKey(workspaceId) && customerDisplayPhase === "presentation") {
+          startCustomerSlideshow(gatherPresentationSlides());
+        }
+      });
     }
 
     function updateAddPeopleCta() {
@@ -7057,6 +7756,7 @@ service cloud.firestore {
       document.body.classList.remove("login-mode");
       document.body.classList.add("app-mode");
       hideAuthViews();
+      document.getElementById("customerDisplayView")?.classList.add("hidden");
       appView.classList.remove("hidden");
 
       const meta = getRole();
@@ -12048,6 +12748,9 @@ service cloud.firestore {
           : `<li class="note" style="justify-content:center;border:none">Cart is empty — tap a product to add</li>`;
       }
       updateSellActionButtons();
+      if (salesModeActive && customerDisplayPhase === "cart") {
+        publishCustomerDisplay("cart");
+      }
     }
 
     function renderSellSessionUI() {
@@ -12105,6 +12808,9 @@ service cloud.firestore {
         setSellSuccess("");
         syncSellModeItemOptions();
         renderSellSessionUI();
+        publishCustomerDisplay("cart");
+      } else {
+        publishCustomerDisplay("presentation");
       }
       updateSellActionButtons();
     }
@@ -12123,6 +12829,7 @@ service cloud.firestore {
       const qtyEl = document.getElementById("sellModeQty");
       if (qtyEl) qtyEl.value = "1";
       setSalesModeActive(true);
+      publishCustomerDisplay("cart");
     }
 
     function addToCartFromMode() {
@@ -12181,12 +12888,14 @@ service cloud.firestore {
         cost,
         revenue: n * sell,
         profit: n * (sell - cost),
+        photoSrc: firstItemPhotoSrc(tr) || "",
       });
       setSellError("");
       setSellSuccess(`Added ${n} × ${row.name}` + (color ? ` (${color})` : "") + ` to cart`);
       if (qtyEl) qtyEl.value = "1";
       syncSellModeItemOptions(String(idx), color || "");
       renderSellSessionUI();
+      publishCustomerDisplay("cart");
     }
 
     function removeCartLine(cartId) {
@@ -12201,6 +12910,7 @@ service cloud.firestore {
         salesPosSelection.color || ""
       );
       renderSellSessionUI();
+      if (customerDisplayPhase === "cart") publishCustomerDisplay("cart");
     }
 
     function endTransaction() {
@@ -12276,10 +12986,17 @@ service cloud.firestore {
       scheduleSave(
         `Sale transaction: ${totalUnits} unit(s), ${committed.length} line(s), ${fmt(totalRev)}`
       );
+      customerDisplayPhase = "thanks";
       recalculate();
       syncSellModeItemOptions();
       renderSellSessionUI();
       updateSellActionButtons();
+      publishCustomerDisplay("thanks");
+      if (customerDisplayThanksTimer) clearTimeout(customerDisplayThanksTimer);
+      customerDisplayThanksTimer = setTimeout(() => {
+        customerDisplayThanksTimer = null;
+        if (salesModeActive) publishCustomerDisplay("presentation");
+      }, 4500);
     }
 
     function buildDayOverviewData() {
@@ -12515,6 +13232,7 @@ service cloud.firestore {
         setSellError("");
       }
       updateSellActionButtons();
+      renderCustomerDisplaySlidesEditor();
     }
 
     function sellUndoStorageKey(id = workspaceId) {
@@ -14201,6 +14919,7 @@ service cloud.firestore {
       workspaceState.dailySales = normalizeDailySales(workspaceState.dailySales);
       workspaceState.batchPlanner = normalizeBatchPlanner(workspaceState.batchPlanner);
       writeBatchPlannerToEditor();
+      renderCustomerDisplaySlidesEditor();
       workspaceState = ensureAccounts(workspaceState);
       workspaceState.chatMessages = normalizeChatMessages(workspaceState.chatMessages);
       workspaceState.tickets = normalizeTickets(workspaceState.tickets);
@@ -15267,6 +15986,21 @@ service cloud.firestore {
     document.getElementById("addToCartBtn")?.addEventListener("click", () => addToCartFromMode());
     document.getElementById("endTransactionBtn")?.addEventListener("click", () => endTransaction());
     document.getElementById("endSalesDayBtn")?.addEventListener("click", () => endSalesDay());
+    const openCd = () => openCustomerDisplay();
+    document.getElementById("openCustomerDisplayBtn")?.addEventListener("click", openCd);
+    document.getElementById("openCustomerDisplayBtn2")?.addEventListener("click", openCd);
+    document.getElementById("openCustomerDisplayBtnMode")?.addEventListener("click", openCd);
+    document.getElementById("cdSlideFileInput")?.addEventListener("change", (e) => {
+      const input = e.target;
+      addCustomerDisplaySlides(input.files).finally(() => {
+        input.value = "";
+      });
+    });
+    document.getElementById("cdSlidesList")?.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-remove-cd-slide]");
+      if (!btn) return;
+      removeCustomerDisplaySlide(btn.getAttribute("data-remove-cd-slide"));
+    });
     document.getElementById("sellCartList")?.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-remove-cart]");
       if (!btn) return;
@@ -15516,6 +16250,11 @@ service cloud.firestore {
       refreshFirebaseUi();
       setupMeta = loadSetupMeta();
       const urlWs = getWsFromUrl();
+
+      if (isCustomerDisplayMode()) {
+        bootCustomerDisplayWindow();
+        return;
+      }
 
       const needsReseSetup = invalidateStalePasswordPipeline();
       if (needsReseSetup) {
