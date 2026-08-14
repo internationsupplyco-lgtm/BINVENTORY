@@ -2786,6 +2786,21 @@
       object-fit: cover;
       transition: opacity 0.4s ease;
     }
+    .cd-slide-wrap video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #0a0a0a;
+    }
+    .cd-presentation-layout-overlay .cd-brand {
+      position: absolute;
+      z-index: 2;
+      top: 0;
+      left: 0;
+      right: 0;
+      border-bottom-color: rgba(255, 255, 255, 0.22);
+      background: rgba(0, 0, 0, 0.42);
+    }
     .cd-slide-caption {
       position: absolute;
       left: 0;
@@ -3008,6 +3023,33 @@
       font-size: 0.75rem;
       line-height: 1;
     }
+    .cd-slides-thumbs .cd-slide-thumb .cd-drag-handle {
+      left: 2px;
+      right: auto;
+      cursor: grab;
+    }
+    .cd-slides-thumbs .cd-slide-thumb.dragging { opacity: 0.45; }
+    .cd-slides-thumbs .cd-slide-thumb video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #111;
+    }
+    .cd-layout-editor {
+      display: grid;
+      gap: 0.45rem;
+      margin-top: 0.65rem;
+    }
+    .cd-layout-row {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.45rem 0.55rem;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+    }
+    .cd-layout-row .cd-layout-handle { cursor: grab; color: var(--muted); }
+    .cd-layout-row.dragging { opacity: 0.45; }
     .customer-display-actions {
       display: flex;
       flex-wrap: wrap;
@@ -3020,12 +3062,13 @@
 <body class="login-mode">
   <div id="customerDisplayView" class="cd-shell hidden" aria-live="polite">
     <div class="cd-phase" id="cdPhasePresentation">
-      <div class="cd-brand">
+      <div class="cd-brand" id="cdPresentationBrand">
         <img id="cdBrandLogo" class="cd-brand-logo hidden" alt="" />
         <span class="cd-brand-text" id="cdBrand">Inventory Split</span>
       </div>
       <div class="cd-slide-wrap">
         <img id="cdSlideImg" alt="" class="hidden" />
+        <video id="cdSlideVideo" class="hidden" muted playsinline></video>
         <p class="cd-slide-caption hidden" id="cdSlideCaption"></p>
         <p class="cd-presentation-empty" id="cdPresentationEmpty">Welcome</p>
       </div>
@@ -3525,10 +3568,32 @@
               </div>
             </div>
             <div class="field" style="margin-top:1rem">
-              <label for="cdSlideFileInput">Presentation photos (optional)</label>
-              <div class="field-hint">Stored in this browser’s local storage only (not cloud sync). If empty, inventory item photos are used. Up to 12 slides.</div>
-              <input type="file" id="cdSlideFileInput" accept="image/*" multiple />
+              <label for="cdSlideFileInput">Presentation media (optional)</label>
+              <div class="field-hint">Images, MP4/WebM video, or PDF pages. PowerPoint, Keynote, and PPT files need to be exported to PDF or images first. Stored only on this machine. If empty, inventory item photos are used. Up to 12 slides.</div>
+              <input type="file" id="cdSlideFileInput" accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,application/pdf,.png,.jpg,.jpeg,.webp,.gif,.mp4,.webm,.pdf,.ppt,.pptx,.key" multiple />
               <div class="cd-slides-thumbs" id="cdSlidesList"></div>
+              <p class="sell-error" id="cdMediaError" aria-live="polite"></p>
+            </div>
+            <div class="field" style="margin-top:1rem">
+              <label>Customer screen layout</label>
+              <div class="field-hint">Drag blocks to reorder the presentation screen. Toggle blocks off, then choose whether branding sits above, below, or over the slideshow.</div>
+              <div class="cd-layout-editor" id="cdLayoutEditor"></div>
+              <label for="cdLayoutPlacement" style="margin-top:.6rem">Brand placement</label>
+              <select id="cdLayoutPlacement">
+                <option value="above">Above slideshow</option>
+                <option value="below">Below slideshow</option>
+                <option value="overlay">Over slideshow</option>
+              </select>
+            </div>
+            <div class="field" style="margin-top:1rem">
+              <label>Receipt printer &amp; cash drawer</label>
+              <div class="field-hint">TM-T88III: connect over Web Serial where supported. Safari uses the browser’s 80 mm print dialog fallback; drawer kicking requires a connected ESC/POS printer.</div>
+              <label><input type="checkbox" id="receiptPrintEnabled" /> Print receipt when a transaction ends</label>
+              <label><input type="checkbox" id="drawerKickEnabled" /> Kick cash drawer when a transaction ends</label>
+              <div class="customer-display-actions">
+                <button type="button" class="btn-ghost" id="connectReceiptPrinterBtn">Connect printer</button>
+                <span class="note" id="receiptPrinterStatus">Not connected</span>
+              </div>
             </div>
           </div>
           <div class="card" id="sellChartCard">
@@ -4509,6 +4574,9 @@ service cloud.firestore {
     const SETUP_KEY = "inventory-split-setup";
     const CUSTOMER_SLIDES_KEY = "inventory-split-customer-slides:";
     const CUSTOMER_BRAND_KEY = "inventory-split-customer-brand:";
+    const CUSTOMER_MEDIA_DB = "inventory-split-customer-media";
+    const CUSTOMER_MEDIA_STORE = "assets";
+    const CUSTOMER_PRINTER_KEY = "inventory-split-customer-printer:";
     const WS_PREFIX = "inventory-split-ws:";
     const FIREBASE_LS_KEY = "inventory-split-firebase";
     const CHAT_PIP_KEY = "inventory-split-chat-pip";
@@ -4715,11 +4783,19 @@ service cloud.firestore {
       if (!Array.isArray(list)) return [];
       const out = [];
       for (const raw of list) {
-        const m = normalizeMediaFile(raw, "photo");
-        if (!m) continue;
-        if (!m.dataUrl && !m.url) continue;
-        m.caption = String(raw.caption || raw.name || "").slice(0, 80);
-        out.push(m);
+        if (!raw || typeof raw !== "object") continue;
+        const src = typeof raw.dataUrl === "string" ? raw.dataUrl : typeof raw.url === "string" ? raw.url : "";
+        const type = raw.slideType === "video" || /^data:video\//.test(src) ? "video" : "image";
+        if (!src || !(type === "video" ? /^data:video\/(mp4|webm)/.test(src) : /^(data:image\/|https?:|blob:)/.test(src))) continue;
+        out.push({
+          name: String(raw.name || (type === "video" ? "video" : "slide")).slice(0, 180),
+          dataUrl: src.startsWith("data:") ? src : "",
+          url: src.startsWith("data:") ? "" : src,
+          slideType: type,
+          caption: String(raw.caption || raw.name || "").slice(0, 80),
+          size: Math.max(0, Number(raw.size) || 0),
+          at: String(raw.at || new Date().toISOString()),
+        });
         if (out.length >= 12) break;
       }
       return out;
@@ -7522,39 +7598,157 @@ service cloud.firestore {
       return CUSTOMER_BRAND_KEY + String(id || "MAIN").toUpperCase();
     }
 
+    const customerMediaCache = new Map();
+    const customerMediaLoading = new Map();
+    let customerMediaDbPromise = null;
+    let customerPdfJsPromise = null;
+    let customerPrinterPort = null;
+
+    function customerMediaId(id = workspaceId) {
+      return String(id || "MAIN").toUpperCase();
+    }
+
+    function customerMediaPointerKey(id = workspaceId) {
+      return customerDisplaySlidesKey(id) + ":index";
+    }
+
+    function customerMediaDb() {
+      if (!("indexedDB" in window)) return Promise.reject(new Error("IndexedDB is unavailable in this browser."));
+      if (!customerMediaDbPromise) {
+        customerMediaDbPromise = new Promise((resolve, reject) => {
+          const request = indexedDB.open(CUSTOMER_MEDIA_DB, 1);
+          request.onupgradeneeded = () => request.result.createObjectStore(CUSTOMER_MEDIA_STORE, { keyPath: "id" });
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error || new Error("Could not open local media storage."));
+        });
+      }
+      return customerMediaDbPromise;
+    }
+
+    async function readCustomerMedia(id = workspaceId) {
+      const db = await customerMediaDb();
+      return new Promise((resolve, reject) => {
+        const req = db.transaction(CUSTOMER_MEDIA_STORE, "readonly").objectStore(CUSTOMER_MEDIA_STORE).get(customerMediaId(id));
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error || new Error("Could not read local media."));
+      });
+    }
+
+    async function writeCustomerMedia(record, id = workspaceId) {
+      const db = await customerMediaDb();
+      const next = { ...record, id: customerMediaId(id) };
+      await new Promise((resolve, reject) => {
+        const req = db.transaction(CUSTOMER_MEDIA_STORE, "readwrite").objectStore(CUSTOMER_MEDIA_STORE).put(next);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error || new Error("Could not save local media. Device storage may be full."));
+      });
+      customerMediaCache.set(customerMediaId(id), next);
+      try {
+        localStorage.setItem(customerMediaPointerKey(id), JSON.stringify({ updatedAt: Date.now(), count: next.slides?.length || 0 }));
+        localStorage.setItem(customerDisplaySlidesKey(id) + ":ping", String(Date.now()));
+        localStorage.setItem(customerDisplayBrandKey(id) + ":ping", String(Date.now()));
+      } catch (_) {}
+      return next;
+    }
+
+    function legacyCustomerMedia(id = workspaceId) {
+      let slides = [], brand = {};
+      try { slides = JSON.parse(localStorage.getItem(customerDisplaySlidesKey(id)) || "[]"); } catch (_) {}
+      try { brand = JSON.parse(localStorage.getItem(customerDisplayBrandKey(id)) || "{}"); } catch (_) {}
+      return { slides: Array.isArray(slides) ? slides : [], brand: brand && typeof brand === "object" ? brand : {} };
+    }
+
+    function ensureCustomerMediaLoaded(id = workspaceId) {
+      const key = customerMediaId(id);
+      if (customerMediaLoading.has(key)) return customerMediaLoading.get(key);
+      const task = (async () => {
+        const existing = await readCustomerMedia(id);
+        if (existing) {
+          customerMediaCache.set(key, existing);
+        } else {
+          const legacy = legacyCustomerMedia(id);
+          const migrated = {
+            slides: normalizeCustomerDisplaySlides(legacy.slides, true),
+            brand: normalizeCustomerDisplayBrand(legacy.brand, true),
+          };
+          if (migrated.slides.length || migrated.brand.companyName || migrated.brand.logoDataUrl) {
+            await writeCustomerMedia(migrated, id);
+            try {
+              localStorage.removeItem(customerDisplaySlidesKey(id));
+              localStorage.setItem(customerDisplayBrandKey(id), JSON.stringify({ companyName: migrated.brand.companyName, layout: migrated.brand.layout }));
+            } catch (_) {}
+          } else {
+            customerMediaCache.set(key, migrated);
+          }
+        }
+        renderCustomerDisplaySlidesEditor();
+        renderCustomerDisplayBrandEditor();
+        renderCustomerDisplayLayoutEditor();
+        if (customerDisplayIsDisplayWindow && isCustomerSlideshowPhase(customerDisplayPhase)) {
+          applyCustomerDisplayLayout(loadCustomerDisplayBrand());
+          startCustomerSlideshow(gatherPresentationSlides());
+        }
+      })().catch((err) => {
+        console.warn(err);
+        setCustomerMediaError("Could not load local presentation media: " + (err?.message || "storage error"));
+      });
+      customerMediaLoading.set(key, task);
+      return task;
+    }
+
+    function setCustomerMediaError(message) {
+      const el = document.getElementById("cdMediaError");
+      if (el) el.textContent = message || "";
+      if (message) setSellError(message);
+    }
+
     function normalizeCustomerDisplayBrand(raw) {
       const b = raw && typeof raw === "object" ? raw : {};
       let logoDataUrl = "";
       if (typeof b.logoDataUrl === "string" && b.logoDataUrl.startsWith("data:image/")) {
-        logoDataUrl = b.logoDataUrl.length > MAX_ITEM_PHOTO_CHARS ? "" : b.logoDataUrl;
+        logoDataUrl = b.logoDataUrl;
       }
+      const layout = b.layout && typeof b.layout === "object" ? b.layout : {};
+      const order = Array.isArray(layout.order) ? layout.order.filter((x) => ["logo", "name", "slideshow"].includes(x)) : [];
       return {
         companyName: String(b.companyName || "").trim().slice(0, 80),
         logoDataUrl,
+        layout: {
+          order: [...new Set([...order, "logo", "name", "slideshow"])],
+          visible: {
+            logo: layout.visible?.logo !== false,
+            name: layout.visible?.name !== false,
+            slideshow: layout.visible?.slideshow !== false,
+          },
+          placement: ["above", "below", "overlay"].includes(layout.placement) ? layout.placement : "above",
+        },
       };
     }
 
     function loadCustomerDisplayBrand(id = workspaceId) {
+      const cached = customerMediaCache.get(customerMediaId(id));
+      if (cached) return normalizeCustomerDisplayBrand(cached.brand, true);
+      ensureCustomerMediaLoaded(id);
       try {
         const raw = JSON.parse(localStorage.getItem(customerDisplayBrandKey(id)) || "null");
-        return normalizeCustomerDisplayBrand(raw);
+        return normalizeCustomerDisplayBrand(raw, true);
       } catch {
-        return normalizeCustomerDisplayBrand(null);
+        return normalizeCustomerDisplayBrand(null, true);
       }
     }
 
-    function saveCustomerDisplayBrand(brand, id = workspaceId) {
+    async function saveCustomerDisplayBrand(brand, id = workspaceId) {
       const next = normalizeCustomerDisplayBrand(brand);
       try {
-        localStorage.setItem(customerDisplayBrandKey(id), JSON.stringify(next));
+        const current = customerMediaCache.get(customerMediaId(id)) || { slides: loadCustomerDisplaySlides(id), brand: {} };
+        await writeCustomerMedia({ ...current, brand: next }, id);
+        // Small metadata only: prevents quota failures while retaining a useful local pointer.
+        localStorage.setItem(customerDisplayBrandKey(id), JSON.stringify({ companyName: next.companyName, layout: next.layout }));
       } catch (err) {
         console.warn(err);
-        setSellError("Could not save company branding to local storage (browser storage may be full).");
-        return next;
+        setCustomerMediaError("Could not save customer branding: " + (err?.message || "device storage may be full") + ". Your previous file was kept.");
+        return false;
       }
-      try {
-        localStorage.setItem(customerDisplayBrandKey(id) + ":ping", String(Date.now()));
-      } catch (_) {}
       return next;
     }
 
@@ -7593,14 +7787,15 @@ service cloud.firestore {
       }
       if (!file || !/^image\//.test(file.type)) return;
       try {
-        const dataUrl = await compressImageFile(file, { maxWidth: 512, quality: 0.78 });
-        if (!dataUrl || dataUrl.length > MAX_ITEM_PHOTO_CHARS) {
+        const compressed = await compressImageFile(file, { maxWidth: 512, quality: 0.78 });
+        const dataUrl = compressed?.dataUrl || compressed;
+        if (!dataUrl || typeof dataUrl !== "string") {
           setSellError("Logo too large after compression. Try a smaller image.");
           return;
         }
         const brand = loadCustomerDisplayBrand();
         brand.logoDataUrl = dataUrl;
-        saveCustomerDisplayBrand(brand);
+        if (!(await saveCustomerDisplayBrand(brand))) return;
         renderCustomerDisplayBrandEditor();
         setSellSuccess("Customer logo saved on this device.");
         publishCustomerDisplay();
@@ -7609,21 +7804,21 @@ service cloud.firestore {
       }
     }
 
-    function removeCustomerDisplayLogo() {
+    async function removeCustomerDisplayLogo() {
       if (!getRole()?.canEdit) return;
       const brand = loadCustomerDisplayBrand();
       brand.logoDataUrl = "";
-      saveCustomerDisplayBrand(brand);
+      if (!(await saveCustomerDisplayBrand(brand))) return;
       renderCustomerDisplayBrandEditor();
       setSellSuccess("Customer logo removed.");
       publishCustomerDisplay();
     }
 
-    function saveCustomerDisplayCompanyName(rawName) {
+    async function saveCustomerDisplayCompanyName(rawName) {
       if (!getRole()?.canEdit) return;
       const brand = loadCustomerDisplayBrand();
       brand.companyName = String(rawName || "").trim().slice(0, 80);
-      saveCustomerDisplayBrand(brand);
+      if (!(await saveCustomerDisplayBrand(brand))) return;
       renderCustomerDisplayBrandEditor();
       publishCustomerDisplay();
     }
@@ -7651,7 +7846,82 @@ service cloud.firestore {
       }
     }
 
+    function applyCustomerDisplayLayout(brand) {
+      const phase = document.getElementById("cdPhasePresentation");
+      const brandEl = document.getElementById("cdPresentationBrand");
+      const slideWrap = phase?.querySelector(".cd-slide-wrap");
+      if (!phase || !brandEl || !slideWrap) return;
+      const layout = normalizeCustomerDisplayBrand(brand).layout;
+      phase.classList.toggle("cd-presentation-layout-overlay", layout.placement === "overlay" && (layout.visible.logo || layout.visible.name));
+      brandEl.classList.toggle("hidden", !(layout.visible.logo || layout.visible.name));
+      const logo = document.getElementById("cdBrandLogo");
+      const name = document.getElementById("cdBrand");
+      logo?.classList.toggle("hidden", !layout.visible.logo || !brand.logoDataUrl);
+      name?.classList.toggle("hidden", !layout.visible.name);
+      if (logo && name && layout.order.indexOf("name") < layout.order.indexOf("logo")) brandEl.append( name, logo );
+      else if (logo && name) brandEl.append(logo, name);
+      slideWrap.classList.toggle("hidden", !layout.visible.slideshow);
+      if (layout.placement !== "overlay") {
+        const blocks = layout.order.filter((x) => x === "slideshow" || (x === "logo" || x === "name") && (layout.visible.logo || layout.visible.name));
+        const firstBrand = Math.min(...["logo", "name"].map((x) => blocks.indexOf(x)).filter((x) => x >= 0));
+        const slideIndex = blocks.indexOf("slideshow");
+        if (slideIndex >= 0 && firstBrand >= 0 && firstBrand > slideIndex) phase.appendChild(brandEl);
+        else phase.insertBefore(brandEl, slideWrap);
+      }
+    }
+
+    function renderCustomerDisplayLayoutEditor() {
+      const el = document.getElementById("cdLayoutEditor");
+      const placement = document.getElementById("cdLayoutPlacement");
+      if (!el) return;
+      const layout = loadCustomerDisplayBrand().layout;
+      if (placement) { placement.value = layout.placement; placement.disabled = !getRole()?.canEdit; }
+      el.innerHTML = layout.order.map((key) => `<div class="cd-layout-row" draggable="${getRole()?.canEdit ? "true" : "false"}" data-cd-layout="${key}">
+        <span class="cd-layout-handle" title="Drag to reorder">⋮⋮</span><strong>${key === "name" ? "Company name" : key[0].toUpperCase() + key.slice(1)}</strong>
+        <label style="margin-left:auto"><input type="checkbox" data-cd-layout-visible="${key}" ${layout.visible[key] ? "checked" : ""} ${getRole()?.canEdit ? "" : "disabled"} /> Show</label>
+      </div>`).join("");
+    }
+
+    async function updateCustomerDisplayLayout(mutator) {
+      if (!getRole()?.canEdit) return;
+      const brand = loadCustomerDisplayBrand();
+      mutator(brand.layout);
+      if (!(await saveCustomerDisplayBrand(brand))) return;
+      renderCustomerDisplayLayoutEditor();
+      applyCustomerDisplayLayout(brand);
+      publishCustomerDisplay();
+    }
+
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result || ""));
+        r.onerror = () => reject(r.error || new Error("Could not read file"));
+        r.readAsDataURL(file);
+      });
+    }
+
+    async function customerPdfPages(file) {
+      if (!customerPdfJsPromise) customerPdfJsPromise = import("https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.mjs");
+      const pdfjs = await customerPdfJsPromise;
+      pdfjs.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.mjs";
+      const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+      const pages = [];
+      for (let pageNo = 1; pageNo <= pdf.numPages && pages.length < 12; pageNo++) {
+        const page = await pdf.getPage(pageNo);
+        const viewport = page.getViewport({ scale: Math.min(1.5, 1400 / page.getViewport({ scale: 1 }).width) });
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height);
+        await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+        pages.push({ name: `${file.name} · page ${pageNo}`, dataUrl: canvas.toDataURL("image/jpeg", 0.82), slideType: "image", caption: "", at: new Date().toISOString() });
+      }
+      return pages;
+    }
+
     function loadCustomerDisplaySlides(id = workspaceId) {
+      const cached = customerMediaCache.get(customerMediaId(id));
+      if (cached) return normalizeCustomerDisplaySlides(cached.slides);
+      ensureCustomerMediaLoaded(id);
       try {
         const raw = JSON.parse(localStorage.getItem(customerDisplaySlidesKey(id)) || "null");
         const slides = normalizeCustomerDisplaySlides(raw);
@@ -7662,7 +7932,7 @@ service cloud.firestore {
         const ws = readWorkspaceRaw(id);
         const migrated = normalizeCustomerDisplaySlides(ws?.customerDisplaySlides);
         if (migrated.length) {
-          saveCustomerDisplaySlides(migrated, id);
+          saveCustomerDisplaySlides(migrated, id).catch((err) => setCustomerMediaError("Could not migrate old presentation slides: " + (err?.message || "storage error")));
           try {
             delete ws.customerDisplaySlides;
             localStorage.setItem(dataKey(id), JSON.stringify(ws));
@@ -7673,22 +7943,21 @@ service cloud.firestore {
       return [];
     }
 
-    function saveCustomerDisplaySlides(slides, id = workspaceId) {
+    async function saveCustomerDisplaySlides(slides, id = workspaceId) {
       const next = normalizeCustomerDisplaySlides(slides);
+      if (Array.isArray(slides) && slides.length && !next.length) {
+        setCustomerMediaError("None of those files could be saved. Please choose a supported image, video, or PDF.");
+        return false;
+      }
       try {
-        localStorage.setItem(customerDisplaySlidesKey(id), JSON.stringify(next));
+        const current = customerMediaCache.get(customerMediaId(id)) || { slides: [], brand: loadCustomerDisplayBrand(id) };
+        await writeCustomerMedia({ ...current, slides: next }, id);
+        localStorage.setItem(customerMediaPointerKey(id), JSON.stringify({ updatedAt: Date.now(), count: next.length }));
       } catch (err) {
         console.warn(err);
-        setSellError("Could not save slides to local storage (browser storage may be full).");
-        return next;
+        setCustomerMediaError("Could not save presentation media: " + (err?.message || "device storage may be full") + ". Your previous slides were kept.");
+        return false;
       }
-      // Notify customer display window in the same browser.
-      try {
-        localStorage.setItem(
-          customerDisplaySlidesKey(id) + ":ping",
-          String(Date.now())
-        );
-      } catch (_) {}
       return next;
     }
 
@@ -7723,7 +7992,7 @@ service cloud.firestore {
     function gatherPresentationSlides() {
       const custom = loadCustomerDisplaySlides();
       const fromCustom = custom
-        .map((s) => ({ src: mediaSrc(s), caption: s.caption || "" }))
+        .map((s) => ({ src: mediaSrc(s), caption: s.caption || "", type: s.slideType || "image" }))
         .filter((s) => s.src);
       if (fromCustom.length) return fromCustom;
       let items = normalizeItems(workspaceState?.items || []);
@@ -7848,6 +8117,7 @@ service cloud.firestore {
     function startCustomerSlideshow(slides) {
       stopCustomerSlideshow();
       const img = document.getElementById("cdSlideImg");
+      const video = document.getElementById("cdSlideVideo");
       const cap = document.getElementById("cdSlideCaption");
       const empty = document.getElementById("cdPresentationEmpty");
       if (!img) return;
@@ -7855,6 +8125,7 @@ service cloud.firestore {
       if (!list.length) {
         img.classList.add("hidden");
         img.removeAttribute("src");
+        if (video) { video.pause(); video.removeAttribute("src"); video.classList.add("hidden"); }
         if (cap) {
           cap.textContent = "";
           cap.classList.add("hidden");
@@ -7866,23 +8137,36 @@ service cloud.firestore {
         return;
       }
       if (empty) empty.classList.add("hidden");
-      img.classList.remove("hidden");
       customerDisplaySlideIdx = 0;
       const show = () => {
         const s = list[customerDisplaySlideIdx % list.length];
-        img.style.opacity = "0";
-        setTimeout(() => {
-          img.src = s.src;
-          if (cap) {
-            cap.textContent = s.caption || "";
-            cap.classList.toggle("hidden", !s.caption);
-          }
-          img.style.opacity = "1";
-        }, 220);
         customerDisplaySlideIdx += 1;
+        const isVideo = s.type === "video";
+        if (isVideo && video) {
+          img.classList.add("hidden");
+          video.classList.remove("hidden");
+          video.src = s.src;
+          video.muted = true;
+          video.loop = false;
+          video.onended = () => { clearTimeout(customerDisplaySlideTimer); customerDisplaySlideTimer = setTimeout(show, 0); };
+          video.play().catch(() => {});
+          customerDisplaySlideTimer = setTimeout(() => { if (video.src === s.src) show(); }, 30000);
+        } else {
+          if (video) { video.pause(); video.removeAttribute("src"); video.classList.add("hidden"); }
+          img.classList.remove("hidden");
+          img.style.opacity = "0";
+          setTimeout(() => {
+          img.src = s.src;
+          img.style.opacity = "1";
+          }, 220);
+        }
+        if (cap) {
+          cap.textContent = s.caption || "";
+          cap.classList.toggle("hidden", !s.caption);
+        }
+        if (!isVideo) customerDisplaySlideTimer = setTimeout(show, 5200);
       };
       show();
-      customerDisplaySlideTimer = setInterval(show, 5200);
     }
 
     function setCustomerDisplayPhaseUi(phase) {
@@ -7922,6 +8206,7 @@ service cloud.firestore {
       const brand = getCustomerDisplayBrandName(localBrand) || msg.brand || "Inventory Split";
       const logoSrc = localBrand.logoDataUrl || msg.logoSrc || "";
       applyCustomerDisplayBrandUi(brand, logoSrc);
+      applyCustomerDisplayLayout(localBrand);
       setCustomerDisplayPhaseUi(phase);
       if (isCustomerSlideshowPhase(phase)) {
         startCustomerSlideshow(gatherPresentationSlides());
@@ -7986,8 +8271,12 @@ service cloud.firestore {
         ? slides
             .map((s, i) => {
               const src = mediaSrc(s);
-              return `<div class="cd-slide-thumb">
-                ${src ? `<img src="${escapeHtml(src)}" alt="" />` : ""}
+              const preview = s.slideType === "video"
+                ? `<video src="${escapeHtml(src)}" muted></video>`
+                : (src ? `<img src="${escapeHtml(src)}" alt="" />` : "");
+              return `<div class="cd-slide-thumb" draggable="${getRole()?.canEdit ? "true" : "false"}" data-cd-slide-index="${i}">
+                ${preview}
+                <button type="button" class="cd-drag-handle" aria-label="Drag to reorder" title="Drag to reorder">⋮⋮</button>
                 <button type="button" data-remove-cd-slide="${i}" aria-label="Remove slide">×</button>
               </div>`;
             })
@@ -8000,30 +8289,38 @@ service cloud.firestore {
         setSellError("You do not have permission to edit presentation slides.");
         return;
       }
-      const files = [...(fileList || [])].filter((f) => f && /^image\//.test(f.type));
+      const files = [...(fileList || [])].filter(Boolean);
       if (!files.length) return;
-      const slides = loadCustomerDisplaySlides();
+      const slides = loadCustomerDisplaySlides().slice();
+      const rejected = [];
       for (const file of files) {
         if (slides.length >= 12) break;
         try {
-          const dataUrl = await compressImageFile(file, { maxWidth: 1400, quality: 0.72 });
-          if (!dataUrl || dataUrl.length > MAX_ITEM_PHOTO_CHARS) continue;
-          const entry = normalizeMediaFile(
-            {
-              name: file.name || "slide.jpg",
-              dataUrl,
-              size: file.size || 0,
-              uploadedBy: currentUser?.name || currentUser?.username || "Unknown",
-              uploadedByUsername: currentUser?.username || "",
-              caption: "",
-              at: new Date().toISOString(),
-            },
-            "photo"
-          );
-          if (entry) slides.push(entry);
-        } catch (_) {}
+          const ext = (file.name || "").split(".").pop().toLowerCase();
+          if (["ppt", "pptx", "key"].includes(ext)) {
+            rejected.push(`${file.name}: PowerPoint/Keynote can't be displayed directly — export to PDF or images and upload that.`);
+            continue;
+          }
+          if (file.type === "application/pdf" || ext === "pdf") {
+            const pages = await customerPdfPages(file);
+            slides.push(...pages.slice(0, 12 - slides.length));
+            continue;
+          }
+          if (/^image\/(png|jpeg|webp|gif)/.test(file.type)) {
+            const compressed = await compressImageFile(file, { maxWidth: 1400, quality: 0.72 });
+            slides.push({ name: file.name || "slide.jpg", dataUrl: compressed.dataUrl || compressed, slideType: "image", size: file.size || 0, caption: "", at: new Date().toISOString() });
+            continue;
+          }
+          if (/^video\/(mp4|webm)/.test(file.type)) {
+            slides.push({ name: file.name || "video", dataUrl: await fileToDataUrl(file), slideType: "video", size: file.size || 0, caption: "", at: new Date().toISOString() });
+            continue;
+          }
+          rejected.push(`${file.name}: unsupported file type.`);
+        } catch (err) { rejected.push(`${file.name}: ${err?.message || "could not process file"}`); }
       }
-      saveCustomerDisplaySlides(slides);
+      if (rejected.length) setCustomerMediaError(rejected.join(" "));
+      const saved = await saveCustomerDisplaySlides(slides);
+      if (!saved) return;
       renderCustomerDisplaySlidesEditor();
       setSellSuccess("Presentation slides saved on this device.");
       if (isCustomerSlideshowPhase(customerDisplayPhase)) {
@@ -8031,13 +8328,13 @@ service cloud.firestore {
       }
     }
 
-    function removeCustomerDisplaySlide(idx) {
+    async function removeCustomerDisplaySlide(idx) {
       if (!getRole()?.canEdit) return;
       const slides = loadCustomerDisplaySlides();
       const i = Math.floor(parseNum(idx));
       if (i < 0 || i >= slides.length) return;
       slides.splice(i, 1);
-      saveCustomerDisplaySlides(slides);
+      if (!(await saveCustomerDisplaySlides(slides))) return;
       renderCustomerDisplaySlidesEditor();
       setSellSuccess("Removed presentation slide.");
       if (isCustomerSlideshowPhase(customerDisplayPhase)) {
@@ -8067,6 +8364,7 @@ service cloud.firestore {
         sessionWs = session?.workspaceId || null;
       } catch (_) {}
       workspaceId = String(urlWs || sessionWs || setupMeta?.defaultWorkspaceId || "MAIN").toUpperCase();
+      ensureCustomerMediaLoaded(workspaceId);
       try {
         const raw = readWorkspaceRaw(workspaceId);
         if (raw) workspaceState = ensureAccounts({ ...emptyState(), ...raw });
@@ -13470,6 +13768,70 @@ service cloud.firestore {
       updateCashierReadyBanner();
     }
 
+    function customerPrinterSettingsKey(id = workspaceId) {
+      return CUSTOMER_PRINTER_KEY + String(id || "MAIN").toUpperCase();
+    }
+    function loadCustomerPrinterSettings() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(customerPrinterSettingsKey()) || "{}");
+        return { printReceipt: raw.printReceipt === true, kickDrawer: raw.kickDrawer === true };
+      } catch (_) { return { printReceipt: false, kickDrawer: false }; }
+    }
+    function saveCustomerPrinterSettings(next) {
+      localStorage.setItem(customerPrinterSettingsKey(), JSON.stringify(next));
+      renderCustomerPrinterSettings();
+    }
+    function renderCustomerPrinterSettings() {
+      const settings = loadCustomerPrinterSettings();
+      const print = document.getElementById("receiptPrintEnabled"), drawer = document.getElementById("drawerKickEnabled");
+      if (print) { print.checked = settings.printReceipt; print.disabled = !getRole()?.canEdit; }
+      if (drawer) { drawer.checked = settings.kickDrawer; drawer.disabled = !getRole()?.canEdit; }
+      const status = document.getElementById("receiptPrinterStatus");
+      if (status) status.textContent = customerPrinterPort ? "Printer connected for this session" : (navigator.serial ? "Not connected" : "Browser print fallback only");
+    }
+    async function connectReceiptPrinter() {
+      if (!navigator.serial) { setSellError("Web Serial is unavailable here. Receipts use the browser print dialog; cash drawer kicking needs Chrome/Edge with a serial printer connection."); return; }
+      try {
+        customerPrinterPort = await navigator.serial.requestPort();
+        await customerPrinterPort.open({ baudRate: 9600 });
+        renderCustomerPrinterSettings();
+        setSellSuccess("Receipt printer connected for this session.");
+      } catch (err) { setSellError("Printer was not connected: " + (err?.message || "request cancelled")); }
+    }
+    function escText(text) { return new TextEncoder().encode(String(text).replace(/[^\x20-\x7E\n]/g, "?")); }
+    function receiptEscPos(lines, total, brand, kickDrawer) {
+      const bytes = [0x1b, 0x40, 0x1b, 0x61, 1, 0x1b, 0x45, 1, 0x1d, 0x21, 0x11, ...escText(brand + "\n"), 0x1d, 0x21, 0, 0x1b, 0x45, 0, ...escText(new Date().toLocaleString() + "\n\n"), 0x1b, 0x61, 0];
+      lines.forEach((line) => bytes.push(...escText(`${line.name}${line.color ? " · " + line.color : ""}\n${line.qty} x ${fmt(line.sell)}                 ${fmt(line.revenue)}\n`)));
+      bytes.push(...escText("\nTOTAL: " + fmt(total) + "\n\n"), 0x1b, 0x61, 1, ...escText("Thank you!\n\n\n"));
+      if (kickDrawer) bytes.push(0x1b, 0x70, 0x00, 0x19, 0xfa);
+      bytes.push(0x1d, 0x56, 0x00);
+      return new Uint8Array(bytes);
+    }
+    function browserReceiptPrint(lines, total, brand) {
+      const popup = window.open("", "_blank", "width=400,height=600");
+      if (!popup) throw new Error("Pop-up blocked; allow pop-ups to print the receipt.");
+      const safe = (v) => escapeHtml(String(v));
+      popup.document.write(`<html><head><title>Receipt</title><style>@page{size:80mm auto;margin:4mm}body{width:72mm;font:12px monospace}h1{text-align:center;font-size:16px}.total{font-weight:bold;font-size:15px;border-top:1px dashed #000;padding-top:6px;margin-top:8px}</style></head><body><h1>${safe(brand)}</h1><div>${safe(new Date().toLocaleString())}</div><hr>${lines.map((l) => `<div>${safe(l.name)}${l.color ? " · " + safe(l.color) : ""}<br>${l.qty} × ${safe(fmt(l.sell))} <span style="float:right">${safe(fmt(l.revenue))}</span></div>`).join("")}<div class="total">TOTAL <span style="float:right">${safe(fmt(total))}</span></div><p style="text-align:center">Thank you!</p><scr` + `ipt>window.onload=()=>window.print()</scr` + `ipt></body></html>`);
+      popup.document.close();
+    }
+    async function printTransactionReceipt(lines, total) {
+      const settings = loadCustomerPrinterSettings();
+      if (!settings.printReceipt && !settings.kickDrawer) return;
+      const brand = getCustomerDisplayBrandName(loadCustomerDisplayBrand());
+      try {
+        if (customerPrinterPort?.writable) {
+          const writer = customerPrinterPort.writable.getWriter();
+          await writer.write(receiptEscPos(lines, total, brand, settings.kickDrawer));
+          writer.releaseLock();
+        } else if (settings.printReceipt) {
+          browserReceiptPrint(lines, total, brand);
+          if (settings.kickDrawer) setSellError("Receipt opened in the browser print dialog, but the cash drawer was not kicked because no serial printer is connected.");
+        } else {
+          throw new Error("Connect a Web Serial printer before kicking the cash drawer.");
+        }
+      } catch (err) { setSellError("Transaction completed, but receipt/drawer action failed: " + (err?.message || "printer error")); }
+    }
+
     function endTransaction() {
       setSellSuccess("");
       if (!getRole()?.canEdit) {
@@ -13552,6 +13914,8 @@ service cloud.firestore {
         totalLabel: fmt(totalRev),
         units: totalUnits,
       });
+      // Hardware failures are intentionally isolated from the already-committed sale.
+      printTransactionReceipt(committed, totalRev);
       updateCashierReadyBanner();
       if (customerDisplayThanksTimer) clearTimeout(customerDisplayThanksTimer);
       customerDisplayThanksTimer = setTimeout(() => {
@@ -13798,6 +14162,9 @@ service cloud.firestore {
       updateSellActionButtons();
       renderCustomerDisplaySlidesEditor();
       renderCustomerDisplayBrandEditor();
+      renderCustomerDisplayLayoutEditor();
+      renderCustomerPrinterSettings();
+      ensureCustomerMediaLoaded();
     }
 
     function sellUndoStorageKey(id = workspaceId) {
@@ -15486,6 +15853,9 @@ service cloud.firestore {
       writeBatchPlannerToEditor();
       renderCustomerDisplaySlidesEditor();
       renderCustomerDisplayBrandEditor();
+      renderCustomerDisplayLayoutEditor();
+      renderCustomerPrinterSettings();
+      ensureCustomerMediaLoaded();
       workspaceState = ensureAccounts(workspaceState);
       workspaceState.chatMessages = normalizeChatMessages(workspaceState.chatMessages);
       workspaceState.tickets = normalizeTickets(workspaceState.tickets);
@@ -16567,6 +16937,26 @@ service cloud.firestore {
       if (!btn) return;
       removeCustomerDisplaySlide(btn.getAttribute("data-remove-cd-slide"));
     });
+    let draggedCustomerSlide = null;
+    document.getElementById("cdSlidesList")?.addEventListener("dragstart", (e) => {
+      const slide = e.target.closest("[data-cd-slide-index]");
+      if (!slide || !getRole()?.canEdit) return e.preventDefault();
+      draggedCustomerSlide = slide;
+      slide.classList.add("dragging");
+    });
+    document.getElementById("cdSlidesList")?.addEventListener("dragover", (e) => e.preventDefault());
+    document.getElementById("cdSlidesList")?.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      const target = e.target.closest("[data-cd-slide-index]");
+      if (!draggedCustomerSlide || !target || target === draggedCustomerSlide) return;
+      const slides = loadCustomerDisplaySlides().slice();
+      const from = Number(draggedCustomerSlide.dataset.cdSlideIndex), to = Number(target.dataset.cdSlideIndex);
+      slides.splice(to, 0, slides.splice(from, 1)[0]);
+      if (await saveCustomerDisplaySlides(slides)) { renderCustomerDisplaySlidesEditor(); publishCustomerDisplay(); }
+    });
+    document.getElementById("cdSlidesList")?.addEventListener("dragend", () => {
+      draggedCustomerSlide?.classList.remove("dragging"); draggedCustomerSlide = null;
+    });
     document.getElementById("cdCompanyNameInput")?.addEventListener("change", (e) => {
       saveCustomerDisplayCompanyName(e.target.value);
       setSellSuccess("Company name saved on this device.");
@@ -16584,6 +16974,39 @@ service cloud.firestore {
       });
     });
     document.getElementById("cdRemoveLogoBtn")?.addEventListener("click", () => removeCustomerDisplayLogo());
+    document.getElementById("receiptPrintEnabled")?.addEventListener("change", (e) => {
+      if (!getRole()?.canEdit) return;
+      saveCustomerPrinterSettings({ ...loadCustomerPrinterSettings(), printReceipt: e.target.checked });
+    });
+    document.getElementById("drawerKickEnabled")?.addEventListener("change", (e) => {
+      if (!getRole()?.canEdit) return;
+      saveCustomerPrinterSettings({ ...loadCustomerPrinterSettings(), kickDrawer: e.target.checked });
+    });
+    document.getElementById("connectReceiptPrinterBtn")?.addEventListener("click", () => connectReceiptPrinter());
+    document.getElementById("cdLayoutPlacement")?.addEventListener("change", (e) => updateCustomerDisplayLayout((layout) => { layout.placement = e.target.value; }));
+    document.getElementById("cdLayoutEditor")?.addEventListener("change", (e) => {
+      const key = e.target.getAttribute("data-cd-layout-visible");
+      if (key) updateCustomerDisplayLayout((layout) => { layout.visible[key] = e.target.checked; });
+    });
+    let draggedCustomerLayout = null;
+    document.getElementById("cdLayoutEditor")?.addEventListener("dragstart", (e) => {
+      const row = e.target.closest("[data-cd-layout]");
+      if (!row || !getRole()?.canEdit) return e.preventDefault();
+      draggedCustomerLayout = row; row.classList.add("dragging");
+    });
+    document.getElementById("cdLayoutEditor")?.addEventListener("dragover", (e) => e.preventDefault());
+    document.getElementById("cdLayoutEditor")?.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const target = e.target.closest("[data-cd-layout]");
+      if (!draggedCustomerLayout || !target || target === draggedCustomerLayout) return;
+      updateCustomerDisplayLayout((layout) => {
+        const from = layout.order.indexOf(draggedCustomerLayout.dataset.cdLayout), to = layout.order.indexOf(target.dataset.cdLayout);
+        layout.order.splice(to, 0, layout.order.splice(from, 1)[0]);
+      });
+    });
+    document.getElementById("cdLayoutEditor")?.addEventListener("dragend", () => {
+      draggedCustomerLayout?.classList.remove("dragging"); draggedCustomerLayout = null;
+    });
     document.getElementById("sellCartList")?.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-remove-cart]");
       if (!btn) return;
