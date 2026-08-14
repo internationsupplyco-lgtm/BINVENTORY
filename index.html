@@ -3587,13 +3587,36 @@
             </div>
             <div class="field" style="margin-top:1rem">
               <label>Receipt printer &amp; cash drawer</label>
-              <div class="field-hint">TM-T88III: connect over Web Serial where supported. Safari uses the browser’s 80 mm print dialog fallback; drawer kicking requires a connected ESC/POS printer.</div>
+              <div class="field-hint">
+                Windows 11 + serial-to-USB adapter: use <strong>Chrome or Edge</strong> on this https:// site, then
+                <strong>Connect serial printer</strong> and pick the COM port (e.g. COM3). Install the adapter’s
+                Windows driver first (FTDI / Prolific / CH340 / CP210x) and confirm Device Manager → Ports (COM &amp; LPT)
+                shows a COM number while the printer is powered on. “Connect USB printer” is only for a direct USB
+                TM-T88III cable — not a serial adapter.
+              </div>
               <label><input type="checkbox" id="receiptPrintEnabled" /> Print receipt when a transaction ends</label>
               <label><input type="checkbox" id="drawerKickEnabled" /> Kick cash drawer when a transaction ends</label>
+              <div class="field-row" style="margin-top:.6rem">
+                <div class="field">
+                  <label for="receiptBaudRate">Serial speed</label>
+                  <select id="receiptBaudRate"></select>
+                  <div class="field-hint">TM-T88III ships at 38400. Match DIP switches; try None flow control if the port opens but nothing prints.</div>
+                </div>
+                <div class="field">
+                  <label for="receiptFlowControl">Flow control</label>
+                  <select id="receiptFlowControl">
+                    <option value="hardware">Hardware (DTR/DSR)</option>
+                    <option value="none">None</option>
+                  </select>
+                </div>
+              </div>
               <div class="customer-display-actions">
-                <button type="button" class="btn-ghost" id="connectReceiptPrinterBtn">Connect printer</button>
+                <button type="button" class="btn-ghost" id="connectReceiptPrinterBtn">Connect serial printer (COM)</button>
+                <button type="button" class="btn-ghost" id="connectReceiptPrinterUsbBtn">Connect USB printer</button>
+                <button type="button" class="btn-ghost" id="testReceiptPrinterBtn">Test print</button>
                 <span class="note" id="receiptPrinterStatus">Not connected</span>
               </div>
+              <div class="field-hint" id="receiptPrinterDiag"></div>
             </div>
           </div>
           <div class="card" id="sellChartCard">
@@ -7603,6 +7626,8 @@ service cloud.firestore {
     let customerMediaDbPromise = null;
     let customerPdfJsPromise = null;
     let customerPrinterPort = null;
+    /** WebUSB fallback for USB-attached ESC/POS printers: { device, endpoint }. */
+    let customerPrinterUsb = null;
 
     function customerMediaId(id = workspaceId) {
       return String(id || "MAIN").toUpperCase();
@@ -13771,11 +13796,20 @@ service cloud.firestore {
     function customerPrinterSettingsKey(id = workspaceId) {
       return CUSTOMER_PRINTER_KEY + String(id || "MAIN").toUpperCase();
     }
+    const RECEIPT_BAUD_RATES = [9600, 19200, 38400, 57600, 115200];
     function loadCustomerPrinterSettings() {
+      // TM-T88III leaves the factory at 38400 8N1 with DTR/DSR flow control.
+      const fallback = { printReceipt: false, kickDrawer: false, baudRate: 38400, flowControl: "hardware" };
       try {
         const raw = JSON.parse(localStorage.getItem(customerPrinterSettingsKey()) || "{}");
-        return { printReceipt: raw.printReceipt === true, kickDrawer: raw.kickDrawer === true };
-      } catch (_) { return { printReceipt: false, kickDrawer: false }; }
+        const baudRate = RECEIPT_BAUD_RATES.includes(Number(raw.baudRate)) ? Number(raw.baudRate) : fallback.baudRate;
+        return {
+          printReceipt: raw.printReceipt === true,
+          kickDrawer: raw.kickDrawer === true,
+          baudRate,
+          flowControl: raw.flowControl === "none" ? "none" : "hardware",
+        };
+      } catch (_) { return fallback; }
     }
     function saveCustomerPrinterSettings(next) {
       localStorage.setItem(customerPrinterSettingsKey(), JSON.stringify(next));
@@ -13786,17 +13820,183 @@ service cloud.firestore {
       const print = document.getElementById("receiptPrintEnabled"), drawer = document.getElementById("drawerKickEnabled");
       if (print) { print.checked = settings.printReceipt; print.disabled = !getRole()?.canEdit; }
       if (drawer) { drawer.checked = settings.kickDrawer; drawer.disabled = !getRole()?.canEdit; }
+      const baud = document.getElementById("receiptBaudRate");
+      if (baud) {
+        if (!baud.options.length) {
+          baud.innerHTML = RECEIPT_BAUD_RATES.map((r) => `<option value="${r}">${r} baud</option>`).join("");
+        }
+        baud.value = String(settings.baudRate);
+        baud.disabled = !getRole()?.canEdit;
+      }
+      const flow = document.getElementById("receiptFlowControl");
+      if (flow) { flow.value = settings.flowControl; flow.disabled = !getRole()?.canEdit; }
       const status = document.getElementById("receiptPrinterStatus");
-      if (status) status.textContent = customerPrinterPort ? "Printer connected for this session" : (navigator.serial ? "Not connected" : "Browser print fallback only");
+      if (status) {
+        status.textContent = customerPrinterPort
+          ? "Serial printer connected for this session"
+          : customerPrinterUsb
+            ? "USB printer connected for this session"
+            : "Not connected";
+      }
+      const diag = document.getElementById("receiptPrinterDiag");
+      if (diag) {
+        diag.textContent = printerSupportSummary();
+        refreshPrinterPortDiag();
+      }
     }
-    async function connectReceiptPrinter() {
-      if (!navigator.serial) { setSellError("Web Serial is unavailable here. Receipts use the browser print dialog; cash drawer kicking needs Chrome/Edge with a serial printer connection."); return; }
+
+    /** Web Serial / WebUSB both need a secure context; file:// pages get neither. */
+    function printerSupportSummary() {
+      const parts = [];
+      parts.push("Page: " + (location.protocol === "file:" ? "file:// (no printer APIs)" : location.protocol + "//" + location.host));
+      parts.push("Secure context: " + (window.isSecureContext ? "yes" : "no"));
+      parts.push("Web Serial: " + (navigator.serial ? "available" : "unavailable"));
+      parts.push("WebUSB: " + (navigator.usb ? "available" : "unavailable"));
+      return parts.join(" · ");
+    }
+
+    async function refreshPrinterPortDiag() {
+      const diag = document.getElementById("receiptPrinterDiag");
+      if (!diag || !navigator.serial?.getPorts) return;
       try {
-        customerPrinterPort = await navigator.serial.requestPort();
-        await customerPrinterPort.open({ baudRate: 9600 });
+        const ports = await navigator.serial.getPorts();
+        const base = printerSupportSummary();
+        diag.textContent =
+          base +
+          " · Previously allowed COM ports: " +
+          ports.length +
+          (ports.length
+            ? " (click Connect serial printer to reopen)"
+            : " (none yet — click Connect and pick your COM port)");
+      } catch (_) {}
+    }
+
+    async function openReceiptSerialPort(port, settings) {
+      if (port.readable || port.writable) {
+        try { await port.close(); } catch (_) {}
+      }
+      try {
+        await port.open({ baudRate: settings.baudRate, flowControl: settings.flowControl });
+      } catch (err) {
+        // Some USB-serial adapters on Windows ignore hardware flow control and fail open.
+        if (settings.flowControl !== "none") {
+          await port.open({ baudRate: settings.baudRate, flowControl: "none" });
+          saveCustomerPrinterSettings({ ...settings, flowControl: "none" });
+          return "none";
+        }
+        throw err;
+      }
+      return settings.flowControl;
+    }
+
+    async function connectReceiptPrinter() {
+      if (!navigator.serial) {
+        setSellError(
+          "Web Serial is unavailable here (" +
+            printerSupportSummary() +
+            "). On Windows 11 use Chrome or Edge over https:// (not file://)."
+        );
+        return;
+      }
+      const settings = loadCustomerPrinterSettings();
+      try {
+        // Prefer a previously granted port (no picker) when only one exists.
+        let port = null;
+        try {
+          const known = await navigator.serial.getPorts();
+          if (known.length === 1) port = known[0];
+        } catch (_) {}
+        if (!port) port = await navigator.serial.requestPort();
+        const flowUsed = await openReceiptSerialPort(port, settings);
+        customerPrinterPort = port;
+        customerPrinterUsb = null;
         renderCustomerPrinterSettings();
-        setSellSuccess("Receipt printer connected for this session.");
-      } catch (err) { setSellError("Printer was not connected: " + (err?.message || "request cancelled")); }
+        setSellSuccess(
+          `Serial/COM printer connected at ${settings.baudRate} baud (${flowUsed} flow control). Use Test print next.`
+        );
+      } catch (err) {
+        const msg = String(err?.message || "request cancelled");
+        setSellError(
+          /No port selected|cancel/i.test(msg)
+            ? "No COM port was picked. On Windows 11: Device Manager → Ports (COM & LPT) should list your serial-USB adapter (e.g. COM3). Install FTDI/Prolific/CH340/CP210x drivers if nothing appears, then click Connect serial printer again and choose that COM port."
+            : "Serial/COM printer was not connected: " + msg
+        );
+      }
+    }
+
+    async function connectReceiptPrinterUsb() {
+      if (!navigator.usb) {
+        setSellError("WebUSB is unavailable here (" + printerSupportSummary() + "). Chrome or Edge over https:// is required.");
+        return;
+      }
+      try {
+        // 0x04b8 = Seiko Epson; class 7 covers generic USB printers.
+        const device = await navigator.usb.requestDevice({
+          filters: [{ vendorId: 0x04b8 }, { classCode: 0x07 }],
+        });
+        await device.open();
+        if (!device.configuration) await device.selectConfiguration(1);
+        let iface = null;
+        let endpoint = null;
+        for (const candidate of device.configuration.interfaces) {
+          for (const alt of candidate.alternates) {
+            const out = alt.endpoints.find((e) => e.direction === "out" && e.type === "bulk");
+            if (out && (alt.interfaceClass === 0x07 || !iface)) {
+              iface = candidate;
+              endpoint = out.endpointNumber;
+              if (alt.interfaceClass === 0x07) break;
+            }
+          }
+          if (iface && endpoint != null) break;
+        }
+        if (!iface || endpoint == null) throw new Error("No printer interface with a bulk OUT endpoint was found");
+        await device.claimInterface(iface.interfaceNumber);
+        customerPrinterUsb = { device, endpoint, interfaceNumber: iface.interfaceNumber };
+        customerPrinterPort = null;
+        renderCustomerPrinterSettings();
+        setSellSuccess("Receipt printer connected over USB for this session.");
+      } catch (err) {
+        const msg = String(err?.message || "request cancelled");
+        setSellError(
+          /claim/i.test(msg)
+            ? "macOS is holding the printer through its own driver, so the browser cannot claim it. Remove the TM-T88III from System Settings › Printers (or use the serial/Ethernet connection), then try again."
+            : "USB printer was not connected: " + msg
+        );
+      }
+    }
+
+    async function writeToReceiptPrinter(bytes) {
+      if (customerPrinterPort?.writable) {
+        const writer = customerPrinterPort.writable.getWriter();
+        try {
+          await writer.write(bytes);
+        } finally {
+          writer.releaseLock();
+        }
+        return true;
+      }
+      if (customerPrinterUsb?.device) {
+        await customerPrinterUsb.device.transferOut(customerPrinterUsb.endpoint, bytes);
+        return true;
+      }
+      return false;
+    }
+
+    async function testReceiptPrinter() {
+      const settings = loadCustomerPrinterSettings();
+      const brand = getCustomerDisplayBrandName(loadCustomerDisplayBrand());
+      const lines = [{ name: "Test item", color: "", qty: 1, sell: 1, revenue: 1 }];
+      try {
+        const sent = await writeToReceiptPrinter(receiptEscPos(lines, 1, brand, settings.kickDrawer));
+        if (sent) {
+          setSellSuccess("Test receipt sent to the printer.");
+          return;
+        }
+        browserReceiptPrint(lines, 1, brand);
+        setSellSuccess("No printer is connected, so the test receipt opened in the browser print dialog.");
+      } catch (err) {
+        setSellError("Test print failed: " + (err?.message || "printer error"));
+      }
     }
     function escText(text) { return new TextEncoder().encode(String(text).replace(/[^\x20-\x7E\n]/g, "?")); }
     function receiptEscPos(lines, total, brand, kickDrawer) {
@@ -13819,10 +14019,8 @@ service cloud.firestore {
       if (!settings.printReceipt && !settings.kickDrawer) return;
       const brand = getCustomerDisplayBrandName(loadCustomerDisplayBrand());
       try {
-        if (customerPrinterPort?.writable) {
-          const writer = customerPrinterPort.writable.getWriter();
-          await writer.write(receiptEscPos(lines, total, brand, settings.kickDrawer));
-          writer.releaseLock();
+        if (customerPrinterPort?.writable || customerPrinterUsb?.device) {
+          await writeToReceiptPrinter(receiptEscPos(lines, total, brand, settings.kickDrawer));
         } else if (settings.printReceipt) {
           browserReceiptPrint(lines, total, brand);
           if (settings.kickDrawer) setSellError("Receipt opened in the browser print dialog, but the cash drawer was not kicked because no serial printer is connected.");
@@ -16982,7 +17180,17 @@ service cloud.firestore {
       if (!getRole()?.canEdit) return;
       saveCustomerPrinterSettings({ ...loadCustomerPrinterSettings(), kickDrawer: e.target.checked });
     });
+    document.getElementById("receiptBaudRate")?.addEventListener("change", (e) => {
+      if (!getRole()?.canEdit) return;
+      saveCustomerPrinterSettings({ ...loadCustomerPrinterSettings(), baudRate: Number(e.target.value) });
+    });
+    document.getElementById("receiptFlowControl")?.addEventListener("change", (e) => {
+      if (!getRole()?.canEdit) return;
+      saveCustomerPrinterSettings({ ...loadCustomerPrinterSettings(), flowControl: e.target.value });
+    });
     document.getElementById("connectReceiptPrinterBtn")?.addEventListener("click", () => connectReceiptPrinter());
+    document.getElementById("connectReceiptPrinterUsbBtn")?.addEventListener("click", () => connectReceiptPrinterUsb());
+    document.getElementById("testReceiptPrinterBtn")?.addEventListener("click", () => testReceiptPrinter());
     document.getElementById("cdLayoutPlacement")?.addEventListener("change", (e) => updateCustomerDisplayLayout((layout) => { layout.placement = e.target.value; }));
     document.getElementById("cdLayoutEditor")?.addEventListener("change", (e) => {
       const key = e.target.getAttribute("data-cd-layout-visible");
