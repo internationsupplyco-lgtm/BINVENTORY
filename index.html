@@ -1033,6 +1033,25 @@
     .sell-end-txn:disabled {
       opacity: 0.55;
     }
+    .sell-pay-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      width: 100%;
+      margin-top: 0.35rem;
+    }
+    .sell-pay-row .sell-end-txn {
+      flex: 1 1 8rem;
+    }
+    .sell-pay-other {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .sell-pay-other:hover:not(:disabled) {
+      background: var(--surface);
+      border-color: var(--accent);
+    }
     .sell-success {
       color: var(--success);
       font-size: 0.9rem;
@@ -2960,13 +2979,25 @@
       font-variant-numeric: tabular-nums;
       opacity: 0;
     }
+    .cd-thanks-pay {
+      margin-top: 0.75rem;
+      font-size: clamp(1rem, 2.2vw, 1.35rem);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #b0b0b0;
+      opacity: 0;
+    }
     .cd-thanks.cd-thanks-show-total .cd-thanks-total-label,
-    .cd-thanks.cd-thanks-show-total .cd-thanks-total {
+    .cd-thanks.cd-thanks-show-total .cd-thanks-total,
+    .cd-thanks.cd-thanks-show-total .cd-thanks-pay {
       opacity: 1;
       transition: opacity 0.45s ease;
     }
     .cd-thanks.cd-thanks-show-total .cd-thanks-total {
       transition-delay: 0.12s;
+    }
+    .cd-thanks.cd-thanks-show-total .cd-thanks-pay {
+      transition-delay: 0.2s;
     }
     .cd-brand-editor {
       display: flex;
@@ -3093,6 +3124,7 @@
       <h1>Thank you</h1>
       <div class="cd-thanks-total-label">Total</div>
       <div class="cd-thanks-total" id="cdThanksTotal">$0.00</div>
+      <div class="cd-thanks-pay" id="cdThanksPay"></div>
     </div>
   </div>
 
@@ -3586,27 +3618,29 @@
               </select>
             </div>
             <div class="field" style="margin-top:1rem">
-              <label>Receipt printer &amp; cash drawer</label>
+              <label>Epson TM-T88III (APD / Windows print)</label>
               <div class="field-hint">
-                Using <strong>Epson APD</strong>: keep <strong>Windows / Epson APD print</strong> mode below, tick print receipt,
-                and set your APD printer as the Windows default (or pick it in the print dialog). Enable APD’s cash-drawer
-                option in the driver so the drawer opens with each receipt. Serial COM mode is only needed if you want the
-                app to talk to the printer directly without Windows.
+                Receipts print through your <strong>Epson APD</strong> driver (Windows print dialog).
+                Set the TM-T88III as the Windows default printer.
+                To skip the dialog every sale, launch Chrome with
+                <code>--kiosk-printing</code> and keep that printer as default.<br /><br />
+                Cash drawer: set APD → Printer properties → Device Settings / Cash Drawer to open with each print
+                (the Windows print path cannot send a separate app kick command).
               </div>
               <label><input type="checkbox" id="receiptPrintEnabled" /> Print receipt when a transaction ends</label>
-              <label><input type="checkbox" id="drawerKickEnabled" /> Remind me about cash drawer (APD should open it)</label>
+              <label class="hidden"><input type="checkbox" id="drawerKickEnabled" /> Open cash drawer on Cash sales (serial ESC/POS only)</label>
               <div class="field" style="margin-top:.6rem">
-                <label for="receiptPrintMode">How to reach the printer</label>
+                <label for="receiptPrintMode">Receipt method</label>
                 <select id="receiptPrintMode">
-                  <option value="windows">Windows / Epson APD print (recommended)</option>
-                  <option value="serial">Serial COM + ESC/POS (needs free COM port)</option>
+                  <option value="windows">Epson APD / Windows print</option>
+                  <option value="serial">Silent ESC/POS over COM (advanced)</option>
                 </select>
               </div>
-              <div class="field-row" id="receiptSerialOptions" style="margin-top:.6rem">
+              <div class="field-row hidden" id="receiptSerialOptions" style="margin-top:.6rem">
                 <div class="field">
                   <label for="receiptBaudRate">Serial speed</label>
                   <select id="receiptBaudRate"></select>
-                  <div class="field-hint">TM-T88III ships at 38400. Match DIP switches; try None flow control if the port opens but nothing prints.</div>
+                  <div class="field-hint">Only for Silent ESC/POS mode.</div>
                 </div>
                 <div class="field">
                   <label for="receiptFlowControl">Flow control</label>
@@ -3617,10 +3651,10 @@
                 </div>
               </div>
               <div class="customer-display-actions">
-                <button type="button" class="btn-ghost" id="connectReceiptPrinterBtn">Connect serial printer (COM)</button>
-                <button type="button" class="btn-ghost" id="connectReceiptPrinterUsbBtn">Connect USB printer</button>
-                <button type="button" class="btn-ghost" id="testReceiptPrinterBtn">Test print</button>
-                <span class="note" id="receiptPrinterStatus">Not connected</span>
+                <button type="button" class="btn-ghost hidden" id="connectReceiptPrinterBtn">Connect serial printer (COM)</button>
+                <button type="button" class="btn-ghost hidden" id="connectReceiptPrinterUsbBtn">Connect USB printer</button>
+                <button type="button" class="btn-primary" id="testReceiptPrinterBtn">Test print</button>
+                <span class="note" id="receiptPrinterStatus">Epson APD / Windows print</span>
               </div>
             </div>
           </div>
@@ -3725,7 +3759,10 @@
                     Cart total: <strong id="sellCartTotal">$0.00</strong>
                     <span id="sellCartUnitsLabel"> · 0 units</span>
                   </div>
-                  <button type="button" class="btn-primary sell-end-txn" id="endTransactionBtn" disabled>End transaction</button>
+                  <div class="sell-pay-row" role="group" aria-label="Payment method">
+                    <button type="button" class="btn-primary sell-end-txn" id="endTransactionCashBtn" disabled>Cash</button>
+                    <button type="button" class="btn-ghost sell-end-txn sell-pay-other" id="endTransactionOtherBtn" disabled>Other</button>
+                  </div>
                 </div>
               </div>
               <div class="sell-session-strip" id="sellSessionStrip">
@@ -8247,7 +8284,13 @@ service cloud.firestore {
       if (phase === "thanks") {
         const thanksEl = document.getElementById("cdPhaseThanks");
         const totalEl = document.getElementById("cdThanksTotal");
+        const payEl = document.getElementById("cdThanksPay");
         if (totalEl) totalEl.textContent = msg.totalLabel || "$0.00";
+        if (payEl) {
+          const pay = msg.paymentMethod === "cash" ? "Cash" : msg.paymentMethod === "other" ? "Other" : "";
+          payEl.textContent = pay;
+          payEl.classList.toggle("hidden", !pay);
+        }
         if (thanksEl) thanksEl.classList.remove("cd-thanks-show-total");
         if (customerDisplayThanksRevealTimer) {
           clearTimeout(customerDisplayThanksRevealTimer);
@@ -13241,7 +13284,8 @@ service cloud.firestore {
       const resetBtn = document.getElementById("resetSalesBtn");
       const enterBtn = document.getElementById("enterSalesModeBtn");
       const addCartBtn = document.getElementById("addToCartBtn");
-      const endTxnBtn = document.getElementById("endTransactionBtn");
+      const endTxnCashBtn = document.getElementById("endTransactionCashBtn");
+      const endTxnOtherBtn = document.getElementById("endTransactionOtherBtn");
       const endBtn = document.getElementById("endSalesDayBtn");
       const viewerNote = document.getElementById("sellViewerNote");
       if (viewerNote) viewerNote.classList.toggle("hidden", canSell);
@@ -13288,7 +13332,15 @@ service cloud.firestore {
             : 0;
         addCartBtn.disabled = !canSell || !selReady || !colorOk || avail <= 0;
       }
-      if (endTxnBtn) endTxnBtn.disabled = !canSell || salesCart.length === 0;
+      const canEndTxn = canSell && salesCart.length > 0;
+      if (endTxnCashBtn) {
+        endTxnCashBtn.disabled = !canEndTxn;
+        endTxnCashBtn.title = canEndTxn ? "End transaction — paid with cash" : "Add items to the cart first";
+      }
+      if (endTxnOtherBtn) {
+        endTxnOtherBtn.disabled = !canEndTxn;
+        endTxnOtherBtn.title = canEndTxn ? "End transaction — card / other payment" : "Add items to the cart first";
+      }
       if (endBtn) endBtn.disabled = !canSell;
     }
 
@@ -13664,6 +13716,12 @@ service cloud.firestore {
                   `<li><span>${escapeHtml(s.name)}${
                     s.color ? " · " + escapeHtml(s.color) : ""
                   } ×${s.qty}${
+                    s.paymentMethod
+                      ? ` <em style="color:var(--muted);font-style:normal">(${escapeHtml(
+                          paymentMethodLabel(s.paymentMethod)
+                        )})</em>`
+                      : ""
+                  }${
                     s.txnLabel ? ` <em style="color:var(--muted);font-style:normal">(${escapeHtml(s.txnLabel)})</em>` : ""
                   }</span><span>${fmt(s.revenue)}</span></li>`
               )
@@ -13805,23 +13863,23 @@ service cloud.firestore {
     }
     const RECEIPT_BAUD_RATES = [9600, 19200, 38400, 57600, 115200];
     function loadCustomerPrinterSettings() {
-      // TM-T88III leaves the factory at 38400 8N1 with DTR/DSR flow control.
-      // Windows Generic/Text Only uses browser print — that driver often holds the COM port.
+      // Default: Epson APD via Windows print dialog.
       const fallback = {
-        printReceipt: false,
+        printReceipt: true,
         kickDrawer: false,
         baudRate: 38400,
-        flowControl: "hardware",
+        flowControl: "none",
         printMode: "windows",
       };
       try {
         const raw = JSON.parse(localStorage.getItem(customerPrinterSettingsKey()) || "{}");
         const baudRate = RECEIPT_BAUD_RATES.includes(Number(raw.baudRate)) ? Number(raw.baudRate) : fallback.baudRate;
+        const hasStored = raw && typeof raw === "object" && Object.keys(raw).length > 0;
         return {
-          printReceipt: raw.printReceipt === true,
-          kickDrawer: raw.kickDrawer === true,
+          printReceipt: hasStored ? raw.printReceipt === true : fallback.printReceipt,
+          kickDrawer: hasStored ? raw.kickDrawer === true : fallback.kickDrawer,
           baudRate,
-          flowControl: raw.flowControl === "none" ? "none" : "hardware",
+          flowControl: raw.flowControl === "hardware" ? "hardware" : "none",
           printMode: raw.printMode === "serial" ? "serial" : "windows",
         };
       } catch (_) { return fallback; }
@@ -13830,11 +13888,19 @@ service cloud.firestore {
       localStorage.setItem(customerPrinterSettingsKey(), JSON.stringify(next));
       renderCustomerPrinterSettings();
     }
+    function hasReceiptPrinterLink() {
+      return !!(customerPrinterPort?.writable || customerPrinterUsb?.device);
+    }
     function renderCustomerPrinterSettings() {
       const settings = loadCustomerPrinterSettings();
       const print = document.getElementById("receiptPrintEnabled"), drawer = document.getElementById("drawerKickEnabled");
       if (print) { print.checked = settings.printReceipt; print.disabled = !getRole()?.canEdit; }
-      if (drawer) { drawer.checked = settings.kickDrawer; drawer.disabled = !getRole()?.canEdit; }
+      if (drawer) {
+        drawer.checked = settings.kickDrawer;
+        drawer.disabled = !getRole()?.canEdit;
+        const drawerLabel = drawer.closest("label");
+        if (drawerLabel) drawerLabel.classList.toggle("hidden", settings.printMode !== "serial");
+      }
       const mode = document.getElementById("receiptPrintMode");
       if (mode) { mode.value = settings.printMode; mode.disabled = !getRole()?.canEdit; }
       const serialOpts = document.getElementById("receiptSerialOptions");
@@ -13856,13 +13922,15 @@ service cloud.firestore {
       const status = document.getElementById("receiptPrinterStatus");
       if (status) {
         if (settings.printMode === "windows") {
-          status.textContent = "Epson APD / Windows print — uses print dialog";
-        } else {
+          status.textContent = settings.printReceipt
+            ? "APD / Windows print — ready (drawer via APD settings)"
+            : "APD / Windows print — receipt printing off";
+        } else if (hasReceiptPrinterLink()) {
           status.textContent = customerPrinterPort
-            ? "Serial printer connected for this session"
-            : customerPrinterUsb
-              ? "USB printer connected for this session"
-              : "Not connected";
+            ? "Serial connected — silent print + Cash drawer ready"
+            : "USB connected — silent print + Cash drawer ready";
+        } else {
+          status.textContent = "Silent ESC/POS — connect COM/USB";
         }
       }
       const diag = document.getElementById("receiptPrinterDiag");
@@ -13870,6 +13938,7 @@ service cloud.firestore {
         diag.textContent = "";
         diag.classList.add("hidden");
       }
+      if (settings.printMode === "serial" && !hasReceiptPrinterLink()) tryReconnectReceiptSerial();
     }
 
     /** Web Serial / WebUSB both need a secure context; file:// pages get neither. */
@@ -14009,40 +14078,75 @@ service cloud.firestore {
       return false;
     }
 
+    function drawerKickEscPos() {
+      // ESC/POS cash drawer pulse: ESC p m t1 t2 (TM-T88III pin 2)
+      return new Uint8Array([0x1b, 0x70, 0x00, 0x19, 0xfa]);
+    }
+
+    async function tryReconnectReceiptSerial() {
+      if (hasReceiptPrinterLink() || !navigator.serial?.getPorts) return false;
+      const settings = loadCustomerPrinterSettings();
+      try {
+        const known = await navigator.serial.getPorts();
+        if (!known.length) return false;
+        const port = known.length === 1 ? known[0] : known[known.length - 1];
+        await openReceiptSerialPort(port, settings);
+        customerPrinterPort = port;
+        customerPrinterUsb = null;
+        renderCustomerPrinterSettings();
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
     async function testReceiptPrinter() {
       const settings = loadCustomerPrinterSettings();
       const brand = getCustomerDisplayBrandName(loadCustomerDisplayBrand());
       const lines = [{ name: "Test item", color: "", qty: 1, sell: 1, revenue: 1 }];
       try {
         if (settings.printMode === "windows") {
-          browserReceiptPrint(lines, 1, brand);
+          browserReceiptPrint(lines, 1, brand, "cash");
           setSellSuccess(
-            "Test receipt opened — pick your Epson APD / TM-T88III printer in the dialog (or set it as the Windows default)."
+            "Test receipt opened — pick Epson TM-T88III (APD), or set it as the Windows default. Use Chrome --kiosk-printing to skip the dialog."
           );
           return;
         }
-        const sent = await writeToReceiptPrinter(receiptEscPos(lines, 1, brand, settings.kickDrawer));
-        if (sent) {
-          setSellSuccess("Test receipt sent to the printer.");
+        await tryReconnectReceiptSerial();
+        if (hasReceiptPrinterLink()) {
+          await writeToReceiptPrinter(
+            receiptEscPos(lines, 1, brand, !!settings.kickDrawer, "cash")
+          );
+          setSellSuccess(
+            settings.kickDrawer
+              ? "Silent test receipt sent over COM/USB (Cash + drawer kick)."
+              : "Silent test receipt sent over COM/USB."
+          );
           return;
         }
-        browserReceiptPrint(lines, 1, brand);
-        setSellSuccess("No serial printer is connected, so the test receipt opened in the browser print dialog.");
+        setSellError(
+          "No COM/USB printer connected for silent mode. Free the port from Epson APD, then Connect serial printer — or switch back to APD / Windows print."
+        );
       } catch (err) {
         setSellError("Test print failed: " + (err?.message || "printer error"));
       }
     }
     function escText(text) { return new TextEncoder().encode(String(text).replace(/[^\x20-\x7E\n]/g, "?")); }
-    function receiptEscPos(lines, total, brand, kickDrawer) {
+    function paymentMethodLabel(method) {
+      return method === "cash" ? "Cash" : "Other";
+    }
+
+    function receiptEscPos(lines, total, brand, kickDrawer, paymentMethod) {
+      const pay = paymentMethodLabel(paymentMethod);
       const bytes = [0x1b, 0x40, 0x1b, 0x61, 1, 0x1b, 0x45, 1, 0x1d, 0x21, 0x11, ...escText(brand + "\n"), 0x1d, 0x21, 0, 0x1b, 0x45, 0, ...escText(new Date().toLocaleString() + "\n\n"), 0x1b, 0x61, 0];
       lines.forEach((line) => bytes.push(...escText(`${line.name}${line.color ? " · " + line.color : ""}\n${line.qty} x ${fmt(line.sell)}                 ${fmt(line.revenue)}\n`)));
-      bytes.push(...escText("\nTOTAL: " + fmt(total) + "\n\n"), 0x1b, 0x61, 1, ...escText("Thank you!\n\n\n"));
+      bytes.push(...escText("\nTOTAL: " + fmt(total) + "\n"), ...escText("Paid: " + pay + "\n\n"), 0x1b, 0x61, 1, ...escText("Thank you!\n\n\n"));
       if (kickDrawer) bytes.push(0x1b, 0x70, 0x00, 0x19, 0xfa);
       bytes.push(0x1d, 0x56, 0x00);
       return new Uint8Array(bytes);
     }
-    /** Centered receipt layout for Epson APD / Windows print (no page URL footer when possible). */
-    function browserReceiptPrint(lines, total, brand) {
+    /** Centered receipt layout for Epson APD / Windows print. */
+    function browserReceiptPrint(lines, total, brand, paymentMethod) {
       const popup = window.open("", "_blank", "width=420,height=680");
       if (!popup) throw new Error("Pop-up blocked; allow pop-ups to print the receipt.");
       const brandInfo = loadCustomerDisplayBrand();
@@ -14051,6 +14155,7 @@ service cloud.firestore {
         ? brandInfo.logoDataUrl
         : "";
       const when = escapeHtml(new Date().toLocaleString());
+      const pay = escapeHtml(paymentMethodLabel(paymentMethod));
       const units = (lines || []).reduce((s, l) => s + (Number(l.qty) || 0), 0);
       const itemsHtml = (lines || []).length
         ? (lines || [])
@@ -14134,6 +14239,14 @@ html, body {
   font-weight: 700;
 }
 .total-block .amt { font-size: 16px; }
+.pay-block {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 .thanks {
   text-align: center;
   margin: 14px 0 0;
@@ -14165,6 +14278,7 @@ html, body {
       <span>Total</span>
       <span class="amt">${escapeHtml(fmt(total))}</span>
     </div>
+    <p class="pay-block">${pay}</p>
     <p class="thanks">Thank you!</p>
     <p class="footer">Please come again</p>
   </div>
@@ -14175,33 +14289,40 @@ html, body {
       );
       popup.document.close();
     }
-    async function printTransactionReceipt(lines, total) {
+    async function printTransactionReceipt(lines, total, paymentMethod) {
       const settings = loadCustomerPrinterSettings();
-      if (!settings.printReceipt && !settings.kickDrawer) return;
+      const isCash = paymentMethod === "cash";
+      const wantPrint = !!settings.printReceipt;
+      const wantKick = !!(settings.kickDrawer && isCash && settings.printMode === "serial");
+      if (!wantPrint && !wantKick) return;
       const brand = getCustomerDisplayBrandName(loadCustomerDisplayBrand());
       try {
+        // Epson APD / Windows print (dialog unless Chrome --kiosk-printing).
         if (settings.printMode === "windows") {
-          if (settings.printReceipt) browserReceiptPrint(lines, total, brand);
-          if (settings.kickDrawer && !customerPrinterDrawerNoticeShown) {
-            customerPrinterDrawerNoticeShown = true;
-            setSellError(
-              "With Epson APD, enable the driver’s cash-drawer setting so the drawer opens when the receipt prints. The app does not kick the drawer in Windows/APD mode."
-            );
-          }
+          if (wantPrint) browserReceiptPrint(lines, total, brand, paymentMethod);
           return;
         }
-        if (customerPrinterPort?.writable || customerPrinterUsb?.device) {
-          await writeToReceiptPrinter(receiptEscPos(lines, total, brand, settings.kickDrawer));
-        } else if (settings.printReceipt) {
-          browserReceiptPrint(lines, total, brand);
-          if (settings.kickDrawer) setSellError("Receipt opened in the browser print dialog, but the cash drawer was not kicked because no serial printer is connected.");
-        } else {
-          throw new Error("Connect a Web Serial printer before kicking the cash drawer.");
+
+        await tryReconnectReceiptSerial();
+        const linked = hasReceiptPrinterLink();
+        if (!linked) {
+          setSellError(
+            "Transaction saved, but silent print/drawer needs a COM connection. Free the port from Epson APD, then Connect serial printer — or switch Receipt method to APD / Windows print."
+          );
+          return;
         }
-      } catch (err) { setSellError("Transaction completed, but receipt/drawer action failed: " + (err?.message || "printer error")); }
+        if (wantPrint) {
+          await writeToReceiptPrinter(receiptEscPos(lines, total, brand, wantKick, paymentMethod));
+        } else if (wantKick) {
+          await writeToReceiptPrinter(drawerKickEscPos());
+        }
+      } catch (err) {
+        setSellError("Transaction completed, but receipt/drawer action failed: " + (err?.message || "printer error"));
+      }
     }
 
-    function endTransaction() {
+    function endTransaction(paymentMethod) {
+      const pay = paymentMethod === "cash" ? "cash" : "other";
       setSellSuccess("");
       if (!getRole()?.canEdit) {
         setSellError("You do not have permission to record sales.");
@@ -14249,6 +14370,7 @@ html, body {
           profit: result.profit,
           at: new Date().toISOString(),
           txnLabel: "txn",
+          paymentMethod: pay,
         });
         totalUnits += result.qty;
         totalRev += result.revenue;
@@ -14261,18 +14383,19 @@ html, body {
       pushSellUndo({
         type: "transaction",
         txnId,
+        paymentMethod: pay,
         lines: undoLines,
         at: new Date().toISOString(),
       });
       salesCart = [];
       setSellError("");
       setSellSuccess(
-        `Transaction complete: ${totalUnits.toLocaleString()} unit${totalUnits === 1 ? "" : "s"} · ${fmt(
-          totalRev
-        )}` + (committed.length > 1 ? ` (${committed.length} lines)` : "")
+        `Transaction complete (${paymentMethodLabel(pay)}): ${totalUnits.toLocaleString()} unit${
+          totalUnits === 1 ? "" : "s"
+        } · ${fmt(totalRev)}` + (committed.length > 1 ? ` (${committed.length} lines)` : "")
       );
       scheduleSave(
-        `Sale transaction: ${totalUnits} unit(s), ${committed.length} line(s), ${fmt(totalRev)}`
+        `Sale transaction (${paymentMethodLabel(pay)}): ${totalUnits} unit(s), ${committed.length} line(s), ${fmt(totalRev)}`
       );
       customerDisplayPhase = "thanks";
       recalculate();
@@ -14282,9 +14405,10 @@ html, body {
       publishCustomerDisplay("thanks", {
         totalLabel: fmt(totalRev),
         units: totalUnits,
+        paymentMethod: pay,
       });
       // Hardware failures are intentionally isolated from the already-committed sale.
-      printTransactionReceipt(committed, totalRev);
+      printTransactionReceipt(committed, totalRev, pay);
       updateCashierReadyBanner();
       if (customerDisplayThanksTimer) clearTimeout(customerDisplayThanksTimer);
       customerDisplayThanksTimer = setTimeout(() => {
@@ -17289,7 +17413,8 @@ html, body {
     document.getElementById("resetSalesBtn").addEventListener("click", () => resetAllSales());
     document.getElementById("enterSalesModeBtn")?.addEventListener("click", () => enterSalesMode());
     document.getElementById("addToCartBtn")?.addEventListener("click", () => addToCartFromMode());
-    document.getElementById("endTransactionBtn")?.addEventListener("click", () => endTransaction());
+    document.getElementById("endTransactionCashBtn")?.addEventListener("click", () => endTransaction("cash"));
+    document.getElementById("endTransactionOtherBtn")?.addEventListener("click", () => endTransaction("other"));
     document.getElementById("endSalesDayBtn")?.addEventListener("click", () => endSalesDay());
     const openCd = () => openCustomerDisplay();
     document.getElementById("openCustomerDisplayBtn")?.addEventListener("click", openCd);
