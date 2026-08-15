@@ -3588,22 +3588,18 @@
             <div class="field" style="margin-top:1rem">
               <label>Receipt printer &amp; cash drawer</label>
               <div class="field-hint">
-                Text Only is not required — pick whichever fits:<br />
-                <strong>1. Generic / Text Only (works today):</strong> keep Windows mode below. Receipts go through the print
-                dialog; the app cannot kick the drawer. To skip the dialog, launch Chrome with
-                <code>--kiosk-printing</code> and make the printer the Windows default.<br />
-                <strong>2. Epson APD driver (best if Windows should own the printer):</strong> install Epson’s Advanced Printer
-                Driver, then enable its cash-drawer option so the drawer fires on each receipt. Still uses Windows mode here.<br />
-                <strong>3. Serial COM + ESC/POS (most control):</strong> remove/disable the Windows printer holding the COM port
-                so it is free, then use Serial mode — no print dialog, proper 80 mm formatting, auto-cut and drawer kick from the app.
+                Using <strong>Epson APD</strong>: keep <strong>Windows / Epson APD print</strong> mode below, tick print receipt,
+                and set your APD printer as the Windows default (or pick it in the print dialog). Enable APD’s cash-drawer
+                option in the driver so the drawer opens with each receipt. Serial COM mode is only needed if you want the
+                app to talk to the printer directly without Windows.
               </div>
               <label><input type="checkbox" id="receiptPrintEnabled" /> Print receipt when a transaction ends</label>
-              <label><input type="checkbox" id="drawerKickEnabled" /> Kick cash drawer when a transaction ends</label>
+              <label><input type="checkbox" id="drawerKickEnabled" /> Remind me about cash drawer (APD should open it)</label>
               <div class="field" style="margin-top:.6rem">
                 <label for="receiptPrintMode">How to reach the printer</label>
                 <select id="receiptPrintMode">
-                  <option value="windows">Windows Text Only / browser print (recommended for Generic/Text Only)</option>
-                  <option value="serial">Serial COM + ESC/POS (needs free COM port, not held by Windows printer)</option>
+                  <option value="windows">Windows / Epson APD print (recommended)</option>
+                  <option value="serial">Serial COM + ESC/POS (needs free COM port)</option>
                 </select>
               </div>
               <div class="field-row" id="receiptSerialOptions" style="margin-top:.6rem">
@@ -3626,7 +3622,6 @@
                 <button type="button" class="btn-ghost" id="testReceiptPrinterBtn">Test print</button>
                 <span class="note" id="receiptPrinterStatus">Not connected</span>
               </div>
-              <div class="field-hint" id="receiptPrinterDiag"></div>
             </div>
           </div>
           <div class="card" id="sellChartCard">
@@ -13861,7 +13856,7 @@ service cloud.firestore {
       const status = document.getElementById("receiptPrinterStatus");
       if (status) {
         if (settings.printMode === "windows") {
-          status.textContent = "Windows Text Only mode — uses browser print dialog";
+          status.textContent = "Epson APD / Windows print — uses print dialog";
         } else {
           status.textContent = customerPrinterPort
             ? "Serial printer connected for this session"
@@ -13872,8 +13867,8 @@ service cloud.firestore {
       }
       const diag = document.getElementById("receiptPrinterDiag");
       if (diag) {
-        diag.textContent = printerSupportSummary();
-        refreshPrinterPortDiag();
+        diag.textContent = "";
+        diag.classList.add("hidden");
       }
     }
 
@@ -14022,7 +14017,7 @@ service cloud.firestore {
         if (settings.printMode === "windows") {
           browserReceiptPrint(lines, 1, brand);
           setSellSuccess(
-            "Test receipt opened — in the print dialog pick your Generic/Text Only TM-T88III (or set it as the default printer)."
+            "Test receipt opened — pick your Epson APD / TM-T88III printer in the dialog (or set it as the Windows default)."
           );
           return;
         }
@@ -14046,41 +14041,137 @@ service cloud.firestore {
       bytes.push(0x1d, 0x56, 0x00);
       return new Uint8Array(bytes);
     }
-    /** Plain monospace receipt for Windows Generic/Text Only drivers (and browser print). */
+    /** Centered receipt layout for Epson APD / Windows print (no page URL footer when possible). */
     function browserReceiptPrint(lines, total, brand) {
-      const popup = window.open("", "_blank", "width=420,height=640");
+      const popup = window.open("", "_blank", "width=420,height=680");
       if (!popup) throw new Error("Pop-up blocked; allow pop-ups to print the receipt.");
-      const pad = (left, right, width = 42) => {
-        const L = String(left || "");
-        const R = String(right || "");
-        const gap = Math.max(1, width - L.length - R.length);
-        return L + " ".repeat(gap) + R;
-      };
-      const bodyLines = [
-        String(brand || "Receipt").slice(0, 42),
-        new Date().toLocaleString(),
-        "-".repeat(42),
-        ...lines.flatMap((l) => [
-          String(l.name || "") + (l.color ? " · " + l.color : ""),
-          pad(String(l.qty) + " x " + fmt(l.sell), fmt(l.revenue)),
-        ]),
-        "-".repeat(42),
-        pad("TOTAL", fmt(total)),
-        "",
-        "Thank you!",
-        "",
-        "",
-      ];
-      const text = bodyLines.map((l) => escapeHtml(l)).join("\n");
+      const brandInfo = loadCustomerDisplayBrand();
+      const title = escapeHtml(String(brand || brandInfo.companyName || "Receipt"));
+      const logo = brandInfo.logoDataUrl && brandInfo.logoDataUrl.startsWith("data:image/")
+        ? brandInfo.logoDataUrl
+        : "";
+      const when = escapeHtml(new Date().toLocaleString());
+      const units = (lines || []).reduce((s, l) => s + (Number(l.qty) || 0), 0);
+      const itemsHtml = (lines || []).length
+        ? (lines || [])
+            .map((l) => {
+              const name = escapeHtml(String(l.name || ""));
+              const color = l.color ? ` <span class="muted">· ${escapeHtml(String(l.color))}</span>` : "";
+              return `<div class="line">
+                <div class="line-name">${name}${color}</div>
+                <div class="line-row">
+                  <span>${escapeHtml(String(l.qty))} × ${escapeHtml(fmt(l.sell))}</span>
+                  <span class="amt">${escapeHtml(fmt(l.revenue))}</span>
+                </div>
+              </div>`;
+            })
+            .join("")
+        : `<div class="line muted" style="text-align:center">No items</div>`;
       popup.document.write(
-        `<!DOCTYPE html><html><head><title>Receipt</title><style>
-@page{size:80mm auto;margin:3mm}
-html,body{margin:0;padding:0;background:#fff;color:#000}
-pre{margin:0;font:12px/1.35 "Consolas","Courier New",monospace;white-space:pre-wrap;width:72mm}
-@media print{body{-webkit-print-color-adjust:exact}}
-</style></head><body><pre>${text}</pre><scr` +
-          `ipt>window.onload=function(){window.focus();window.print();}</scr` +
-          `ipt></body></html>`
+        `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Receipt</title><style>
+@page { size: 80mm auto; margin: 4mm; }
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  color: #111;
+  font: 12px/1.4 "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.receipt {
+  width: 72mm;
+  margin: 0 auto;
+  padding: 2mm 0 6mm;
+}
+.header {
+  text-align: center;
+  margin-bottom: 10px;
+}
+.logo {
+  display: block;
+  max-width: 42mm;
+  max-height: 28mm;
+  margin: 0 auto 8px;
+  object-fit: contain;
+}
+.store {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.when, .meta {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: #444;
+}
+.rule {
+  border: 0;
+  border-top: 1px dashed #222;
+  margin: 10px 0;
+}
+.line { margin: 0 0 8px; }
+.line-name { font-weight: 600; font-size: 12px; }
+.line-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+  font-size: 11px;
+}
+.amt { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.muted { color: #555; font-weight: 400; }
+.total-block {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin: 4px 0 2px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.total-block .amt { font-size: 16px; }
+.thanks {
+  text-align: center;
+  margin: 14px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.footer {
+  text-align: center;
+  margin-top: 4px;
+  font-size: 10px;
+  color: #666;
+}
+@media print {
+  body { width: 80mm; }
+  .receipt { width: 72mm; }
+}
+</style></head><body>
+  <div class="receipt">
+    <div class="header">
+      ${logo ? `<img class="logo" src="${logo}" alt="" />` : ""}
+      <h1 class="store">${title}</h1>
+      <p class="when">${when}</p>
+      <p class="meta">${units} item${units === 1 ? "" : "s"}</p>
+    </div>
+    <hr class="rule" />
+    ${itemsHtml}
+    <hr class="rule" />
+    <div class="total-block">
+      <span>Total</span>
+      <span class="amt">${escapeHtml(fmt(total))}</span>
+    </div>
+    <p class="thanks">Thank you!</p>
+    <p class="footer">Please come again</p>
+  </div>
+  <scr` +
+          `ipt>window.onload=function(){window.focus();setTimeout(function(){window.print();},120);}</scr` +
+          `ipt>
+</body></html>`
       );
       popup.document.close();
     }
@@ -14094,7 +14185,7 @@ pre{margin:0;font:12px/1.35 "Consolas","Courier New",monospace;white-space:pre-w
           if (settings.kickDrawer && !customerPrinterDrawerNoticeShown) {
             customerPrinterDrawerNoticeShown = true;
             setSellError(
-              "Heads up: in Windows Text Only mode the app cannot kick the drawer. Use the Epson APD driver’s cash-drawer setting, or switch to Serial COM mode on a free COM port."
+              "With Epson APD, enable the driver’s cash-drawer setting so the drawer opens when the receipt prints. The app does not kick the drawer in Windows/APD mode."
             );
           }
           return;
