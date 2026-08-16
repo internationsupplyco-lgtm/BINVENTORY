@@ -707,6 +707,34 @@
       animation: sell-ss-pulse 3s ease-in-out infinite;
       pointer-events: none;
     }
+    .sell-ss-corner-counter {
+      position: absolute;
+      top: 1rem;
+      right: 1.15rem;
+      z-index: 1;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: rgba(232, 237, 244, 0.72);
+      background: rgba(15, 20, 25, 0.45);
+      border: 1px solid rgba(45, 58, 79, 0.7);
+      border-radius: 8px;
+      padding: 0.4rem 0.7rem;
+      pointer-events: none;
+      font-variant-numeric: tabular-nums;
+    }
+    .sell-ss-corner-counter strong {
+      color: var(--accent);
+      font-weight: 800;
+    }
+    .sell-ss-corner-counter.sell-ss-corner-flash {
+      animation: sell-ss-corner-flash 0.7s ease;
+    }
+    @keyframes sell-ss-corner-flash {
+      0% { color: #fff; border-color: var(--accent); transform: scale(1); }
+      35% { color: #fff; border-color: #93c5fd; transform: scale(1.08); }
+      100% { color: rgba(232, 237, 244, 0.72); border-color: rgba(45, 58, 79, 0.7); transform: scale(1); }
+    }
     .sell-pos-layout {
       display: grid;
       grid-template-columns: 1fr;
@@ -4664,9 +4692,10 @@ service cloud.firestore {
   </div>
 
   <div class="sell-cashier-ready hidden" id="sellCashierReady" role="status" aria-live="polite" aria-hidden="true">
+    <div class="sell-ss-corner-counter" id="sellSsCornerCounter">Corner hits: <strong>0</strong></div>
     <div class="sell-ss-bounce" id="sellSsBounce">
       <img class="sell-ss-logo hidden" id="sellSsLogo" alt="" />
-      <span class="sell-ss-name" id="sellSsName">Ready for sales</span>
+      <span class="sell-ss-name hidden" id="sellSsName" aria-hidden="true"></span>
     </div>
     <span class="sell-cashier-ready-hint">Move your mouse to start</span>
   </div>
@@ -6070,7 +6099,14 @@ service cloud.firestore {
     let salesScreensaverIdleTimer = null;
     const SALES_SCREENSAVER_IDLE_MS = 20000;
     let salesSsRaf = 0;
-    let salesSsBounce = { x: 48, y: 48, vx: 2.4, vy: 1.9, w: 160, h: 80 };
+    let salesSsBounce = { x: 48, y: 48, vx: 0.85, vy: 0.65, w: 160, h: 80 };
+    const SALES_SS_CORNER_KEY = "inventory-split-ss-corner-hits";
+    let salesSsCornerHits = 0;
+    try {
+      salesSsCornerHits = Math.max(0, parseInt(localStorage.getItem(SALES_SS_CORNER_KEY) || "0", 10) || 0);
+    } catch (_) {
+      salesSsCornerHits = 0;
+    }
     let salesCartSeq = 0;
     /** POS picker: selected inventory index + optional color, plus name filter. */
     let salesPosFilter = "";
@@ -13736,7 +13772,7 @@ service cloud.firestore {
         brand && typeof brand.logoDataUrl === "string" && brand.logoDataUrl.startsWith("data:image/")
           ? brand.logoDataUrl
           : "";
-      const label = getCustomerDisplayBrandName(brand) || "Ready for sales";
+      if (name) name.classList.add("hidden");
       if (logo) {
         logo.onload = () => {
           measureSalesSsBounce();
@@ -13749,10 +13785,25 @@ service cloud.firestore {
           logo.classList.add("hidden");
         }
       }
-      if (name) {
-        name.textContent = label;
-        name.classList.toggle("sell-ss-name-solo", !logoUrl);
+    }
+
+    function updateSalesSsCornerCounter(flash) {
+      const el = document.getElementById("sellSsCornerCounter");
+      if (!el) return;
+      el.innerHTML = `Corner hits: <strong>${salesSsCornerHits}</strong>`;
+      if (flash) {
+        el.classList.remove("sell-ss-corner-flash");
+        void el.offsetWidth;
+        el.classList.add("sell-ss-corner-flash");
       }
+    }
+
+    function registerSalesSsCornerHit() {
+      salesSsCornerHits += 1;
+      try {
+        localStorage.setItem(SALES_SS_CORNER_KEY, String(salesSsCornerHits));
+      } catch (_) {}
+      updateSalesSsCornerCounter(true);
     }
 
     function measureSalesSsBounce() {
@@ -13781,20 +13832,27 @@ service cloud.firestore {
       const maxY = Math.max(0, el.clientHeight - salesSsBounce.h);
       salesSsBounce.x += salesSsBounce.vx;
       salesSsBounce.y += salesSsBounce.vy;
+      let hitX = false;
+      let hitY = false;
       if (salesSsBounce.x <= 0) {
         salesSsBounce.x = 0;
         salesSsBounce.vx = Math.abs(salesSsBounce.vx);
+        hitX = true;
       } else if (salesSsBounce.x >= maxX) {
         salesSsBounce.x = maxX;
         salesSsBounce.vx = -Math.abs(salesSsBounce.vx);
+        hitX = true;
       }
       if (salesSsBounce.y <= 0) {
         salesSsBounce.y = 0;
         salesSsBounce.vy = Math.abs(salesSsBounce.vy);
+        hitY = true;
       } else if (salesSsBounce.y >= maxY) {
         salesSsBounce.y = maxY;
         salesSsBounce.vy = -Math.abs(salesSsBounce.vy);
+        hitY = true;
       }
+      if (hitX && hitY) registerSalesSsCornerHit();
       bounce.style.transform = `translate(${salesSsBounce.x}px, ${salesSsBounce.y}px)`;
       salesSsRaf = requestAnimationFrame(tickSalesScreensaverBounce);
     }
@@ -13804,6 +13862,7 @@ service cloud.firestore {
       const bounce = document.getElementById("sellSsBounce");
       if (!el || !bounce || el.classList.contains("hidden")) return;
       syncSalesScreensaverBrand();
+      updateSalesSsCornerCounter(false);
       bounce.style.transform = "translate(0px, 0px)";
       measureSalesSsBounce();
       const maxX = Math.max(0, el.clientWidth - salesSsBounce.w);
@@ -13812,8 +13871,8 @@ service cloud.firestore {
       if (fresh) {
         salesSsBounce.x = maxX > 0 ? Math.random() * maxX : 0;
         salesSsBounce.y = maxY > 0 ? Math.random() * maxY : 0;
-        salesSsBounce.vx = 2.4 * (Math.random() < 0.5 ? 1 : -1);
-        salesSsBounce.vy = 1.9 * (Math.random() < 0.5 ? 1 : -1);
+        salesSsBounce.vx = 0.85 * (Math.random() < 0.5 ? 1 : -1);
+        salesSsBounce.vy = 0.65 * (Math.random() < 0.5 ? 1 : -1);
       } else {
         salesSsBounce.x = Math.min(Math.max(0, salesSsBounce.x), maxX);
         salesSsBounce.y = Math.min(Math.max(0, salesSsBounce.y), maxY);
