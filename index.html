@@ -735,6 +735,45 @@
       35% { color: #fff; border-color: #93c5fd; transform: scale(1.08); }
       100% { color: rgba(232, 237, 244, 0.72); border-color: rgba(45, 58, 79, 0.7); transform: scale(1); }
     }
+    .sell-ss-speed {
+      position: absolute;
+      top: 1rem;
+      left: 1.15rem;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: rgba(232, 237, 244, 0.72);
+      background: rgba(15, 20, 25, 0.45);
+      border: 1px solid rgba(45, 58, 79, 0.7);
+      border-radius: 8px;
+      padding: 0.35rem 0.55rem;
+      pointer-events: auto;
+      cursor: default;
+    }
+    .sell-ss-speed button {
+      appearance: none;
+      border: 1px solid rgba(45, 58, 79, 0.9);
+      background: rgba(36, 48, 68, 0.9);
+      color: var(--text);
+      width: 1.7rem;
+      height: 1.7rem;
+      border-radius: 6px;
+      font: inherit;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .sell-ss-speed button:hover {
+      border-color: var(--accent);
+    }
+    .sell-ss-speed-label {
+      min-width: 4.5rem;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
     .sell-pos-layout {
       display: grid;
       grid-template-columns: 1fr;
@@ -3681,6 +3720,14 @@
               </div>
             </div>
             <div class="field" style="margin-top:1rem">
+              <label for="sellSsSpeedInput">Ready-for-sales screensaver speed</label>
+              <div class="field-hint">Logo bounce speed on the cashier screensaver (saved on this device). You can also use − / + while the screensaver is up.</div>
+              <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-top:.35rem">
+                <input type="range" id="sellSsSpeedInput" min="1" max="5" step="1" value="3" style="flex:1;min-width:160px" />
+                <span id="sellSsSpeedLabel" style="min-width:4.5rem;color:var(--muted)">Normal</span>
+              </div>
+            </div>
+            <div class="field" style="margin-top:1rem">
               <label for="cdSlideFileInput">Presentation media (optional)</label>
               <div class="field-hint">Images, MP4/WebM video, or PDF pages. PowerPoint, Keynote, and PPT files need to be exported to PDF or images first. Stored only on this machine. If empty, inventory item photos are used. Up to 12 slides.</div>
               <input type="file" id="cdSlideFileInput" accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,application/pdf,.png,.jpg,.jpeg,.webp,.gif,.mp4,.webm,.pdf,.ppt,.pptx,.key" multiple />
@@ -4692,12 +4739,17 @@ service cloud.firestore {
   </div>
 
   <div class="sell-cashier-ready hidden" id="sellCashierReady" role="status" aria-live="polite" aria-hidden="true">
+    <div class="sell-ss-speed" id="sellSsSpeedHud">
+      <button type="button" id="sellSsSpeedDown" aria-label="Slower">−</button>
+      <span class="sell-ss-speed-label" id="sellSsSpeedHudLabel">Speed 3</span>
+      <button type="button" id="sellSsSpeedUp" aria-label="Faster">+</button>
+    </div>
     <div class="sell-ss-corner-counter" id="sellSsCornerCounter">Corner hits: <strong>0</strong></div>
     <div class="sell-ss-bounce" id="sellSsBounce">
       <img class="sell-ss-logo hidden" id="sellSsLogo" alt="" />
       <span class="sell-ss-name hidden" id="sellSsName" aria-hidden="true"></span>
     </div>
-    <span class="sell-cashier-ready-hint">Move your mouse to start</span>
+    <span class="sell-cashier-ready-hint">Move your mouse to start · −/+ speed</span>
   </div>
 
   <div id="chatPip" class="chat-pip hidden" aria-hidden="true" role="dialog" aria-label="Chat">
@@ -6101,11 +6153,72 @@ service cloud.firestore {
     let salesSsRaf = 0;
     let salesSsBounce = { x: 48, y: 48, vx: 0.85, vy: 0.65, w: 160, h: 80 };
     const SALES_SS_CORNER_KEY = "inventory-split-ss-corner-hits";
+    const SALES_SS_SPEED_KEY = "inventory-split-ss-speed";
+    const SALES_SS_SPEED_LEVELS = [
+      { label: "Slowest", vx: 0.32, vy: 0.24 },
+      { label: "Slow", vx: 0.55, vy: 0.42 },
+      { label: "Normal", vx: 0.85, vy: 0.65 },
+      { label: "Fast", vx: 1.35, vy: 1.05 },
+      { label: "Fastest", vx: 2.15, vy: 1.65 },
+    ];
+    let salesSsSpeedLevel = 3;
+    try {
+      const savedSpeed = parseInt(localStorage.getItem(SALES_SS_SPEED_KEY) || "3", 10);
+      if (savedSpeed >= 1 && savedSpeed <= 5) salesSsSpeedLevel = savedSpeed;
+    } catch (_) {}
     let salesSsCornerHits = 0;
     try {
       salesSsCornerHits = Math.max(0, parseInt(localStorage.getItem(SALES_SS_CORNER_KEY) || "0", 10) || 0);
     } catch (_) {
       salesSsCornerHits = 0;
+    }
+
+    function salesSsSpeedConfig(level) {
+      const idx = Math.min(5, Math.max(1, level | 0)) - 1;
+      return SALES_SS_SPEED_LEVELS[idx] || SALES_SS_SPEED_LEVELS[2];
+    }
+
+    function applySalesSsSpeed(keepDirection) {
+      const cfg = salesSsSpeedConfig(salesSsSpeedLevel);
+      let dirX = 1;
+      let dirY = 1;
+      if (keepDirection) {
+        dirX = salesSsBounce.vx < 0 ? -1 : 1;
+        dirY = salesSsBounce.vy < 0 ? -1 : 1;
+      } else {
+        dirX = Math.random() < 0.5 ? -1 : 1;
+        dirY = Math.random() < 0.5 ? -1 : 1;
+      }
+      salesSsBounce.vx = cfg.vx * dirX;
+      salesSsBounce.vy = cfg.vy * dirY;
+    }
+
+    function syncSalesSsSpeedUI() {
+      const cfg = salesSsSpeedConfig(salesSsSpeedLevel);
+      const range = document.getElementById("sellSsSpeedInput");
+      const label = document.getElementById("sellSsSpeedLabel");
+      const hud = document.getElementById("sellSsSpeedHudLabel");
+      if (range && document.activeElement !== range) range.value = String(salesSsSpeedLevel);
+      if (label) label.textContent = cfg.label;
+      if (hud) hud.textContent = `Speed ${salesSsSpeedLevel}`;
+      const down = document.getElementById("sellSsSpeedDown");
+      const up = document.getElementById("sellSsSpeedUp");
+      if (down) down.disabled = salesSsSpeedLevel <= 1;
+      if (up) up.disabled = salesSsSpeedLevel >= 5;
+    }
+
+    function setSalesSsSpeed(level, opts) {
+      const next = Math.min(5, Math.max(1, level | 0));
+      if (next === salesSsSpeedLevel && !(opts && opts.force)) {
+        syncSalesSsSpeedUI();
+        return;
+      }
+      salesSsSpeedLevel = next;
+      try {
+        localStorage.setItem(SALES_SS_SPEED_KEY, String(salesSsSpeedLevel));
+      } catch (_) {}
+      applySalesSsSpeed(true);
+      syncSalesSsSpeedUI();
     }
     let salesCartSeq = 0;
     /** POS picker: selected inventory index + optional color, plus name filter. */
@@ -7953,6 +8066,12 @@ service cloud.firestore {
       }
       if (removeBtn) removeBtn.disabled = !brand.logoDataUrl || !getRole()?.canEdit;
       if (nameEl) nameEl.disabled = !getRole()?.canEdit;
+      const speedInput = document.getElementById("sellSsSpeedInput");
+      if (speedInput) {
+        speedInput.disabled = !getRole()?.canEdit;
+        speedInput.value = String(salesSsSpeedLevel);
+      }
+      syncSalesSsSpeedUI();
     }
 
     async function setCustomerDisplayLogo(file) {
@@ -13871,12 +13990,13 @@ service cloud.firestore {
       if (fresh) {
         salesSsBounce.x = maxX > 0 ? Math.random() * maxX : 0;
         salesSsBounce.y = maxY > 0 ? Math.random() * maxY : 0;
-        salesSsBounce.vx = 0.85 * (Math.random() < 0.5 ? 1 : -1);
-        salesSsBounce.vy = 0.65 * (Math.random() < 0.5 ? 1 : -1);
+        applySalesSsSpeed(false);
       } else {
         salesSsBounce.x = Math.min(Math.max(0, salesSsBounce.x), maxX);
         salesSsBounce.y = Math.min(Math.max(0, salesSsBounce.y), maxY);
+        applySalesSsSpeed(true);
       }
+      syncSalesSsSpeedUI();
       bounce.style.transform = `translate(${salesSsBounce.x}px, ${salesSsBounce.y}px)`;
       if (!salesSsRaf) {
         salesSsRaf = requestAnimationFrame(tickSalesScreensaverBounce);
@@ -13974,6 +14094,19 @@ service cloud.firestore {
           if (salesScreensaverAwake && salesCart.length === 0) scheduleSalesScreensaverIdle();
           return;
         }
+        const hud = document.getElementById("sellSsSpeedHud");
+        if (hud) {
+          const r = hud.getBoundingClientRect();
+          const pad = 10;
+          if (
+            e.clientX >= r.left - pad &&
+            e.clientX <= r.right + pad &&
+            e.clientY >= r.top - pad &&
+            e.clientY <= r.bottom + pad
+          ) {
+            return;
+          }
+        }
         const x = e.clientX ?? 0;
         const y = e.clientY ?? 0;
         if (!tracking) {
@@ -13988,7 +14121,8 @@ service cloud.firestore {
         lastY = y;
         wakeSalesScreensaver();
       };
-      const onWake = () => {
+      const onWake = (e) => {
+        if (e && e.target && e.target.closest && e.target.closest("#sellSsSpeedHud")) return;
         const el = document.getElementById("sellCashierReady");
         if (!el || el.classList.contains("hidden")) {
           if (salesScreensaverAwake && salesCart.length === 0) scheduleSalesScreensaverIdle();
@@ -14002,6 +14136,12 @@ service cloud.firestore {
       window.addEventListener("keydown", (e) => {
         const el = document.getElementById("sellCashierReady");
         const ssVisible = el && !el.classList.contains("hidden");
+        if (ssVisible && (e.key === "-" || e.key === "_" || e.key === "+" || e.key === "=")) {
+          e.preventDefault();
+          if (e.key === "-" || e.key === "_") setSalesSsSpeed(salesSsSpeedLevel - 1);
+          else setSalesSsSpeed(salesSsSpeedLevel + 1);
+          return;
+        }
         if (e.key === "Escape" && ssVisible && !salesModeActive) {
           e.preventDefault();
           wakeSalesScreensaver({ overviewOnly: true });
@@ -14015,6 +14155,16 @@ service cloud.firestore {
       });
       window.addEventListener("resize", () => {
         if (salesSsRaf) measureSalesSsBounce();
+      });
+      document.getElementById("sellSsSpeedDown")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setSalesSsSpeed(salesSsSpeedLevel - 1);
+      });
+      document.getElementById("sellSsSpeedUp")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setSalesSsSpeed(salesSsSpeedLevel + 1);
       });
     }
 
@@ -17960,6 +18110,10 @@ html, body {
       });
     });
     document.getElementById("cdRemoveLogoBtn")?.addEventListener("click", () => removeCustomerDisplayLogo());
+    document.getElementById("sellSsSpeedInput")?.addEventListener("input", (e) => {
+      if (!getRole()?.canEdit) return;
+      setSalesSsSpeed(parseInt(e.target.value, 10) || 3);
+    });
     document.getElementById("receiptPrintEnabled")?.addEventListener("change", (e) => {
       if (!getRole()?.canEdit) return;
       saveCustomerPrinterSettings({ ...loadCustomerPrinterSettings(), printReceipt: e.target.checked });
