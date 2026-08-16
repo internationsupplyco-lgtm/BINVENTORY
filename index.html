@@ -636,18 +636,9 @@
       position: fixed;
       inset: 0;
       z-index: 8500;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0.65rem;
-      padding: 2rem;
-      text-align: center;
+      overflow: hidden;
       cursor: none;
-      background:
-        radial-gradient(ellipse 80% 55% at 50% 35%, rgba(59, 130, 246, 0.18), transparent 60%),
-        radial-gradient(ellipse 60% 40% at 70% 80%, rgba(34, 197, 94, 0.08), transparent 55%),
-        #0a0e14;
+      background: #05070a;
       animation: sell-ss-fade-in 0.45s ease;
     }
     .sell-cashier-ready.hidden {
@@ -658,26 +649,63 @@
       to { opacity: 1; }
     }
     @keyframes sell-ss-pulse {
-      0%, 100% { opacity: 0.55; transform: scale(1); }
-      50% { opacity: 1; transform: scale(1.02); }
+      0%, 100% { opacity: 0.35; }
+      50% { opacity: 0.75; }
     }
-    .sell-cashier-ready-title {
-      font-size: clamp(2rem, 5vw, 3.25rem);
+    .sell-ss-bounce {
+      position: absolute;
+      left: 0;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.65rem;
+      will-change: transform;
+      pointer-events: none;
+      max-width: min(42vw, 320px);
+    }
+    .sell-ss-logo {
+      display: block;
+      width: auto;
+      height: auto;
+      max-width: min(36vw, 260px);
+      max-height: min(28vh, 200px);
+      object-fit: contain;
+      filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.45));
+    }
+    .sell-ss-logo.hidden {
+      display: none;
+    }
+    .sell-ss-name {
+      font-size: clamp(1.35rem, 3.5vw, 2.25rem);
       font-weight: 800;
       letter-spacing: -0.03em;
       color: var(--text);
-      line-height: 1.1;
+      text-align: center;
+      line-height: 1.15;
+      text-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+      white-space: nowrap;
+      max-width: min(70vw, 420px);
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .sell-cashier-ready-sub {
-      font-size: clamp(1rem, 2.2vw, 1.25rem);
-      color: var(--muted);
-      max-width: 28rem;
+    .sell-ss-name.hidden {
+      display: none;
+    }
+    .sell-ss-name.sell-ss-name-solo {
+      font-size: clamp(1.6rem, 4.5vw, 2.75rem);
+      padding: 0.35rem 0.5rem;
     }
     .sell-cashier-ready-hint {
-      margin-top: 1.75rem;
-      font-size: 0.95rem;
-      color: rgba(139, 156, 179, 0.85);
-      animation: sell-ss-pulse 2.8s ease-in-out infinite;
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 1.25rem;
+      text-align: center;
+      font-size: 0.85rem;
+      color: rgba(139, 156, 179, 0.55);
+      animation: sell-ss-pulse 3s ease-in-out infinite;
+      pointer-events: none;
     }
     .sell-pos-layout {
       display: grid;
@@ -4636,9 +4664,11 @@ service cloud.firestore {
   </div>
 
   <div class="sell-cashier-ready hidden" id="sellCashierReady" role="status" aria-live="polite" aria-hidden="true">
-    <span class="sell-cashier-ready-title">Ready for sales</span>
-    <span class="sell-cashier-ready-sub">Waiting for the next transaction</span>
-    <span class="sell-cashier-ready-hint">Move your mouse to start · Esc for overview</span>
+    <div class="sell-ss-bounce" id="sellSsBounce">
+      <img class="sell-ss-logo hidden" id="sellSsLogo" alt="" />
+      <span class="sell-ss-name" id="sellSsName">Ready for sales</span>
+    </div>
+    <span class="sell-cashier-ready-hint">Move your mouse to start</span>
   </div>
 
   <div id="chatPip" class="chat-pip hidden" aria-hidden="true" role="dialog" aria-label="Chat">
@@ -6039,6 +6069,8 @@ service cloud.firestore {
     let salesScreensaverHadCart = false;
     let salesScreensaverIdleTimer = null;
     const SALES_SCREENSAVER_IDLE_MS = 20000;
+    let salesSsRaf = 0;
+    let salesSsBounce = { x: 48, y: 48, vx: 2.4, vy: 1.9, w: 160, h: 80 };
     let salesCartSeq = 0;
     /** POS picker: selected inventory index + optional color, plus name filter. */
     let salesPosFilter = "";
@@ -13696,6 +13728,102 @@ service cloud.firestore {
       return salesCart.length === 0 && customerDisplayPhase !== "thanks";
     }
 
+    function syncSalesScreensaverBrand() {
+      const brand = loadCustomerDisplayBrand();
+      const logo = document.getElementById("sellSsLogo");
+      const name = document.getElementById("sellSsName");
+      const logoUrl =
+        brand && typeof brand.logoDataUrl === "string" && brand.logoDataUrl.startsWith("data:image/")
+          ? brand.logoDataUrl
+          : "";
+      const label = getCustomerDisplayBrandName(brand) || "Ready for sales";
+      if (logo) {
+        logo.onload = () => {
+          measureSalesSsBounce();
+        };
+        if (logoUrl) {
+          if (logo.getAttribute("src") !== logoUrl) logo.src = logoUrl;
+          logo.classList.remove("hidden");
+        } else {
+          logo.removeAttribute("src");
+          logo.classList.add("hidden");
+        }
+      }
+      if (name) {
+        name.textContent = label;
+        name.classList.toggle("sell-ss-name-solo", !logoUrl);
+      }
+    }
+
+    function measureSalesSsBounce() {
+      const bounce = document.getElementById("sellSsBounce");
+      if (!bounce) return;
+      const rect = bounce.getBoundingClientRect();
+      salesSsBounce.w = Math.max(40, rect.width || bounce.offsetWidth || 160);
+      salesSsBounce.h = Math.max(24, rect.height || bounce.offsetHeight || 80);
+    }
+
+    function stopSalesScreensaverBounce() {
+      if (salesSsRaf) {
+        cancelAnimationFrame(salesSsRaf);
+        salesSsRaf = 0;
+      }
+    }
+
+    function tickSalesScreensaverBounce() {
+      const el = document.getElementById("sellCashierReady");
+      const bounce = document.getElementById("sellSsBounce");
+      if (!el || !bounce || el.classList.contains("hidden")) {
+        salesSsRaf = 0;
+        return;
+      }
+      const maxX = Math.max(0, el.clientWidth - salesSsBounce.w);
+      const maxY = Math.max(0, el.clientHeight - salesSsBounce.h);
+      salesSsBounce.x += salesSsBounce.vx;
+      salesSsBounce.y += salesSsBounce.vy;
+      if (salesSsBounce.x <= 0) {
+        salesSsBounce.x = 0;
+        salesSsBounce.vx = Math.abs(salesSsBounce.vx);
+      } else if (salesSsBounce.x >= maxX) {
+        salesSsBounce.x = maxX;
+        salesSsBounce.vx = -Math.abs(salesSsBounce.vx);
+      }
+      if (salesSsBounce.y <= 0) {
+        salesSsBounce.y = 0;
+        salesSsBounce.vy = Math.abs(salesSsBounce.vy);
+      } else if (salesSsBounce.y >= maxY) {
+        salesSsBounce.y = maxY;
+        salesSsBounce.vy = -Math.abs(salesSsBounce.vy);
+      }
+      bounce.style.transform = `translate(${salesSsBounce.x}px, ${salesSsBounce.y}px)`;
+      salesSsRaf = requestAnimationFrame(tickSalesScreensaverBounce);
+    }
+
+    function startSalesScreensaverBounce() {
+      const el = document.getElementById("sellCashierReady");
+      const bounce = document.getElementById("sellSsBounce");
+      if (!el || !bounce || el.classList.contains("hidden")) return;
+      syncSalesScreensaverBrand();
+      bounce.style.transform = "translate(0px, 0px)";
+      measureSalesSsBounce();
+      const maxX = Math.max(0, el.clientWidth - salesSsBounce.w);
+      const maxY = Math.max(0, el.clientHeight - salesSsBounce.h);
+      const fresh = !salesSsRaf;
+      if (fresh) {
+        salesSsBounce.x = maxX > 0 ? Math.random() * maxX : 0;
+        salesSsBounce.y = maxY > 0 ? Math.random() * maxY : 0;
+        salesSsBounce.vx = 2.4 * (Math.random() < 0.5 ? 1 : -1);
+        salesSsBounce.vy = 1.9 * (Math.random() < 0.5 ? 1 : -1);
+      } else {
+        salesSsBounce.x = Math.min(Math.max(0, salesSsBounce.x), maxX);
+        salesSsBounce.y = Math.min(Math.max(0, salesSsBounce.y), maxY);
+      }
+      bounce.style.transform = `translate(${salesSsBounce.x}px, ${salesSsBounce.y}px)`;
+      if (!salesSsRaf) {
+        salesSsRaf = requestAnimationFrame(tickSalesScreensaverBounce);
+      }
+    }
+
     function updateCashierReadyBanner() {
       const el = document.getElementById("sellCashierReady");
       if (!el) return;
@@ -13710,6 +13838,7 @@ service cloud.firestore {
       }
       const waiting = salesScreensaverShouldWait();
       const show = waiting && !salesScreensaverAwake;
+      const wasHidden = el.classList.contains("hidden");
       el.classList.toggle("hidden", !show);
       el.setAttribute("aria-hidden", show ? "false" : "true");
       const hint = el.querySelector(".sell-cashier-ready-hint");
@@ -13717,6 +13846,12 @@ service cloud.firestore {
         hint.textContent = salesModeActive
           ? "Move your mouse to sell"
           : "Move your mouse to start · Esc for overview";
+      }
+      if (show) {
+        if (wasHidden) syncSalesScreensaverBrand();
+        startSalesScreensaverBounce();
+      } else {
+        stopSalesScreensaverBounce();
       }
     }
 
@@ -13726,8 +13861,10 @@ service cloud.firestore {
       if (salesCart.length > 0) return;
       if (!isSellPageVisible()) return;
       if (!getRole()?.canEdit) return;
+      if (document.getElementById("sellDayOverview")) return;
       salesScreensaverIdleTimer = setTimeout(() => {
         if (salesCart.length > 0) return;
+        if (document.getElementById("sellDayOverview")) return;
         salesScreensaverAwake = false;
         updateCashierReadyBanner();
       }, SALES_SCREENSAVER_IDLE_MS);
@@ -13775,7 +13912,7 @@ service cloud.firestore {
         const el = document.getElementById("sellCashierReady");
         if (!el || el.classList.contains("hidden")) {
           tracking = false;
-          if (salesModeActive && salesCart.length === 0) scheduleSalesScreensaverIdle();
+          if (salesScreensaverAwake && salesCart.length === 0) scheduleSalesScreensaverIdle();
           return;
         }
         const x = e.clientX ?? 0;
@@ -13795,7 +13932,7 @@ service cloud.firestore {
       const onWake = () => {
         const el = document.getElementById("sellCashierReady");
         if (!el || el.classList.contains("hidden")) {
-          if (salesModeActive && salesCart.length === 0) scheduleSalesScreensaverIdle();
+          if (salesScreensaverAwake && salesCart.length === 0) scheduleSalesScreensaverIdle();
           return;
         }
         wakeSalesScreensaver();
@@ -13812,10 +13949,13 @@ service cloud.firestore {
           return;
         }
         if (!ssVisible) {
-          if (salesModeActive && salesCart.length === 0) scheduleSalesScreensaverIdle();
+          if (salesScreensaverAwake && salesCart.length === 0) scheduleSalesScreensaverIdle();
           return;
         }
         wakeSalesScreensaver();
+      });
+      window.addEventListener("resize", () => {
+        if (salesSsRaf) measureSalesSsBounce();
       });
     }
 
@@ -14819,7 +14959,10 @@ html, body {
       document.body.appendChild(overlay);
       const close = () => {
         overlay.remove();
+        // Keep overview visible; screensaver after idle, mouse then starts sales mode.
+        salesScreensaverAwake = true;
         updateCashierReadyBanner();
+        scheduleSalesScreensaverIdle();
       };
       overlay.addEventListener("click", (e) => {
         if (e.target === overlay) close();
@@ -14844,7 +14987,8 @@ html, body {
       salesModeSession = [];
       salesSessionReceipts = [];
       salesCart = [];
-      salesScreensaverAwake = false;
+      // Stay on the sales overview after the day summary — don't snap back into sales mode.
+      salesScreensaverAwake = true;
       salesScreensaverHadCart = false;
       clearTimeout(salesScreensaverIdleTimer);
       salesScreensaverIdleTimer = null;
