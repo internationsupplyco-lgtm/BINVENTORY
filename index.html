@@ -3773,7 +3773,7 @@
           </div>
           <div class="field" style="margin-top:1rem">
             <label>Zebra product labels (GK420T / ZD421)</label>
-            <div class="field-hint">Print Code 128 labels to a Zebra GK420T or ZD421 (Windows print dialog — pick your Zebra printer). Or download raw ZPL for Zebra Setup Utilities. Configure model &amp; size under Build materials → Zebra labels.</div>
+            <div class="field-hint">Print Code 128 labels to a Zebra GK420T or ZD421 (Windows print dialog — pick your Zebra printer). Or download a <code>.lbl</code> file for Zebra Setup Utilities. Configure model &amp; size under Build materials → Zebra labels.</div>
           </div>
         </div>
         <div class="card">
@@ -3840,7 +3840,7 @@
           <p class="field-hint" style="margin-top:0">
             Both printers speak ZPL. Pick your model (ZD421 can be 203 or 300 dpi).
             Print opens the Windows dialog — choose the Zebra printer.
-            Download ZPL to send with Zebra Setup Utilities if you prefer raw files.
+            Download a <code>.lbl</code> file to send with Zebra Setup Utilities if you prefer raw files.
           </p>
           <div class="zebra-label-settings">
             <div class="field">
@@ -7091,7 +7091,7 @@ service cloud.firestore {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = filename || `zebra-label-${Date.now()}.zpl`;
+      a.download = filename || `zebra-label-${Date.now()}.lbl`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -7107,10 +7107,12 @@ service cloud.firestore {
       const settings = loadZebraLabelSettings();
       const model = ZEBRA_PRINTER_MODELS[settings.model] || ZEBRA_PRINTER_MODELS["zd421-203"];
       const zpl = buildZebraLabelZpl({ name, barcode: code, subtitle });
-      const popup = window.open("", "_blank", "noopener,noreferrer,width=520,height=520");
+      // No noopener/noreferrer here: those make window.open return null, which
+      // would skip the print dialog entirely.
+      const popup = window.open("", "_blank", "width=520,height=520");
       if (!popup) {
-        downloadZebraZpl(zpl, `label-${code}.zpl`);
-        alert("Popup blocked — downloaded ZPL instead. Send that file to your " + model.label + ".");
+        downloadZebraZpl(zpl, `label-${code}.lbl`);
+        alert("Popup blocked — downloaded .lbl instead. Allow popups for this site to use the Windows print dialog, or send that file to your " + model.label + ".");
         return;
       }
       const wIn = settings.widthIn;
@@ -7137,24 +7139,45 @@ service cloud.firestore {
   </div>
   <div class="tools">
     <button type="button" id="doPrint">Print to Zebra</button>
-    <button type="button" id="doZpl">Download ZPL</button>
+    <button type="button" id="doZpl">Download .lbl</button>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
   <script>
-    const code = ${JSON.stringify(code)};
-    const zpl = ${JSON.stringify(zpl)};
-    try {
-      JsBarcode("#bc", code, { format: "CODE128", displayValue: true, fontSize: 14, height: 56, margin: 0, width: 2 });
-    } catch (e) {}
+    var code = ${JSON.stringify(code)};
+    var zpl = ${JSON.stringify(zpl)};
+    function drawBarcode() {
+      try {
+        if (typeof JsBarcode === "function") {
+          JsBarcode("#bc", code, { format: "CODE128", displayValue: true, fontSize: 14, height: 56, margin: 0, width: 2 });
+          return;
+        }
+      } catch (e) {}
+      // Offline / blocked CDN: still print something scannable-by-eye.
+      var svg = document.getElementById("bc");
+      if (svg) svg.outerHTML = '<div style="font:700 16px monospace;letter-spacing:2px">' + code + '</div>';
+    }
     document.getElementById("doPrint").onclick = function () { window.print(); };
     document.getElementById("doZpl").onclick = function () {
-      const blob = new Blob([zpl], { type: "text/plain" });
-      const a = document.createElement("a");
+      var blob = new Blob([zpl], { type: "text/plain" });
+      var a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = "label-" + code + ".zpl";
+      a.download = "label-" + code + ".lbl";
       a.click();
     };
-    window.onload = function () { setTimeout(function () { window.focus(); }, 80); };
+    var printed = false;
+    function printOnce() {
+      if (printed) return;
+      printed = true;
+      try { window.print(); } catch (e) {}
+    }
+    drawBarcode();
+    window.onload = function () {
+      drawBarcode();
+      window.focus();
+      setTimeout(printOnce, 350);
+    };
+    // Fallback if onload never fires (e.g. CDN script stalls).
+    setTimeout(printOnce, 2500);
   <\/script>
 </body></html>`);
       popup.document.close();
