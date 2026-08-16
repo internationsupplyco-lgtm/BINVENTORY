@@ -218,10 +218,55 @@
     .user-panel .name { font-weight: 600; }
     .user-panel .meta { color: var(--muted); font-size: 0.78rem; margin: 0.2rem 0 0.65rem; }
 
-    .main {
-      padding: 1.5rem 1.25rem 3rem;
-      max-width: 1100px;
+    .materials-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      margin: 0 0 0.85rem;
+    }
+    .materials-toolbar .sell-pos-search {
+      flex: 1;
+      min-width: 180px;
+    }
+    .materials-toolbar select {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      padding: 0.65rem 0.75rem;
+      font: inherit;
+      min-width: 10rem;
+    }
+    .materials-table input,
+    .materials-table select {
       width: 100%;
+      min-width: 0;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 0.45rem 0.55rem;
+      font: inherit;
+      font-size: 0.92rem;
+    }
+    .materials-table input.num,
+    .materials-table td.num input {
+      text-align: right;
+    }
+    .materials-table .mat-value {
+      font-variant-numeric: tabular-nums;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .materials-table tr.mat-low {
+      background: rgba(245, 158, 11, 0.08);
+    }
+    .materials-table tr.mat-low .mat-value,
+    .materials-table tr.mat-low td:first-child input {
+      color: var(--warning);
+    }
+    .materials-table .mat-notes {
+      min-width: 8rem;
     }
     .page-title {
       font-size: 1.45rem;
@@ -3497,6 +3542,7 @@
       <nav class="nav-list" id="navList">
         <button type="button" class="nav-btn active" data-page="dashboard">Dashboard</button>
         <button type="button" class="nav-btn" data-page="inventory">Inventory</button>
+        <button type="button" class="nav-btn" data-page="materials">Build materials</button>
         <button type="button" class="nav-btn" data-page="sell">Sales</button>
         <button type="button" class="nav-btn" data-page="batch">Next batch</button>
         <button type="button" class="nav-btn" data-page="breakeven">Break-even</button>
@@ -3562,6 +3608,7 @@
           </div>
           <div class="dash-actions">
             <button type="button" class="btn-primary" data-goto="inventory">Open inventory</button>
+            <button type="button" class="btn-ghost" data-goto="materials">Build materials</button>
             <button type="button" class="btn-ghost" data-goto="sell">Sales</button>
             <button type="button" class="btn-ghost" data-goto="batch">Next batch</button>
             <button type="button" class="btn-ghost" data-goto="equity" id="dashGotoEquity">Equity split</button>
@@ -3609,7 +3656,7 @@
 
       <section class="page hidden" id="page-inventory">
         <h1 class="page-title">Inventory</h1>
-        <p class="page-sub">Shared item list for everyone on this workspace.</p>
+        <p class="page-sub">Finished products for sale. Track build supplies (filament, switches, etc.) under <strong>Build materials</strong>.</p>
         <div class="card">
           <div class="card-header">
             <h2>Items</h2>
@@ -3644,6 +3691,47 @@
         <div class="card">
           <h2>Item breakdown</h2>
           <div class="item-grid" id="itemBreakdown"></div>
+        </div>
+      </section>
+
+      <section class="page hidden" id="page-materials">
+        <h1 class="page-title">Build materials</h1>
+        <p class="page-sub">Parts and supplies used to build products — filament, switches, hardware, packaging, and more. Separate from finished goods in Inventory.</p>
+        <div class="kpi-grid" style="margin-bottom:1rem">
+          <div class="stat"><label>Materials</label><div class="value" id="matCount">0</div></div>
+          <div class="stat"><label>Stock value</label><div class="value" id="matValue">$0.00</div></div>
+          <div class="stat"><label>Low stock</label><div class="value" id="matLowCount">0</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h2>Materials &amp; parts</h2>
+            <button type="button" class="btn-primary" id="addBuildMaterialBtn">+ Add material</button>
+          </div>
+          <div class="materials-toolbar">
+            <input type="search" id="materialsSearch" class="sell-pos-search" placeholder="Search materials…" autocomplete="off" aria-label="Search materials" />
+            <select id="materialsCategoryFilter" aria-label="Filter by category">
+              <option value="">All categories</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table class="materials-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Category</th>
+                  <th class="num">Qty</th>
+                  <th>Unit</th>
+                  <th class="num">Cost / unit</th>
+                  <th class="num">Value</th>
+                  <th class="num">Reorder at</th>
+                  <th>Notes</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="materialsBody"></tbody>
+            </table>
+          </div>
+          <p class="note" id="materialsEmptyNote" style="margin-top:0.75rem">No materials yet — add filament, switches, and other build parts.</p>
         </div>
       </section>
 
@@ -5559,6 +5647,7 @@ service cloud.firestore {
             }),
           });
         }),
+        buildMaterials: normalizeBuildMaterials(clean.buildMaterials),
         fixedCosts: clean.fixedCosts,
         variableOverhead: normalizeVariableOverhead(clean.variableOverhead),
         targetUnits: clean.targetUnits,
@@ -5594,6 +5683,7 @@ service cloud.firestore {
         s.workspaceRecoveryDigest || "",
         (s.accounts || []).length,
         (s.items || []).length,
+        (s.buildMaterials || []).length,
         (s.dailySales || []).length,
         (s.chatMessages || []).length,
         (s.tickets || []).length,
@@ -6250,6 +6340,11 @@ service cloud.firestore {
           { name: "Sample item", qty: 10, cost: 5, sell: 12, sold: 0 },
           { name: "Second item", qty: 5, cost: 20, sell: 35, sold: 0 },
         ],
+        buildMaterials: [
+          { name: "PLA filament (black)", category: "filament", qty: 2000, unit: "g", cost: 0.02, reorderAt: 500, notes: "1kg spool leftover" },
+          { name: "Mechanical switches", category: "switches", qty: 120, unit: "pcs", cost: 0.35, reorderAt: 40, notes: "" },
+          { name: "M3 screws", category: "fasteners", qty: 500, unit: "pcs", cost: 0.02, reorderAt: 100, notes: "" },
+        ],
         fixedCosts: 0,
         variableOverhead: { ...DEFAULT_VARIABLE_OVERHEAD },
         targetUnits: "",
@@ -6457,6 +6552,234 @@ service cloud.firestore {
       return list.map(normalizeItem);
     }
 
+    const BUILD_MATERIAL_CATEGORIES = [
+      { id: "filament", label: "Filament" },
+      { id: "switches", label: "Switches" },
+      { id: "electronics", label: "Electronics" },
+      { id: "fasteners", label: "Fasteners" },
+      { id: "hardware", label: "Hardware" },
+      { id: "packaging", label: "Packaging" },
+      { id: "other", label: "Other" },
+    ];
+    const BUILD_MATERIAL_UNITS = ["pcs", "g", "kg", "m", "roll", "spool", "pack"];
+
+    function normalizeBuildMaterialCategory(raw) {
+      const s = String(raw || "").trim().toLowerCase();
+      if (BUILD_MATERIAL_CATEGORIES.some((c) => c.id === s)) return s;
+      if (s.includes("filament") || s.includes("pla") || s.includes("abs") || s.includes("petg")) return "filament";
+      if (s.includes("switch")) return "switches";
+      if (s.includes("electron") || s.includes("pcb") || s.includes("led")) return "electronics";
+      if (s.includes("screw") || s.includes("bolt") || s.includes("nut") || s.includes("fasten")) return "fasteners";
+      if (s.includes("pack")) return "packaging";
+      if (s.includes("hard")) return "hardware";
+      return "other";
+    }
+
+    function normalizeBuildMaterialUnit(raw) {
+      const s = String(raw || "").trim().toLowerCase();
+      if (BUILD_MATERIAL_UNITS.includes(s)) return s;
+      if (s === "each" || s === "ea" || s === "unit" || s === "units") return "pcs";
+      if (s === "gram" || s === "grams") return "g";
+      if (s === "kilogram" || s === "kilograms") return "kg";
+      if (s === "meter" || s === "meters" || s === "metre") return "m";
+      return "pcs";
+    }
+
+    function normalizeBuildMaterial(raw) {
+      const it = raw && typeof raw === "object" ? raw : {};
+      return {
+        id: String(it.id || newItemId()),
+        name: String(it.name ?? "").trim().slice(0, 120),
+        category: normalizeBuildMaterialCategory(it.category),
+        qty: Math.max(0, parseNum(it.qty)),
+        unit: normalizeBuildMaterialUnit(it.unit),
+        cost: Math.max(0, parseNum(it.cost)),
+        reorderAt: Math.max(0, parseNum(it.reorderAt)),
+        notes: String(it.notes ?? "").trim().slice(0, 200),
+      };
+    }
+
+    function normalizeBuildMaterials(list) {
+      if (!Array.isArray(list)) return [];
+      return list.map(normalizeBuildMaterial);
+    }
+
+    function getBuildMaterials() {
+      return normalizeBuildMaterials(workspaceState.buildMaterials);
+    }
+
+    function buildMaterialCategoryLabel(id) {
+      return BUILD_MATERIAL_CATEGORIES.find((c) => c.id === id)?.label || "Other";
+    }
+
+    function scheduleBuildMaterialsSave(activityMsg) {
+      if (applyingRemote) return;
+      workspaceState.buildMaterials = normalizeBuildMaterials(workspaceState.buildMaterials);
+      scheduleSave(activityMsg);
+    }
+
+    function renderBuildMaterialsPage() {
+      const body = document.getElementById("materialsBody");
+      const emptyNote = document.getElementById("materialsEmptyNote");
+      const searchEl = document.getElementById("materialsSearch");
+      const filterEl = document.getElementById("materialsCategoryFilter");
+      if (!body) return;
+
+      workspaceState.buildMaterials = getBuildMaterials();
+      const canEdit = !!getRole()?.canEdit;
+      const q = String(searchEl?.value || "").trim().toLowerCase();
+      const catFilter = String(filterEl?.value || "");
+
+      if (filterEl && filterEl.options.length <= 1) {
+        filterEl.innerHTML =
+          `<option value="">All categories</option>` +
+          BUILD_MATERIAL_CATEGORIES.map(
+            (c) => `<option value="${c.id}">${escapeHtml(c.label)}</option>`
+          ).join("");
+      }
+      if (filterEl) {
+        filterEl.disabled = false;
+        filterEl.value = catFilter;
+      }
+      if (searchEl) searchEl.disabled = false;
+      const addBtn = document.getElementById("addBuildMaterialBtn");
+      if (addBtn) addBtn.disabled = !canEdit;
+
+      const rows = workspaceState.buildMaterials.filter((m) => {
+        if (catFilter && m.category !== catFilter) return false;
+        if (!q) return true;
+        const hay = `${m.name} ${m.notes} ${buildMaterialCategoryLabel(m.category)} ${m.unit}`.toLowerCase();
+        return hay.includes(q);
+      });
+
+      let totalValue = 0;
+      let lowCount = 0;
+      workspaceState.buildMaterials.forEach((m) => {
+        totalValue += m.qty * m.cost;
+        if (m.reorderAt > 0 && m.qty <= m.reorderAt) lowCount += 1;
+      });
+      const set = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      };
+      set("matCount", workspaceState.buildMaterials.length.toLocaleString());
+      set("matValue", fmt(totalValue));
+      set("matLowCount", lowCount.toLocaleString());
+
+      if (emptyNote) {
+        emptyNote.classList.toggle("hidden", workspaceState.buildMaterials.length > 0);
+      }
+
+      body.innerHTML = rows.length
+        ? rows
+            .map((m) => {
+              const value = m.qty * m.cost;
+              const low = m.reorderAt > 0 && m.qty <= m.reorderAt;
+              const dis = canEdit ? "" : "disabled";
+              const catSelect = BUILD_MATERIAL_CATEGORIES.map(
+                (c) =>
+                  `<option value="${c.id}" ${c.id === m.category ? "selected" : ""}>${escapeHtml(c.label)}</option>`
+              ).join("");
+              const unitSelect = BUILD_MATERIAL_UNITS.map(
+                (u) =>
+                  `<option value="${u}" ${u === m.unit ? "selected" : ""}>${escapeHtml(u)}</option>`
+              ).join("");
+              return `<tr class="${low ? "mat-low" : ""}" data-mat-id="${escapeHtml(m.id)}">
+                <td><input type="text" data-mat-field="name" value="${escapeHtml(m.name)}" placeholder="e.g. PLA filament" maxlength="120" ${dis} /></td>
+                <td><select data-mat-field="category" ${dis}>${catSelect}</select></td>
+                <td class="num"><input type="number" class="num" data-mat-field="qty" min="0" step="any" value="${m.qty}" ${dis} /></td>
+                <td><select data-mat-field="unit" ${dis}>${unitSelect}</select></td>
+                <td class="num"><input type="number" class="num" data-mat-field="cost" min="0" step="0.01" value="${m.cost}" ${dis} /></td>
+                <td class="num mat-value">${fmt(value)}</td>
+                <td class="num"><input type="number" class="num" data-mat-field="reorderAt" min="0" step="any" value="${m.reorderAt}" title="Highlight when qty is at or below this" ${dis} /></td>
+                <td><input type="text" class="mat-notes" data-mat-field="notes" value="${escapeHtml(m.notes)}" placeholder="Optional" maxlength="200" ${dis} /></td>
+                <td>${
+                  canEdit
+                    ? `<button type="button" class="btn-ghost btn-danger" data-remove-mat="${escapeHtml(m.id)}" aria-label="Remove">✕</button>`
+                    : ""
+                }</td>
+              </tr>`;
+            })
+            .join("")
+        : `<tr><td colspan="9" class="note" style="text-align:center;border:none">${
+            workspaceState.buildMaterials.length
+              ? "No materials match this search."
+              : "No materials yet."
+          }</td></tr>`;
+    }
+
+    function addBuildMaterial() {
+      if (!getRole()?.canEdit) return;
+      workspaceState.buildMaterials = getBuildMaterials();
+      workspaceState.buildMaterials.push(
+        normalizeBuildMaterial({
+          name: "",
+          category: "other",
+          qty: 0,
+          unit: "pcs",
+          cost: 0,
+          reorderAt: 0,
+          notes: "",
+        })
+      );
+      scheduleBuildMaterialsSave("Added a build material");
+      renderBuildMaterialsPage();
+      const body = document.getElementById("materialsBody");
+      const first = body?.querySelector('tr[data-mat-id] input[data-mat-field="name"]');
+      first?.focus();
+    }
+
+    function refreshBuildMaterialsKpis() {
+      const materials = getBuildMaterials();
+      let totalValue = 0;
+      let lowCount = 0;
+      materials.forEach((m) => {
+        totalValue += m.qty * m.cost;
+        if (m.reorderAt > 0 && m.qty <= m.reorderAt) lowCount += 1;
+      });
+      const set = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      };
+      set("matCount", materials.length.toLocaleString());
+      set("matValue", fmt(totalValue));
+      set("matLowCount", lowCount.toLocaleString());
+    }
+
+    function updateBuildMaterialField(id, field, value) {
+      if (!getRole()?.canEdit) return;
+      workspaceState.buildMaterials = getBuildMaterials();
+      const row = workspaceState.buildMaterials.find((m) => m.id === id);
+      if (!row) return;
+      if (field === "name" || field === "notes") row[field] = String(value || "");
+      else if (field === "category") row.category = normalizeBuildMaterialCategory(value);
+      else if (field === "unit") row.unit = normalizeBuildMaterialUnit(value);
+      else if (field === "qty" || field === "cost" || field === "reorderAt") {
+        row[field] = Math.max(0, parseNum(value));
+      }
+      workspaceState.buildMaterials = normalizeBuildMaterials(workspaceState.buildMaterials);
+      scheduleBuildMaterialsSave();
+      if (field === "category") {
+        renderBuildMaterialsPage();
+        return;
+      }
+      const tr = document.querySelector(`#materialsBody tr[data-mat-id="${CSS.escape(String(id))}"]`);
+      const m = workspaceState.buildMaterials.find((x) => x.id === id);
+      if (tr && m) {
+        const valEl = tr.querySelector(".mat-value");
+        if (valEl) valEl.textContent = fmt(m.qty * m.cost);
+        tr.classList.toggle("mat-low", m.reorderAt > 0 && m.qty <= m.reorderAt);
+      }
+      refreshBuildMaterialsKpis();
+    }
+
+    function removeBuildMaterial(id) {
+      if (!getRole()?.canEdit) return;
+      workspaceState.buildMaterials = getBuildMaterials().filter((m) => m.id !== id);
+      scheduleBuildMaterialsSave("Removed a build material");
+      renderBuildMaterialsPage();
+    }
+
     function normalizeRoleDefs(raw) {
       const base = defaultRoleDefs();
       const out = JSON.parse(JSON.stringify(base));
@@ -6613,6 +6936,9 @@ service cloud.firestore {
       data.appeals = normalizeAppeals(Array.isArray(data.appeals) ? data.appeals : []);
       data.chatFilterWords = normalizeChatFilterWords(data.chatFilterWords);
       data.items = normalizeItems(Array.isArray(data.items) ? data.items : []);
+      data.buildMaterials = Array.isArray(data.buildMaterials)
+        ? normalizeBuildMaterials(data.buildMaterials)
+        : normalizeBuildMaterials(emptyState().buildMaterials);
       data.broadcast = normalizeBroadcast(data.broadcast);
       data.foundation = normalizeFoundation(data.foundation);
       data.variableOverhead = normalizeVariableOverhead(data.variableOverhead);
@@ -7648,6 +7974,11 @@ service cloud.firestore {
         ...emptyState(),
         ...rawState,
         items: normalizeItems(rawState.items?.length ? rawState.items : emptyState().items),
+        buildMaterials: normalizeBuildMaterials(
+          Array.isArray(rawState.buildMaterials)
+            ? rawState.buildMaterials
+            : emptyState().buildMaterials
+        ),
         parties: rawState.parties?.length
           ? rawState.parties
           : DEFAULT_PARTIES.map((p) => ({ ...p })),
@@ -7712,6 +8043,9 @@ service cloud.firestore {
         if (!Array.isArray(data.activity)) data.activity = [];
         if (!Array.isArray(data.items)) data.items = [];
         data.items = normalizeItems(data.items);
+        data.buildMaterials = Array.isArray(data.buildMaterials)
+          ? normalizeBuildMaterials(data.buildMaterials)
+          : normalizeBuildMaterials(emptyState().buildMaterials);
         data.roleDefs = normalizeRoleDefs(data.roleDefs);
         data.chatMessages = normalizeChatMessages(data.chatMessages);
         data.tickets = normalizeTickets(data.tickets);
@@ -7741,6 +8075,7 @@ service cloud.firestore {
       workspaceState.appeals = normalizeAppeals(workspaceState.appeals);
       workspaceState.chatFilterWords = normalizeChatFilterWords(workspaceState.chatFilterWords);
       workspaceState.batchPlanner = normalizeBatchPlanner(workspaceState.batchPlanner);
+      workspaceState.buildMaterials = normalizeBuildMaterials(workspaceState.buildMaterials);
       workspaceState.dailySales = normalizeDailySales(workspaceState.dailySales);
       workspaceState.broadcast = normalizeBroadcast(workspaceState.broadcast);
       if (!workspaceState.workspaceRecoveryDigest) workspaceState.workspaceRecoveryDigest = null;
@@ -8818,6 +9153,9 @@ service cloud.firestore {
       }
       if (page === "batch") {
         renderBatchPage();
+      }
+      if (page === "materials") {
+        renderBuildMaterialsPage();
       }
       if (page === "sell") {
         renderSalesChart();
@@ -11949,6 +12287,7 @@ service cloud.firestore {
       const clean = ensureAccounts({ ...emptyState(), ...workspaceState });
       const payload = {
         items: normalizeItems(clean.items),
+        buildMaterials: normalizeBuildMaterials(clean.buildMaterials),
         fixedCosts: clean.fixedCosts,
         variableOverhead: normalizeVariableOverhead(clean.variableOverhead),
         targetUnits: clean.targetUnits,
@@ -16979,6 +17318,9 @@ html, body {
       workspaceState.foundation = normalizeFoundation(workspaceState.foundation);
       workspaceState.dailySales = normalizeDailySales(workspaceState.dailySales);
       workspaceState.batchPlanner = normalizeBatchPlanner(workspaceState.batchPlanner);
+      workspaceState.buildMaterials = Array.isArray(workspaceState.buildMaterials)
+        ? normalizeBuildMaterials(workspaceState.buildMaterials)
+        : normalizeBuildMaterials(emptyState().buildMaterials);
       writeBatchPlannerToEditor();
       renderCustomerDisplaySlidesEditor();
       renderCustomerDisplayBrandEditor();
@@ -17006,6 +17348,12 @@ html, body {
         !document.getElementById("page-batch").classList.contains("hidden")
       ) {
         renderBatchPage();
+      }
+      if (
+        document.getElementById("page-materials") &&
+        !document.getElementById("page-materials").classList.contains("hidden")
+      ) {
+        renderBuildMaterialsPage();
       }
       if (
         document.getElementById("page-sell") &&
@@ -18042,6 +18390,29 @@ html, body {
       if (!getRole()?.canEdit) return;
       addRow({ name: "", qty: 1, cost: 0, sell: 0, sold: 0 });
       scheduleSave("Added an inventory item");
+    });
+
+    document.getElementById("addBuildMaterialBtn")?.addEventListener("click", () => addBuildMaterial());
+    document.getElementById("materialsSearch")?.addEventListener("input", () => renderBuildMaterialsPage());
+    document.getElementById("materialsCategoryFilter")?.addEventListener("change", () => renderBuildMaterialsPage());
+    document.getElementById("materialsBody")?.addEventListener("input", (e) => {
+      const input = e.target.closest("[data-mat-field]");
+      if (!input) return;
+      const tr = input.closest("tr[data-mat-id]");
+      if (!tr) return;
+      updateBuildMaterialField(tr.getAttribute("data-mat-id"), input.getAttribute("data-mat-field"), input.value);
+    });
+    document.getElementById("materialsBody")?.addEventListener("change", (e) => {
+      const input = e.target.closest("[data-mat-field]");
+      if (!input) return;
+      const tr = input.closest("tr[data-mat-id]");
+      if (!tr) return;
+      updateBuildMaterialField(tr.getAttribute("data-mat-id"), input.getAttribute("data-mat-field"), input.value);
+    });
+    document.getElementById("materialsBody")?.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-remove-mat]");
+      if (!btn) return;
+      removeBuildMaterial(btn.getAttribute("data-remove-mat"));
     });
 
     document.getElementById("undoSaleBtn").addEventListener("click", () => undoLastSale());
