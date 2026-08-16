@@ -268,6 +268,85 @@
     .materials-table .mat-notes {
       min-width: 8rem;
     }
+    .materials-scan-card {
+      margin-bottom: 1rem;
+    }
+    .materials-scan-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      align-items: stretch;
+    }
+    .materials-scan-row input[type="text"] {
+      flex: 1;
+      min-width: 200px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      padding: 0.75rem 0.9rem;
+      font: inherit;
+      font-size: 1rem;
+    }
+    .materials-scan-row input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    }
+    .mat-actions {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .mat-actions .btn-ghost {
+      padding: 0.35rem 0.5rem;
+      font-size: 0.8rem;
+    }
+    .inv-barcode-cell input {
+      width: 100%;
+      min-width: 7rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 0.4rem 0.5rem;
+      font: inherit;
+      font-size: 0.85rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .barcode-use-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9200;
+      background: rgba(0, 0, 0, 0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .barcode-use-overlay.hidden { display: none; }
+    .barcode-use-panel {
+      width: min(420px, 100%);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.15rem 1.25rem 1.25rem;
+      box-shadow: var(--shadow);
+    }
+    .barcode-use-panel h2 { margin: 0 0 0.35rem; font-size: 1.15rem; }
+    .barcode-use-panel .barcode-use-meta { color: var(--muted); margin-bottom: 0.85rem; font-size: 0.92rem; }
+    .barcode-use-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
+    .zebra-label-settings {
+      display: grid;
+      gap: 0.65rem;
+      margin-top: 0.5rem;
+    }
+    @media (min-width: 700px) {
+      .zebra-label-settings {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
     .page-title {
       font-size: 1.45rem;
       font-weight: 700;
@@ -3660,7 +3739,10 @@
         <div class="card">
           <div class="card-header">
             <h2>Items</h2>
-            <button type="button" class="btn-primary" id="addRow">+ Add item</button>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <button type="button" class="btn-ghost" id="assignProductBarcodesBtn" title="Fill empty barcodes">Assign barcodes</button>
+              <button type="button" class="btn-primary" id="addRow">+ Add item</button>
+            </div>
           </div>
           <div class="table-wrap">
             <table>
@@ -3668,6 +3750,7 @@
                 <tr>
                   <th class="inv-drag-cell" aria-label="Reorder"></th>
                   <th>Item</th>
+                  <th>Barcode</th>
                   <th class="num">Qty</th>
                   <th class="num">Cost / unit</th>
                   <th class="num">Sell / unit</th>
@@ -3676,6 +3759,7 @@
                   <th class="num">Revenue</th>
                   <th class="num">Profit</th>
                   <th>Media</th>
+                  <th>Label</th>
                   <th></th>
                 </tr>
               </thead>
@@ -3687,6 +3771,10 @@
             <div class="stat"><label>Revenue potential</label><div class="value" id="totalRevenue">$0.00</div></div>
             <div class="stat"><label>Gross profit</label><div class="value" id="totalProfit">$0.00</div></div>
           </div>
+          <div class="field" style="margin-top:1rem">
+            <label>Zebra product labels (GK420T / ZD421)</label>
+            <div class="field-hint">Print Code 128 labels to a Zebra GK420T or ZD421 (Windows print dialog — pick your Zebra printer). Or download raw ZPL for Zebra Setup Utilities. Configure model &amp; size under Build materials → Zebra labels.</div>
+          </div>
         </div>
         <div class="card">
           <h2>Item breakdown</h2>
@@ -3696,16 +3784,29 @@
 
       <section class="page hidden" id="page-materials">
         <h1 class="page-title">Build materials</h1>
-        <p class="page-sub">Parts and supplies used to build products — filament, switches, hardware, packaging, and more. Separate from finished goods in Inventory.</p>
+        <p class="page-sub">Parts and supplies used to build products. Scan a barcode to deduct what you used. Print labels on a Zebra GK420T or ZD421.</p>
         <div class="kpi-grid" style="margin-bottom:1rem">
           <div class="stat"><label>Materials</label><div class="value" id="matCount">0</div></div>
           <div class="stat"><label>Stock value</label><div class="value" id="matValue">$0.00</div></div>
           <div class="stat"><label>Low stock</label><div class="value" id="matLowCount">0</div></div>
         </div>
+        <div class="card materials-scan-card">
+          <h2>Scan to use</h2>
+          <p class="field-hint" style="margin-top:0">Click the box (or keep this page open), scan a material barcode, then enter how much you used. USB wedge scanners type the code and press Enter.</p>
+          <div class="materials-scan-row">
+            <input type="text" id="matScanInput" placeholder="Scan barcode here…" autocomplete="off" enterkeyhint="done" aria-label="Scan material barcode" />
+            <button type="button" class="btn-primary" id="matScanLookupBtn">Look up</button>
+          </div>
+          <p class="sell-success" id="matScanStatus" aria-live="polite"></p>
+          <p class="sell-error" id="matScanError" aria-live="polite"></p>
+        </div>
         <div class="card">
           <div class="card-header">
             <h2>Materials &amp; parts</h2>
-            <button type="button" class="btn-primary" id="addBuildMaterialBtn">+ Add material</button>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <button type="button" class="btn-ghost" id="assignMaterialBarcodesBtn" title="Fill empty barcodes">Assign barcodes</button>
+              <button type="button" class="btn-primary" id="addBuildMaterialBtn">+ Add material</button>
+            </div>
           </div>
           <div class="materials-toolbar">
             <input type="search" id="materialsSearch" class="sell-pos-search" placeholder="Search materials…" autocomplete="off" aria-label="Search materials" />
@@ -3718,6 +3819,7 @@
               <thead>
                 <tr>
                   <th>Name</th>
+                  <th>Barcode</th>
                   <th>Category</th>
                   <th class="num">Qty</th>
                   <th>Unit</th>
@@ -3732,6 +3834,38 @@
             </table>
           </div>
           <p class="note" id="materialsEmptyNote" style="margin-top:0.75rem">No materials yet — add filament, switches, and other build parts.</p>
+        </div>
+        <div class="card">
+          <h2>Zebra labels (GK420T / ZD421)</h2>
+          <p class="field-hint" style="margin-top:0">
+            Both printers speak ZPL. Pick your model (ZD421 can be 203 or 300 dpi).
+            Print opens the Windows dialog — choose the Zebra printer.
+            Download ZPL to send with Zebra Setup Utilities if you prefer raw files.
+          </p>
+          <div class="zebra-label-settings">
+            <div class="field">
+              <label for="zebraPrinterModel">Printer model</label>
+              <select id="zebraPrinterModel">
+                <option value="gk420t">GK420T (203 dpi)</option>
+                <option value="zd421-203">ZD421 (203 dpi)</option>
+                <option value="zd421-300">ZD421 (300 dpi)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="zebraLabelCopies">Default copies</label>
+              <input type="number" id="zebraLabelCopies" min="1" max="50" step="1" value="1" />
+            </div>
+            <div class="field">
+              <label for="zebraLabelWidthIn">Label width (inches)</label>
+              <input type="number" id="zebraLabelWidthIn" min="1" max="4" step="0.05" value="2.25" />
+            </div>
+            <div class="field">
+              <label for="zebraLabelHeightIn">Label height (inches)</label>
+              <input type="number" id="zebraLabelHeightIn" min="0.5" max="4" step="0.05" value="1.25" />
+            </div>
+          </div>
+          <button type="button" class="btn-ghost" id="zebraSaveLabelSettingsBtn" style="margin-top:0.65rem">Save printer settings</button>
+          <p class="note" id="zebraSettingsStatus" style="margin-top:0.5rem"></p>
         </div>
       </section>
 
@@ -4840,6 +4974,22 @@ service cloud.firestore {
     <span class="sell-cashier-ready-hint">Move your mouse to start · −/+ speed</span>
   </div>
 
+  <div class="barcode-use-overlay hidden" id="matUseOverlay" role="dialog" aria-modal="true" aria-labelledby="matUseTitle">
+    <div class="barcode-use-panel">
+      <h2 id="matUseTitle">Use material</h2>
+      <p class="barcode-use-meta" id="matUseMeta">—</p>
+      <div class="field">
+        <label for="matUseQty">Amount used</label>
+        <input type="number" id="matUseQty" min="0" step="any" value="1" />
+      </div>
+      <div class="barcode-use-actions">
+        <button type="button" class="btn-primary" id="matUseConfirmBtn">Deduct from stock</button>
+        <button type="button" class="btn-ghost" id="matUseCancelBtn">Cancel</button>
+        <button type="button" class="btn-ghost" id="matUsePrintBtn">Print label</button>
+      </div>
+    </div>
+  </div>
+
   <div id="chatPip" class="chat-pip hidden" aria-hidden="true" role="dialog" aria-label="Chat">
     <div class="chat-pip-header" id="chatPipHandle">
       <span class="chat-pip-title"><span id="chatPipTitleText">Chat</span> <span class="chat-unread-badge hidden" id="chatPipBadge" aria-hidden="true"></span></span>
@@ -4851,6 +5001,7 @@ service cloud.firestore {
   <div id="chatToastHost" class="chat-toast-host" aria-live="polite" aria-relevant="additions"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/hash-wasm@4.12.0/dist/index.umd.min.js" data-hash-wasm="1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -6521,6 +6672,44 @@ service cloud.firestore {
       return Array.isArray(v?.colors) && v.colors.length >= 2;
     }
 
+    function normalizeBarcode(raw) {
+      return String(raw || "")
+        .trim()
+        .toUpperCase()
+        .replace(/\s+/g, "")
+        .replace(/[^A-Z0-9\-_./]/g, "")
+        .slice(0, 32);
+    }
+
+    function generateBarcode(prefix) {
+      const p = String(prefix || "X").slice(0, 2).toUpperCase();
+      const stamp = Date.now().toString(36).toUpperCase().slice(-7);
+      const rand = Math.random().toString(36).toUpperCase().slice(2, 6);
+      return normalizeBarcode(p + stamp + rand);
+    }
+
+    function collectUsedBarcodes(exceptId) {
+      const used = new Set();
+      normalizeItems(workspaceState.items || []).forEach((it) => {
+        if (exceptId && it.id === exceptId) return;
+        if (it.barcode) used.add(it.barcode);
+      });
+      getBuildMaterials().forEach((m) => {
+        if (exceptId && m.id === exceptId) return;
+        if (m.barcode) used.add(m.barcode);
+      });
+      return used;
+    }
+
+    function uniqueBarcode(prefix, exceptId) {
+      const used = collectUsedBarcodes(exceptId);
+      for (let i = 0; i < 40; i++) {
+        const code = generateBarcode(prefix);
+        if (!used.has(code)) return code;
+      }
+      return generateBarcode(prefix) + String(Math.floor(Math.random() * 90 + 10));
+    }
+
     function normalizeItem(raw) {
       const it = raw && typeof raw === "object" ? raw : {};
       const photos = Array.isArray(it.photos)
@@ -6533,6 +6722,7 @@ service cloud.firestore {
       return {
         id: String(it.id || newItemId()),
         name: String(it.name ?? ""),
+        barcode: normalizeBarcode(it.barcode),
         // With color variants, item qty is always the sum of variant quantities.
         qty: variants.length ? variantsTotalQty(variants) : Math.max(0, parseNum(it.qty)),
         cost: Math.max(0, parseNum(it.cost)),
@@ -6590,6 +6780,7 @@ service cloud.firestore {
       return {
         id: String(it.id || newItemId()),
         name: String(it.name ?? "").trim().slice(0, 120),
+        barcode: normalizeBarcode(it.barcode),
         category: normalizeBuildMaterialCategory(it.category),
         qty: Math.max(0, parseNum(it.qty)),
         unit: normalizeBuildMaterialUnit(it.unit),
@@ -6644,11 +6835,13 @@ service cloud.firestore {
       if (searchEl) searchEl.disabled = false;
       const addBtn = document.getElementById("addBuildMaterialBtn");
       if (addBtn) addBtn.disabled = !canEdit;
+      const assignBtn = document.getElementById("assignMaterialBarcodesBtn");
+      if (assignBtn) assignBtn.disabled = !canEdit;
 
       const rows = workspaceState.buildMaterials.filter((m) => {
         if (catFilter && m.category !== catFilter) return false;
         if (!q) return true;
-        const hay = `${m.name} ${m.notes} ${buildMaterialCategoryLabel(m.category)} ${m.unit}`.toLowerCase();
+        const hay = `${m.name} ${m.barcode} ${m.notes} ${buildMaterialCategoryLabel(m.category)} ${m.unit}`.toLowerCase();
         return hay.includes(q);
       });
 
@@ -6686,6 +6879,7 @@ service cloud.firestore {
               ).join("");
               return `<tr class="${low ? "mat-low" : ""}" data-mat-id="${escapeHtml(m.id)}">
                 <td><input type="text" data-mat-field="name" value="${escapeHtml(m.name)}" placeholder="e.g. PLA filament" maxlength="120" ${dis} /></td>
+                <td><input type="text" data-mat-field="barcode" value="${escapeHtml(m.barcode)}" placeholder="Scan or assign" maxlength="32" ${dis} /></td>
                 <td><select data-mat-field="category" ${dis}>${catSelect}</select></td>
                 <td class="num"><input type="number" class="num" data-mat-field="qty" min="0" step="any" value="${m.qty}" ${dis} /></td>
                 <td><select data-mat-field="unit" ${dis}>${unitSelect}</select></td>
@@ -6693,15 +6887,19 @@ service cloud.firestore {
                 <td class="num mat-value">${fmt(value)}</td>
                 <td class="num"><input type="number" class="num" data-mat-field="reorderAt" min="0" step="any" value="${m.reorderAt}" title="Highlight when qty is at or below this" ${dis} /></td>
                 <td><input type="text" class="mat-notes" data-mat-field="notes" value="${escapeHtml(m.notes)}" placeholder="Optional" maxlength="200" ${dis} /></td>
-                <td>${
-                  canEdit
-                    ? `<button type="button" class="btn-ghost btn-danger" data-remove-mat="${escapeHtml(m.id)}" aria-label="Remove">✕</button>`
-                    : ""
-                }</td>
+                <td><div class="mat-actions">
+                  <button type="button" class="btn-ghost" data-print-mat="${escapeHtml(m.id)}" title="Print Zebra label">Label</button>
+                  <button type="button" class="btn-ghost" data-use-mat="${escapeHtml(m.id)}" title="Use / deduct">Use</button>
+                  ${
+                    canEdit
+                      ? `<button type="button" class="btn-ghost btn-danger" data-remove-mat="${escapeHtml(m.id)}" aria-label="Remove">✕</button>`
+                      : ""
+                  }
+                </div></td>
               </tr>`;
             })
             .join("")
-        : `<tr><td colspan="9" class="note" style="text-align:center;border:none">${
+        : `<tr><td colspan="10" class="note" style="text-align:center;border:none">${
             workspaceState.buildMaterials.length
               ? "No materials match this search."
               : "No materials yet."
@@ -6714,6 +6912,7 @@ service cloud.firestore {
       workspaceState.buildMaterials.push(
         normalizeBuildMaterial({
           name: "",
+          barcode: uniqueBarcode("M"),
           category: "other",
           qty: 0,
           unit: "pcs",
@@ -6752,6 +6951,7 @@ service cloud.firestore {
       const row = workspaceState.buildMaterials.find((m) => m.id === id);
       if (!row) return;
       if (field === "name" || field === "notes") row[field] = String(value || "");
+      else if (field === "barcode") row.barcode = normalizeBarcode(value);
       else if (field === "category") row.category = normalizeBuildMaterialCategory(value);
       else if (field === "unit") row.unit = normalizeBuildMaterialUnit(value);
       else if (field === "qty" || field === "cost" || field === "reorderAt") {
@@ -6778,6 +6978,345 @@ service cloud.firestore {
       workspaceState.buildMaterials = getBuildMaterials().filter((m) => m.id !== id);
       scheduleBuildMaterialsSave("Removed a build material");
       renderBuildMaterialsPage();
+    }
+
+    const ZEBRA_LABEL_KEY = "inventory-split-zebra-label:";
+    const ZEBRA_PRINTER_MODELS = {
+      "gk420t": { id: "gk420t", label: "GK420T (203 dpi)", dpi: 203 },
+      "zd421-203": { id: "zd421-203", label: "ZD421 (203 dpi)", dpi: 203 },
+      "zd421-300": { id: "zd421-300", label: "ZD421 (300 dpi)", dpi: 300 },
+    };
+
+    function zebraLabelSettingsKey() {
+      return ZEBRA_LABEL_KEY + String(workspaceId || "MAIN").toUpperCase();
+    }
+
+    function loadZebraLabelSettings() {
+      const fallback = {
+        model: "zd421-203",
+        widthIn: 2.25,
+        heightIn: 1.25,
+        copies: 1,
+      };
+      try {
+        const raw = JSON.parse(localStorage.getItem(zebraLabelSettingsKey()) || "{}");
+        const model = ZEBRA_PRINTER_MODELS[raw.model] ? raw.model : fallback.model;
+        return {
+          model,
+          widthIn: Math.min(4, Math.max(1, parseNum(raw.widthIn) || fallback.widthIn)),
+          heightIn: Math.min(4, Math.max(0.5, parseNum(raw.heightIn) || fallback.heightIn)),
+          copies: Math.min(50, Math.max(1, Math.floor(parseNum(raw.copies) || fallback.copies))),
+        };
+      } catch (_) {
+        return fallback;
+      }
+    }
+
+    function saveZebraLabelSettings(next) {
+      const cur = { ...loadZebraLabelSettings(), ...next };
+      if (!ZEBRA_PRINTER_MODELS[cur.model]) cur.model = "zd421-203";
+      cur.widthIn = Math.min(4, Math.max(1, parseNum(cur.widthIn) || 2.25));
+      cur.heightIn = Math.min(4, Math.max(0.5, parseNum(cur.heightIn) || 1.25));
+      cur.copies = Math.min(50, Math.max(1, Math.floor(parseNum(cur.copies) || 1)));
+      localStorage.setItem(zebraLabelSettingsKey(), JSON.stringify(cur));
+      renderZebraLabelSettings();
+      return cur;
+    }
+
+    function renderZebraLabelSettings() {
+      const s = loadZebraLabelSettings();
+      const model = document.getElementById("zebraPrinterModel");
+      const w = document.getElementById("zebraLabelWidthIn");
+      const h = document.getElementById("zebraLabelHeightIn");
+      const c = document.getElementById("zebraLabelCopies");
+      const canEdit = !!getRole()?.canEdit;
+      if (model) {
+        model.value = s.model;
+        model.disabled = !canEdit;
+      }
+      if (w) {
+        w.value = String(s.widthIn);
+        w.disabled = !canEdit;
+      }
+      if (h) {
+        h.value = String(s.heightIn);
+        h.disabled = !canEdit;
+      }
+      if (c) {
+        c.value = String(s.copies);
+        c.disabled = !canEdit;
+      }
+      const saveBtn = document.getElementById("zebraSaveLabelSettingsBtn");
+      if (saveBtn) saveBtn.disabled = !canEdit;
+    }
+
+    function zebraEscape(text) {
+      return String(text || "")
+        .replace(/\\/g, "\\\\")
+        .replace(/\^/g, " ")
+        .replace(/~/g, "-")
+        .slice(0, 40);
+    }
+
+    function buildZebraLabelZpl({ name, barcode, subtitle }) {
+      const settings = loadZebraLabelSettings();
+      const model = ZEBRA_PRINTER_MODELS[settings.model] || ZEBRA_PRINTER_MODELS["zd421-203"];
+      const dpi = model.dpi;
+      const widthDots = Math.round(settings.widthIn * dpi);
+      const heightDots = Math.round(settings.heightIn * dpi);
+      const code = normalizeBarcode(barcode);
+      const title = zebraEscape(name || "Item");
+      const sub = zebraEscape(subtitle || model.label);
+      const copies = settings.copies;
+      // Scale barcode height with dpi so 300dpi labels don't look tiny.
+      const barH = Math.round(dpi === 300 ? 90 : 70);
+      const titleSize = Math.round(dpi === 300 ? 36 : 28);
+      const gap = Math.round(dpi * 0.08);
+      return `^XA
+^PW${widthDots}
+^LL${heightDots}
+^LH0,0
+^PR2,2
+^MD15
+^FO${gap},${gap}^A0N,${titleSize},${titleSize}^FD${title}^FS
+^FO${gap},${gap + titleSize + 8}^A0N,${Math.round(titleSize * 0.6)},${Math.round(titleSize * 0.6)}^FD${sub}^FS
+^FO${gap},${Math.round(heightDots * 0.38)}^BY${dpi === 300 ? 3 : 2},2,${barH}^BCN,${barH},Y,N,N^FD${code}^FS
+^PQ${copies},0,1,Y
+^XZ
+`;
+    }
+
+    function downloadZebraZpl(zpl, filename) {
+      const blob = new Blob([zpl], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename || `zebra-label-${Date.now()}.zpl`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function printZebraLabel({ name, barcode, subtitle }) {
+      const code = normalizeBarcode(barcode);
+      if (!code) {
+        alert("Add a barcode before printing a label.");
+        return;
+      }
+      const settings = loadZebraLabelSettings();
+      const model = ZEBRA_PRINTER_MODELS[settings.model] || ZEBRA_PRINTER_MODELS["zd421-203"];
+      const zpl = buildZebraLabelZpl({ name, barcode: code, subtitle });
+      const popup = window.open("", "_blank", "noopener,noreferrer,width=520,height=520");
+      if (!popup) {
+        downloadZebraZpl(zpl, `label-${code}.zpl`);
+        alert("Popup blocked — downloaded ZPL instead. Send that file to your " + model.label + ".");
+        return;
+      }
+      const wIn = settings.widthIn;
+      const hIn = settings.heightIn;
+      popup.document.write(`<!DOCTYPE html><html><head><title>Zebra label ${escapeHtml(code)}</title>
+<style>
+  @page { size: ${wIn}in ${hIn}in; margin: 0; }
+  html, body { margin: 0; padding: 0; background: #fff; color: #000; font-family: Arial, Helvetica, sans-serif; }
+  .wrap { width: ${wIn}in; height: ${hIn}in; box-sizing: border-box; padding: 0.12in 0.14in; display: flex; flex-direction: column; justify-content: space-between; }
+  .name { font-size: 14px; font-weight: 700; line-height: 1.15; }
+  .sub { font-size: 10px; color: #333; margin-top: 2px; }
+  .bar { display: flex; flex-direction: column; align-items: center; }
+  svg { max-width: 100%; height: auto; }
+  .tools { position: fixed; left: 12px; bottom: 12px; display: flex; gap: 8px; }
+  .tools button { font: 13px sans-serif; padding: 8px 12px; }
+  @media print { .tools { display: none !important; } body { background: #fff; } }
+</style></head><body>
+  <div class="wrap">
+    <div>
+      <div class="name">${escapeHtml(String(name || "Item").slice(0, 48))}</div>
+      <div class="sub">${escapeHtml(String(subtitle || model.label).slice(0, 48))}</div>
+    </div>
+    <div class="bar"><svg id="bc"></svg></div>
+  </div>
+  <div class="tools">
+    <button type="button" id="doPrint">Print to Zebra</button>
+    <button type="button" id="doZpl">Download ZPL</button>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
+  <script>
+    const code = ${JSON.stringify(code)};
+    const zpl = ${JSON.stringify(zpl)};
+    try {
+      JsBarcode("#bc", code, { format: "CODE128", displayValue: true, fontSize: 14, height: 56, margin: 0, width: 2 });
+    } catch (e) {}
+    document.getElementById("doPrint").onclick = function () { window.print(); };
+    document.getElementById("doZpl").onclick = function () {
+      const blob = new Blob([zpl], { type: "text/plain" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "label-" + code + ".zpl";
+      a.click();
+    };
+    window.onload = function () { setTimeout(function () { window.focus(); }, 80); };
+  <\/script>
+</body></html>`);
+      popup.document.close();
+    }
+
+    let matUseTargetId = null;
+
+    function setMatScanMessages(ok, err) {
+      const okEl = document.getElementById("matScanStatus");
+      const errEl = document.getElementById("matScanError");
+      if (okEl) okEl.textContent = ok || "";
+      if (errEl) errEl.textContent = err || "";
+    }
+
+    function findBuildMaterialByBarcode(code) {
+      const needle = normalizeBarcode(code);
+      if (!needle) return null;
+      return getBuildMaterials().find((m) => m.barcode && m.barcode === needle) || null;
+    }
+
+    function openMaterialUseDialog(material) {
+      if (!material) return;
+      matUseTargetId = material.id;
+      const overlay = document.getElementById("matUseOverlay");
+      const meta = document.getElementById("matUseMeta");
+      const qty = document.getElementById("matUseQty");
+      if (meta) {
+        meta.textContent = `${material.name || "Material"} · barcode ${material.barcode || "—"} · on hand ${material.qty} ${material.unit}`;
+      }
+      if (qty) {
+        qty.value = material.unit === "g" || material.unit === "kg" || material.unit === "m" ? "1" : "1";
+        qty.max = String(material.qty);
+      }
+      overlay?.classList.remove("hidden");
+      setTimeout(() => qty?.focus(), 40);
+    }
+
+    function closeMaterialUseDialog() {
+      matUseTargetId = null;
+      document.getElementById("matUseOverlay")?.classList.add("hidden");
+    }
+
+    function confirmMaterialUse() {
+      if (!getRole()?.canEdit) {
+        setMatScanMessages("", "You do not have permission to edit materials.");
+        return;
+      }
+      const id = matUseTargetId;
+      if (!id) return;
+      const qty = Math.max(0, parseNum(document.getElementById("matUseQty")?.value));
+      if (!(qty > 0)) {
+        setMatScanMessages("", "Enter how much you used.");
+        return;
+      }
+      workspaceState.buildMaterials = getBuildMaterials();
+      const row = workspaceState.buildMaterials.find((m) => m.id === id);
+      if (!row) {
+        closeMaterialUseDialog();
+        setMatScanMessages("", "Material not found.");
+        return;
+      }
+      if (qty > row.qty) {
+        setMatScanMessages("", `Only ${row.qty} ${row.unit} on hand.`);
+        return;
+      }
+      row.qty = Math.max(0, +(row.qty - qty).toFixed(4));
+      workspaceState.buildMaterials = normalizeBuildMaterials(workspaceState.buildMaterials);
+      scheduleBuildMaterialsSave(`Used ${qty} ${row.unit} of ${row.name || "material"}`);
+      closeMaterialUseDialog();
+      renderBuildMaterialsPage();
+      setMatScanMessages(`Deducted ${qty} ${row.unit} from ${row.name || "material"} (${row.qty} left).`, "");
+      const scan = document.getElementById("matScanInput");
+      if (scan) {
+        scan.value = "";
+        scan.focus();
+      }
+    }
+
+    function lookupMaterialScan() {
+      const scan = document.getElementById("matScanInput");
+      const code = normalizeBarcode(scan?.value);
+      if (!code) {
+        setMatScanMessages("", "Scan or type a barcode.");
+        return;
+      }
+      const material = findBuildMaterialByBarcode(code);
+      if (!material) {
+        setMatScanMessages("", `No material with barcode ${code}.`);
+        return;
+      }
+      setMatScanMessages(`Found ${material.name || "material"}.`, "");
+      openMaterialUseDialog(material);
+    }
+
+    function assignMissingProductBarcodes() {
+      if (!getRole()?.canEdit) return;
+      let n = 0;
+      inventoryItemRows().forEach((tr) => {
+        const input = tr.querySelector(".item-barcode");
+        if (!input) return;
+        if (normalizeBarcode(input.value)) return;
+        const code = uniqueBarcode("P", tr.dataset.itemId);
+        input.value = code;
+        n += 1;
+      });
+      if (n) {
+        recalculate();
+        scheduleSave(`Assigned barcodes to ${n} product${n === 1 ? "" : "s"}`);
+      }
+      alert(n ? `Assigned ${n} product barcode${n === 1 ? "" : "s"}.` : "All products already have barcodes.");
+    }
+
+    function assignMissingMaterialBarcodes() {
+      if (!getRole()?.canEdit) return;
+      workspaceState.buildMaterials = getBuildMaterials();
+      let n = 0;
+      workspaceState.buildMaterials.forEach((m) => {
+        if (m.barcode) return;
+        m.barcode = uniqueBarcode("M", m.id);
+        n += 1;
+      });
+      if (n) {
+        scheduleBuildMaterialsSave(`Assigned barcodes to ${n} material${n === 1 ? "" : "s"}`);
+        renderBuildMaterialsPage();
+      }
+      alert(n ? `Assigned ${n} material barcode${n === 1 ? "" : "s"}.` : "All materials already have barcodes.");
+    }
+
+    function printProductLabelFromRow(tr) {
+      const item = getItemFromRow(tr);
+      let code = item.barcode;
+      if (!code && getRole()?.canEdit) {
+        code = uniqueBarcode("P", item.id);
+        const input = tr.querySelector(".item-barcode");
+        if (input) input.value = code;
+        scheduleSave("Assigned product barcode for label");
+      }
+      printZebraLabel({
+        name: item.name || "Product",
+        barcode: code,
+        subtitle: `Sell ${fmt(item.sell)}`,
+      });
+    }
+
+    function printMaterialLabelById(id) {
+      let material = getBuildMaterials().find((m) => m.id === id);
+      if (!material) return;
+      if (!material.barcode && getRole()?.canEdit) {
+        workspaceState.buildMaterials = getBuildMaterials();
+        const row = workspaceState.buildMaterials.find((m) => m.id === id);
+        if (row) {
+          row.barcode = uniqueBarcode("M", id);
+          scheduleBuildMaterialsSave("Assigned material barcode for label");
+          renderBuildMaterialsPage();
+          material = row;
+        }
+      }
+      printZebraLabel({
+        name: material.name || "Material",
+        barcode: material.barcode,
+        subtitle: `${buildMaterialCategoryLabel(material.category)} · ${material.unit}`,
+      });
     }
 
     function normalizeRoleDefs(raw) {
@@ -9156,6 +9695,8 @@ service cloud.firestore {
       }
       if (page === "materials") {
         renderBuildMaterialsPage();
+        renderZebraLabelSettings();
+        setTimeout(() => document.getElementById("matScanInput")?.focus(), 50);
       }
       if (page === "sell") {
         renderSalesChart();
@@ -12671,6 +13212,7 @@ service cloud.firestore {
           <span class="inv-drag-handle" draggable="${canEdit ? "true" : "false"}" role="button" tabindex="${canEdit ? "0" : "-1"}" aria-label="Drag to reorder" title="Drag to reorder" aria-disabled="${canEdit ? "false" : "true"}">⋮⋮</span>
         </td>
         <td><input type="text" class="item-name" placeholder="Item name" value="${escapeHtml(item.name || "")}" ${canEdit ? "" : "disabled"} /></td>
+        <td class="inv-barcode-cell"><input type="text" class="item-barcode" placeholder="Barcode" value="${escapeHtml(item.barcode || "")}" maxlength="32" ${canEdit ? "" : "disabled"} /></td>
         <td>
           <input type="number" class="qty" min="0" step="1" value="${item.qty}" ${canEdit && !hasVariants ? "" : "disabled"} ${hasVariants ? 'title="Total of color variants — edit colors in the Media panel"' : ""} />
           <div class="color-chips" data-color-chips></div>
@@ -12685,6 +13227,7 @@ service cloud.firestore {
           <button type="button" class="btn-ghost inv-media-toggle">Media</button>
           <div class="inv-media-counts">${photoN} photo${photoN === 1 ? "" : "s"} · ${modelN} model${modelN === 1 ? "" : "s"}</div>
         </td>
+        <td><button type="button" class="btn-ghost inv-print-label" title="Print Zebra label">Label</button></td>
         <td><button type="button" class="btn-ghost btn-danger remove-row ${canEdit ? "" : "hidden"}" ${canEdit ? "" : "disabled"}>✕</button></td>
       `;
       const onInventoryChange = () => {
@@ -12696,6 +13239,7 @@ service cloud.firestore {
       });
       tr.querySelector(".breakability")?.addEventListener("change", onInventoryChange);
       tr.querySelector(".inv-media-toggle")?.addEventListener("click", () => toggleItemMediaPanel(tr));
+      tr.querySelector(".inv-print-label")?.addEventListener("click", () => printProductLabelFromRow(tr));
       syncColorChips(tr);
       tr.querySelector(".remove-row").addEventListener("click", () => {
         if (!getRole()?.canEdit) return;
@@ -12908,6 +13452,7 @@ service cloud.firestore {
       return normalizeItem({
         id: tr.dataset.itemId,
         name: tr.querySelector(".item-name")?.value,
+        barcode: tr.querySelector(".item-barcode")?.value,
         qty: parseNum(tr.querySelector(".qty")?.value),
         cost: parseNum(tr.querySelector(".cost")?.value),
         sell: parseNum(tr.querySelector(".sell")?.value),
@@ -13433,7 +13978,7 @@ service cloud.firestore {
       }
       const panelRow = document.createElement("tr");
       panelRow.className = "inv-media-panel-row";
-      panelRow.innerHTML = `<td colspan="11"></td>`;
+      panelRow.innerHTML = `<td colspan="13"></td>`;
       tr.after(panelRow);
       refreshItemMediaPanel(tr);
     }
@@ -13611,7 +14156,9 @@ service cloud.firestore {
 
     function addRow(data) {
       if (currentUser && !getRole()?.canEdit && inventoryBody.children.length) return;
-      inventoryBody.appendChild(createRow(data));
+      const payload = { ...(data || {}) };
+      if (!normalizeBarcode(payload.barcode)) payload.barcode = uniqueBarcode("P", payload.id);
+      inventoryBody.appendChild(createRow(payload));
       recalculate();
     }
 
@@ -17354,6 +17901,7 @@ html, body {
         !document.getElementById("page-materials").classList.contains("hidden")
       ) {
         renderBuildMaterialsPage();
+        renderZebraLabelSettings();
       }
       if (
         document.getElementById("page-sell") &&
@@ -18393,8 +18941,43 @@ html, body {
     });
 
     document.getElementById("addBuildMaterialBtn")?.addEventListener("click", () => addBuildMaterial());
+    document.getElementById("assignProductBarcodesBtn")?.addEventListener("click", () => assignMissingProductBarcodes());
+    document.getElementById("assignMaterialBarcodesBtn")?.addEventListener("click", () => assignMissingMaterialBarcodes());
     document.getElementById("materialsSearch")?.addEventListener("input", () => renderBuildMaterialsPage());
     document.getElementById("materialsCategoryFilter")?.addEventListener("change", () => renderBuildMaterialsPage());
+    document.getElementById("matScanLookupBtn")?.addEventListener("click", () => lookupMaterialScan());
+    document.getElementById("matScanInput")?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        lookupMaterialScan();
+      }
+    });
+    document.getElementById("matUseConfirmBtn")?.addEventListener("click", () => confirmMaterialUse());
+    document.getElementById("matUseCancelBtn")?.addEventListener("click", () => closeMaterialUseDialog());
+    document.getElementById("matUsePrintBtn")?.addEventListener("click", () => {
+      if (matUseTargetId) printMaterialLabelById(matUseTargetId);
+    });
+    document.getElementById("matUseOverlay")?.addEventListener("click", (e) => {
+      if (e.target === e.currentTarget) closeMaterialUseDialog();
+    });
+    document.getElementById("matUseQty")?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        confirmMaterialUse();
+      }
+      if (e.key === "Escape") closeMaterialUseDialog();
+    });
+    document.getElementById("zebraSaveLabelSettingsBtn")?.addEventListener("click", () => {
+      if (!getRole()?.canEdit) return;
+      saveZebraLabelSettings({
+        model: document.getElementById("zebraPrinterModel")?.value,
+        widthIn: document.getElementById("zebraLabelWidthIn")?.value,
+        heightIn: document.getElementById("zebraLabelHeightIn")?.value,
+        copies: document.getElementById("zebraLabelCopies")?.value,
+      });
+      const status = document.getElementById("zebraSettingsStatus");
+      if (status) status.textContent = "Zebra printer settings saved on this device.";
+    });
     document.getElementById("materialsBody")?.addEventListener("input", (e) => {
       const input = e.target.closest("[data-mat-field]");
       if (!input) return;
@@ -18410,9 +18993,21 @@ html, body {
       updateBuildMaterialField(tr.getAttribute("data-mat-id"), input.getAttribute("data-mat-field"), input.value);
     });
     document.getElementById("materialsBody")?.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-remove-mat]");
-      if (!btn) return;
-      removeBuildMaterial(btn.getAttribute("data-remove-mat"));
+      const removeBtn = e.target.closest("[data-remove-mat]");
+      if (removeBtn) {
+        removeBuildMaterial(removeBtn.getAttribute("data-remove-mat"));
+        return;
+      }
+      const printBtn = e.target.closest("[data-print-mat]");
+      if (printBtn) {
+        printMaterialLabelById(printBtn.getAttribute("data-print-mat"));
+        return;
+      }
+      const useBtn = e.target.closest("[data-use-mat]");
+      if (useBtn) {
+        const mat = getBuildMaterials().find((m) => m.id === useBtn.getAttribute("data-use-mat"));
+        if (mat) openMaterialUseDialog(mat);
+      }
     });
 
     document.getElementById("undoSaleBtn").addEventListener("click", () => undoLastSale());
