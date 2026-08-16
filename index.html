@@ -633,26 +633,51 @@
     }
     .sell-mode-header h2 { margin: 0; font-size: 1.15rem; }
     .sell-cashier-ready {
+      position: fixed;
+      inset: 0;
+      z-index: 8500;
       display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 0.75rem 1.25rem;
-      flex-wrap: wrap;
-      margin: 0 0 0.85rem;
-      padding: 0.7rem 0.9rem;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--accent);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+      padding: 2rem;
+      text-align: center;
+      cursor: none;
+      background:
+        radial-gradient(ellipse 80% 55% at 50% 35%, rgba(59, 130, 246, 0.18), transparent 60%),
+        radial-gradient(ellipse 60% 40% at 70% 80%, rgba(34, 197, 94, 0.08), transparent 55%),
+        #0a0e14;
+      animation: sell-ss-fade-in 0.45s ease;
+    }
+    .sell-cashier-ready.hidden {
+      display: none;
+    }
+    @keyframes sell-ss-fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes sell-ss-pulse {
+      0%, 100% { opacity: 0.55; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.02); }
     }
     .sell-cashier-ready-title {
-      font-size: 1.05rem;
-      font-weight: 700;
-      letter-spacing: -0.01em;
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
       color: var(--text);
+      line-height: 1.1;
     }
     .sell-cashier-ready-sub {
-      font-size: 0.9rem;
+      font-size: clamp(1rem, 2.2vw, 1.25rem);
       color: var(--muted);
+      max-width: 28rem;
+    }
+    .sell-cashier-ready-hint {
+      margin-top: 1.75rem;
+      font-size: 0.95rem;
+      color: rgba(139, 156, 179, 0.85);
+      animation: sell-ss-pulse 2.8s ease-in-out infinite;
     }
     .sell-pos-layout {
       display: grid;
@@ -1094,7 +1119,7 @@
     .sell-day-overlay {
       position: fixed;
       inset: 0;
-      z-index: 130;
+      z-index: 9000;
       background: rgba(0, 0, 0, 0.72);
       display: flex;
       align-items: center;
@@ -3627,7 +3652,10 @@
                 Cash drawer: set APD → Printer properties → Device Settings / Cash Drawer to open with each print
                 (the Windows print path cannot send a separate app kick command).
               </div>
-              <label><input type="checkbox" id="receiptPrintEnabled" /> Print receipt when a transaction ends</label>
+              <label><input type="checkbox" id="receiptPrintEnabled" /> Use physical printer when a transaction ends</label>
+              <div class="field-hint">Turn this off for digital receipts only — the sale and local receipt record still save.</div>
+              <label><input type="checkbox" id="digitalReceiptEnabled" /> Save a digital receipt on this computer</label>
+              <div class="field-hint">Saved locally only. You can download all session receipts at End sales day.</div>
               <label class="hidden"><input type="checkbox" id="drawerKickEnabled" /> Open cash drawer on Cash sales (serial ESC/POS only)</label>
               <div class="field" style="margin-top:.6rem">
                 <label for="receiptPrintMode">Receipt method</label>
@@ -3707,10 +3735,6 @@
               <button type="button" class="btn-sell-action" id="undoSaleBtnMode" disabled title="Undo the last recorded transaction">Undo last transaction</button>
               <button type="button" class="btn-primary" id="endSalesDayBtn">End sales day</button>
             </div>
-          </div>
-          <div class="sell-cashier-ready hidden" id="sellCashierReady" role="status" aria-live="polite">
-            <span class="sell-cashier-ready-title">Ready for sales</span>
-            <span class="sell-cashier-ready-sub">Waiting for next transaction</span>
           </div>
           <p class="sell-error" id="sellError" aria-live="polite"></p>
           <p class="sell-success" id="sellSuccess" aria-live="polite"></p>
@@ -4611,6 +4635,12 @@ service cloud.firestore {
     </main>
   </div>
 
+  <div class="sell-cashier-ready hidden" id="sellCashierReady" role="status" aria-live="polite" aria-hidden="true">
+    <span class="sell-cashier-ready-title">Ready for sales</span>
+    <span class="sell-cashier-ready-sub">Waiting for the next transaction</span>
+    <span class="sell-cashier-ready-hint">Move your mouse to start · Esc for overview</span>
+  </div>
+
   <div id="chatPip" class="chat-pip hidden" aria-hidden="true" role="dialog" aria-label="Chat">
     <div class="chat-pip-header" id="chatPipHandle">
       <span class="chat-pip-title"><span id="chatPipTitleText">Chat</span> <span class="chat-unread-badge hidden" id="chatPipBadge" aria-hidden="true"></span></span>
@@ -4642,6 +4672,7 @@ service cloud.firestore {
     const CUSTOMER_MEDIA_DB = "inventory-split-customer-media";
     const CUSTOMER_MEDIA_STORE = "assets";
     const CUSTOMER_PRINTER_KEY = "inventory-split-customer-printer:";
+    const DIGITAL_RECEIPTS_KEY = "inventory-split-digital-receipts:";
     const WS_PREFIX = "inventory-split-ws:";
     const FIREBASE_LS_KEY = "inventory-split-firebase";
     const CHAT_PIP_KEY = "inventory-split-chat-pip";
@@ -5999,8 +6030,15 @@ service cloud.firestore {
     let sellUndoStack = [];
     let salesModeActive = false;
     let salesModeSession = [];
+    /** Local-only receipt records for the active sales session. */
+    let salesSessionReceipts = [];
     /** Pending cart lines (not yet committed). Cleared on End transaction / End day / Reset. */
     let salesCart = [];
+    /** When true, Ready-for-sales screensaver is dismissed until idle / cart empties. */
+    let salesScreensaverAwake = false;
+    let salesScreensaverHadCart = false;
+    let salesScreensaverIdleTimer = null;
+    const SALES_SCREENSAVER_IDLE_MS = 20000;
     let salesCartSeq = 0;
     /** POS picker: selected inventory index + optional color, plus name filter. */
     let salesPosFilter = "";
@@ -8596,6 +8634,9 @@ service cloud.firestore {
       }
       if (page === "sell") {
         renderSalesChart();
+        updateCashierReadyBanner();
+      } else {
+        updateCashierReadyBanner();
       }
     }
 
@@ -13635,14 +13676,147 @@ service cloud.firestore {
       return Math.max(0, onHand - cartReservedQty(rowIdx, color));
     }
 
+    function isSellPageVisible() {
+      const page = document.getElementById("page-sell");
+      const app = document.getElementById("appView");
+      return (
+        !!page &&
+        !page.classList.contains("hidden") &&
+        !!app &&
+        !app.classList.contains("hidden") &&
+        !customerDisplayIsDisplayWindow
+      );
+    }
+
+    function salesScreensaverShouldWait() {
+      if (!getRole()?.canEdit) return false;
+      if (!isSellPageVisible()) return false;
+      if (document.getElementById("sellDayOverview")) return false;
+      if (!salesModeActive) return true;
+      return salesCart.length === 0 && customerDisplayPhase !== "thanks";
+    }
+
     function updateCashierReadyBanner() {
       const el = document.getElementById("sellCashierReady");
       if (!el) return;
-      const show =
-        salesModeActive &&
-        salesCart.length === 0 &&
-        customerDisplayPhase !== "thanks";
+      if (salesCart.length > 0) {
+        salesScreensaverHadCart = true;
+        salesScreensaverAwake = true;
+      } else if (salesScreensaverHadCart) {
+        salesScreensaverHadCart = false;
+        salesScreensaverAwake = false;
+        clearTimeout(salesScreensaverIdleTimer);
+        salesScreensaverIdleTimer = null;
+      }
+      const waiting = salesScreensaverShouldWait();
+      const show = waiting && !salesScreensaverAwake;
       el.classList.toggle("hidden", !show);
+      el.setAttribute("aria-hidden", show ? "false" : "true");
+      const hint = el.querySelector(".sell-cashier-ready-hint");
+      if (hint) {
+        hint.textContent = salesModeActive
+          ? "Move your mouse to sell"
+          : "Move your mouse to start · Esc for overview";
+      }
+    }
+
+    function scheduleSalesScreensaverIdle() {
+      clearTimeout(salesScreensaverIdleTimer);
+      salesScreensaverIdleTimer = null;
+      if (salesCart.length > 0) return;
+      if (!isSellPageVisible()) return;
+      if (!getRole()?.canEdit) return;
+      salesScreensaverIdleTimer = setTimeout(() => {
+        if (salesCart.length > 0) return;
+        salesScreensaverAwake = false;
+        updateCashierReadyBanner();
+      }, SALES_SCREENSAVER_IDLE_MS);
+    }
+
+    function wakeSalesScreensaver(opts) {
+      const forOverview = !!(opts && opts.overviewOnly);
+      if (customerDisplayIsDisplayWindow) return;
+      if (!isSellPageVisible()) return;
+      if (!getRole()?.canEdit) return;
+      if (document.getElementById("sellDayOverview")) return;
+
+      const el = document.getElementById("sellCashierReady");
+      const ssVisible = el && !el.classList.contains("hidden");
+      if (!ssVisible && !salesScreensaverShouldWait()) return;
+
+      if (forOverview) {
+        salesScreensaverAwake = true;
+        updateCashierReadyBanner();
+        scheduleSalesScreensaverIdle();
+        return;
+      }
+
+      if (!salesModeActive) {
+        enterSalesMode();
+      }
+      salesScreensaverAwake = true;
+      updateCashierReadyBanner();
+      scheduleSalesScreensaverIdle();
+      const search = document.getElementById("sellPosSearch");
+      if (search && document.activeElement !== search) {
+        try {
+          search.focus({ preventScroll: true });
+        } catch {
+          search.focus();
+        }
+      }
+    }
+
+    function bindSalesScreensaverWake() {
+      let lastX = 0;
+      let lastY = 0;
+      let tracking = false;
+      const onMove = (e) => {
+        const el = document.getElementById("sellCashierReady");
+        if (!el || el.classList.contains("hidden")) {
+          tracking = false;
+          if (salesModeActive && salesCart.length === 0) scheduleSalesScreensaverIdle();
+          return;
+        }
+        const x = e.clientX ?? 0;
+        const y = e.clientY ?? 0;
+        if (!tracking) {
+          tracking = true;
+          lastX = x;
+          lastY = y;
+          wakeSalesScreensaver();
+          return;
+        }
+        if (Math.abs(x - lastX) < 2 && Math.abs(y - lastY) < 2) return;
+        lastX = x;
+        lastY = y;
+        wakeSalesScreensaver();
+      };
+      const onWake = () => {
+        const el = document.getElementById("sellCashierReady");
+        if (!el || el.classList.contains("hidden")) {
+          if (salesModeActive && salesCart.length === 0) scheduleSalesScreensaverIdle();
+          return;
+        }
+        wakeSalesScreensaver();
+      };
+      window.addEventListener("mousemove", onMove, { passive: true });
+      window.addEventListener("pointerdown", onWake, { passive: true });
+      window.addEventListener("touchstart", onWake, { passive: true });
+      window.addEventListener("keydown", (e) => {
+        const el = document.getElementById("sellCashierReady");
+        const ssVisible = el && !el.classList.contains("hidden");
+        if (e.key === "Escape" && ssVisible && !salesModeActive) {
+          e.preventDefault();
+          wakeSalesScreensaver({ overviewOnly: true });
+          return;
+        }
+        if (!ssVisible) {
+          if (salesModeActive && salesCart.length === 0) scheduleSalesScreensaverIdle();
+          return;
+        }
+        wakeSalesScreensaver();
+      });
     }
 
     function renderSellCartUI() {
@@ -13762,6 +13936,7 @@ service cloud.firestore {
         return;
       }
       salesModeSession = [];
+      salesSessionReceipts = [];
       salesCart = [];
       salesPosFilter = "";
       salesPosSelection = { rowIdx: null, color: "" };
@@ -13861,11 +14036,83 @@ service cloud.firestore {
     function customerPrinterSettingsKey(id = workspaceId) {
       return CUSTOMER_PRINTER_KEY + String(id || "MAIN").toUpperCase();
     }
+    function digitalReceiptsKey(id = workspaceId) {
+      return DIGITAL_RECEIPTS_KEY + String(id || "MAIN").toUpperCase();
+    }
+    function loadDigitalReceipts() {
+      try {
+        const list = JSON.parse(localStorage.getItem(digitalReceiptsKey()) || "[]");
+        return Array.isArray(list) ? list.filter((r) => r && typeof r === "object").slice(-500) : [];
+      } catch (_) {
+        return [];
+      }
+    }
+    function saveDigitalReceipt(receipt) {
+      const list = loadDigitalReceipts();
+      list.push(receipt);
+      try {
+        localStorage.setItem(digitalReceiptsKey(), JSON.stringify(list.slice(-500)));
+        return true;
+      } catch (err) {
+        setSellError(
+          "Sale saved, but the local digital receipt could not be saved: " +
+            (err?.message || "browser storage is full")
+        );
+        return false;
+      }
+    }
+    function newDigitalReceiptCode() {
+      const date = todayISODate().replace(/-/g, "");
+      const suffix = Math.random().toString(36).slice(2, 8).toUpperCase();
+      return `R-${date}-${suffix}`;
+    }
+    function createDigitalReceipt(lines, total, paymentMethod) {
+      const receipt = {
+        code: newDigitalReceiptCode(),
+        createdAt: new Date().toISOString(),
+        workspaceId: String(workspaceId || "MAIN").toUpperCase(),
+        companyName: getCustomerDisplayBrandName(loadCustomerDisplayBrand()),
+        paymentMethod: paymentMethod === "cash" ? "cash" : "other",
+        total: Math.max(0, parseNum(total)),
+        lines: (lines || []).map((line) => ({
+          name: String(line.name || "Item"),
+          color: String(line.color || ""),
+          qty: Math.max(0, Math.floor(parseNum(line.qty))),
+          unitPrice: Math.max(0, parseNum(line.sell)),
+          lineTotal: Math.max(0, parseNum(line.revenue)),
+        })),
+      };
+      return receipt;
+    }
+    function downloadSessionReceipts(receipts) {
+      const list = Array.isArray(receipts) ? receipts.filter(Boolean) : [];
+      if (!list.length) {
+        setSellError("There are no digital receipts saved in this sales session.");
+        return;
+      }
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        workspaceId: String(workspaceId || "MAIN").toUpperCase(),
+        companyName: getCustomerDisplayBrandName(loadCustomerDisplayBrand()),
+        receiptCount: list.length,
+        receipts: list,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `digital-receipts-${todayISODate()}-${Date.now().toString(36)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
     const RECEIPT_BAUD_RATES = [9600, 19200, 38400, 57600, 115200];
     function loadCustomerPrinterSettings() {
       // Default: Epson APD via Windows print dialog.
       const fallback = {
         printReceipt: true,
+        saveDigitalReceipt: true,
         kickDrawer: false,
         baudRate: 38400,
         flowControl: "none",
@@ -13877,6 +14124,7 @@ service cloud.firestore {
         const hasStored = raw && typeof raw === "object" && Object.keys(raw).length > 0;
         return {
           printReceipt: hasStored ? raw.printReceipt === true : fallback.printReceipt,
+          saveDigitalReceipt: hasStored ? raw.saveDigitalReceipt !== false : fallback.saveDigitalReceipt,
           kickDrawer: hasStored ? raw.kickDrawer === true : fallback.kickDrawer,
           baudRate,
           flowControl: raw.flowControl === "hardware" ? "hardware" : "none",
@@ -13893,8 +14141,11 @@ service cloud.firestore {
     }
     function renderCustomerPrinterSettings() {
       const settings = loadCustomerPrinterSettings();
-      const print = document.getElementById("receiptPrintEnabled"), drawer = document.getElementById("drawerKickEnabled");
+      const print = document.getElementById("receiptPrintEnabled");
+      const digital = document.getElementById("digitalReceiptEnabled");
+      const drawer = document.getElementById("drawerKickEnabled");
       if (print) { print.checked = settings.printReceipt; print.disabled = !getRole()?.canEdit; }
+      if (digital) { digital.checked = settings.saveDigitalReceipt; digital.disabled = !getRole()?.canEdit; }
       if (drawer) {
         drawer.checked = settings.kickDrawer;
         drawer.disabled = !getRole()?.canEdit;
@@ -14387,12 +14638,23 @@ html, body {
         lines: undoLines,
         at: new Date().toISOString(),
       });
+      const printerSettings = loadCustomerPrinterSettings();
+      let digitalReceipt = null;
+      if (printerSettings.saveDigitalReceipt) {
+        const candidate = createDigitalReceipt(committed, totalRev, pay);
+        if (saveDigitalReceipt(candidate)) {
+          digitalReceipt = candidate;
+          salesSessionReceipts.push(candidate);
+        }
+      }
       salesCart = [];
       setSellError("");
       setSellSuccess(
         `Transaction complete (${paymentMethodLabel(pay)}): ${totalUnits.toLocaleString()} unit${
           totalUnits === 1 ? "" : "s"
-        } · ${fmt(totalRev)}` + (committed.length > 1 ? ` (${committed.length} lines)` : "")
+        } · ${fmt(totalRev)}` +
+          (digitalReceipt ? ` · receipt ${digitalReceipt.code}` : "") +
+          (committed.length > 1 ? ` (${committed.length} lines)` : "")
       );
       scheduleSave(
         `Sale transaction (${paymentMethodLabel(pay)}): ${totalUnits} unit(s), ${committed.length} line(s), ${fmt(totalRev)}`
@@ -14474,6 +14736,7 @@ html, body {
           revenue: sessionRev,
           profit: sessionProfit,
           lines: [...byKey.values()].sort((a, b) => a.name.localeCompare(b.name) || a.color.localeCompare(b.color)),
+          receipts: salesSessionReceipts.slice(),
         },
         day: {
           units: dayUnits,
@@ -14514,8 +14777,16 @@ html, body {
               <h2 id="sellDayTitle">Sales day overview</h2>
               <p class="note" style="margin:0.25rem 0 0">${escapeHtml(data.today)}</p>
             </div>
-            <button type="button" class="btn-ghost" id="sellDayClose">Close</button>
+            <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+              <button type="button" class="btn-primary" id="sellDayDownloadReceipts" ${
+                data.session.receipts.length ? "" : "disabled"
+              }>Download ${data.session.receipts.length} digital receipt${
+                data.session.receipts.length === 1 ? "" : "s"
+              }</button>
+              <button type="button" class="btn-ghost" id="sellDayClose">Close</button>
+            </div>
           </header>
+          <p class="note" style="margin:0 0 1rem">Digital receipts are stored only in this browser. The download includes each receipt code, payment method, items, and total.</p>
           <h3 style="font-size:0.95rem;margin:0 0 0.5rem">This session</h3>
           <div class="sell-day-kpis">
             <div class="stat"><label>Units</label><div class="value">${data.session.units.toLocaleString()}</div></div>
@@ -14546,11 +14817,17 @@ html, body {
           </div>
         </div>`;
       document.body.appendChild(overlay);
-      const close = () => overlay.remove();
+      const close = () => {
+        overlay.remove();
+        updateCashierReadyBanner();
+      };
       overlay.addEventListener("click", (e) => {
         if (e.target === overlay) close();
       });
       overlay.querySelector("#sellDayClose")?.addEventListener("click", close);
+      overlay.querySelector("#sellDayDownloadReceipts")?.addEventListener("click", () => {
+        downloadSessionReceipts(data.session.receipts);
+      });
     }
 
     function endSalesDay() {
@@ -14565,11 +14842,17 @@ html, body {
       }
       showSellDayOverview();
       salesModeSession = [];
+      salesSessionReceipts = [];
       salesCart = [];
+      salesScreensaverAwake = false;
+      salesScreensaverHadCart = false;
+      clearTimeout(salesScreensaverIdleTimer);
+      salesScreensaverIdleTimer = null;
       setSalesModeActive(false);
       setSellSuccess("");
       setSellError("");
       renderSellPage();
+      updateCashierReadyBanner();
     }
 
     function renderSellPage() {
@@ -17411,7 +17694,13 @@ html, body {
     document.getElementById("undoSaleBtn").addEventListener("click", () => undoLastSale());
     document.getElementById("undoSaleBtnMode")?.addEventListener("click", () => undoLastSale());
     document.getElementById("resetSalesBtn").addEventListener("click", () => resetAllSales());
-    document.getElementById("enterSalesModeBtn")?.addEventListener("click", () => enterSalesMode());
+    document.getElementById("enterSalesModeBtn")?.addEventListener("click", () => {
+      salesScreensaverAwake = true;
+      enterSalesMode();
+      updateCashierReadyBanner();
+      scheduleSalesScreensaverIdle();
+    });
+    bindSalesScreensaverWake();
     document.getElementById("addToCartBtn")?.addEventListener("click", () => addToCartFromMode());
     document.getElementById("endTransactionCashBtn")?.addEventListener("click", () => endTransaction("cash"));
     document.getElementById("endTransactionOtherBtn")?.addEventListener("click", () => endTransaction("other"));
@@ -17471,6 +17760,13 @@ html, body {
     document.getElementById("receiptPrintEnabled")?.addEventListener("change", (e) => {
       if (!getRole()?.canEdit) return;
       saveCustomerPrinterSettings({ ...loadCustomerPrinterSettings(), printReceipt: e.target.checked });
+    });
+    document.getElementById("digitalReceiptEnabled")?.addEventListener("change", (e) => {
+      if (!getRole()?.canEdit) return;
+      saveCustomerPrinterSettings({
+        ...loadCustomerPrinterSettings(),
+        saveDigitalReceipt: e.target.checked,
+      });
     });
     document.getElementById("drawerKickEnabled")?.addEventListener("change", (e) => {
       if (!getRole()?.canEdit) return;
